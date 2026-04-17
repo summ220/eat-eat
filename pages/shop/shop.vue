@@ -86,7 +86,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
 const list = ref([])
-const categories = ['蔬菜', '肉蛋', '水产', '调料', '其他']
+const categories = ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
 const currentCategory = ref('全部')
 
 const showModal = ref(false)
