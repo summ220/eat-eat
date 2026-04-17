@@ -198,6 +198,11 @@ onReachBottom(() => {
 
 /* 顶部搜索与操作区 */
 .search-panel {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #FFF5F7;
+  padding-bottom: 20rpx;
   display: flex;
   align-items: center;
   gap: 20rpx;

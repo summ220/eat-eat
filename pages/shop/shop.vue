@@ -238,11 +238,15 @@ const checkCost = () => {
 .page {
   background: #FAFAFA;
   min-height: ~"calc(100vh - 60rpx)";
-  padding-bottom: 40rpx;
+  padding-bottom: 180rpx;
   background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 400rpx);
 }
 
 .top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #FFF5F7;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -287,11 +291,16 @@ const checkCost = () => {
 }
 
 .stat-card {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
   margin: 0 40rpx 30rpx;
   border-radius: 24rpx;
   padding: 30rpx;
   background: #fff;
-  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.03);
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -322,7 +331,7 @@ const checkCost = () => {
 
 .sidebar {
   position: sticky;
-  top: 20rpx;
+  top: 130rpx;
   width: 170rpx;
   background: #fff;
   border-radius: 36rpx;
@@ -331,6 +340,8 @@ const checkCost = () => {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  max-height: calc(100vh - 280rpx);
+  overflow-y: auto;
 }
 
 .nav-item {
