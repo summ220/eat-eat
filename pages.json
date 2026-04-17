@@ -18,8 +18,21 @@
 		{
 			"path": "pages/recipe/recipe",
 			"style": {
-				"navigationBarTitleText": "菜谱",
-				"navigationBarBackgroundColor": "#FFF5F7"
+				"navigationBarTitleText": "菜谱"
+			}
+		},
+		{
+			"path": "pages/recipe/detail",
+			"style": {
+				"navigationBarTitleText": "菜谱详情",
+				"navigationBarBackgroundColor": "#FFE6E6"
+			}
+		},
+		{
+			"path": "pages/recipe/edit",
+			"style": {
+				"navigationBarTitleText": "添加菜谱",
+				"navigationBarBackgroundColor": "#FFE6E6"
 			}
 		},
 		{
@@ -67,31 +80,26 @@
 		"list": [
 			{
 				"pagePath": "pages/index/index",
-				// "text": "吃什么",
 				"iconPath": "static/tabbar/home.png",
 				"selectedIconPath": "static/tabbar/home-active.png"
 			},
 			{
 				"pagePath": "pages/stock/stock",
-				// "text": "食材",
 				"iconPath": "static/tabbar/stock.png",
 				"selectedIconPath": "static/tabbar/stock-active.png"
 			},
 			{
 				"pagePath": "pages/recipe/recipe",
-				// "text": "菜谱",
 				"iconPath": "static/tabbar/recipe.png",
 				"selectedIconPath": "static/tabbar/recipe-active.png"
 			},
 			{
 				"pagePath": "pages/shop/shop",
-				// "text": "购物车",
 				"iconPath": "static/tabbar/shop.png",
 				"selectedIconPath": "static/tabbar/shop-active.png"
 			},
 			{
 				"pagePath": "pages/family/family",
-				// "text": "家庭",
 				"iconPath": "static/tabbar/family.png",
 				"selectedIconPath": "static/tabbar/family-active.png"
 			}
