@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view class="page" :style="themeStyle">
     <view class="header">
       <view class="title-wrap">
         <text class="main-title">🍓 今天吃什么</text>
@@ -49,6 +49,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useTheme } from '../../utils/theme.js'
+
+const { themeStyle } = useTheme()
 
 const menuList = [
   '番茄炒蛋', '可乐鸡翅', '青椒肉丝', '蒜蓉西兰花',
@@ -77,8 +80,7 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
   padding: 40rpx;
   background: #FAFAFA;
   min-height: ~"calc(100vh - 80rpx)";
-  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 100%);
-  background-color: #FFF1F5;
+  background-image: linear-gradient(180deg, var(--theme-light) 0%, #FAFAFA 100%);
 }
 .header {
   margin: 10rpx 0 60rpx;
@@ -94,7 +96,7 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
     letter-spacing: 2rpx;
   }
   .badge {
-    background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+    background: var(--theme-grad);
     color: #fff;
     font-size: 20rpx;
     padding: 6rpx 14rpx;
@@ -102,7 +104,7 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
     margin-left: 20rpx;
     font-weight: bold;
     transform: translateY(-8rpx);
-    box-shadow: 0 4rpx 10rpx rgba(255, 141, 161, 0.3);
+    box-shadow: 0 4rpx 10rpx var(--theme-shadow);
   }
   .sub-title {
     font-size: 26rpx;
@@ -112,11 +114,11 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
 
 .random-card {
   position: relative;
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--theme-grad);
   border-radius: 40rpx;
   padding: 80rpx 40rpx;
   text-align: center;
-  box-shadow: 0 16rpx 40rpx rgba(255, 141, 161, 0.25);
+  box-shadow: 0 16rpx 40rpx var(--theme-shadow);
   margin-bottom: 60rpx;
   overflow: hidden;
   
@@ -152,7 +154,7 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
   }
   .btn-round {
     background: #fff;
-    color: #FF7DA8;
+    color: var(--theme-color);
     border-radius: 100rpx;
     font-size: 30rpx;
     font-weight: bold;

@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view class="page" :style="themeStyle">
     
     <!-- 月份切换栏 -->
     <view class="month-selector">
@@ -120,6 +120,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { useTheme } from '../../utils/theme.js'
+
+const { themeStyle, currentTheme } = useTheme()
 
 // ---- 核心状态 ----
 const categories = ['蔬菜', '肉蛋', '水产', '调料', '其他']
@@ -399,7 +402,7 @@ const touchEnd = (e, item) => {
   min-height: ~"calc(100vh - 60rpx)";
   padding: 30rpx;
   padding-bottom: 160rpx;
-  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 600rpx);
+  background-image: linear-gradient(180deg, var(--theme-light) 0%, #FAFAFA 600rpx);
 }
 
 // 头部月份切换栏
@@ -411,7 +414,7 @@ const touchEnd = (e, item) => {
   .arrow-btn {
     padding: 10rpx 40rpx;
     .arrow {
-      color: #FF8DA1;
+      color: var(--theme-color);
       font-size: 28rpx;
     }
   }
@@ -427,11 +430,11 @@ const touchEnd = (e, item) => {
 // 顶部本月统计卡片
 .header-card {
   position: relative;
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--theme-grad);
   border-radius: 40rpx;
   padding: 60rpx 30rpx;
   text-align: center;
-  box-shadow: 0 16rpx 40rpx rgba(255, 141, 161, 0.25);
+  box-shadow: 0 16rpx 40rpx var(--theme-shadow);
   margin-bottom: 40rpx;
   overflow: hidden;
   
@@ -490,10 +493,10 @@ const touchEnd = (e, item) => {
     font-size: 26rpx;
     transition: all 0.3s;
     &.active {
-      background: #FF8DA1;
+      background: var(--theme-color);
       color: #fff;
       font-weight: bold;
-      box-shadow: 0 4rpx 12rpx rgba(255, 141, 161, 0.2);
+      box-shadow: 0 4rpx 12rpx var(--theme-shadow);
     }
   }
 }
@@ -502,7 +505,7 @@ const touchEnd = (e, item) => {
 .list-section {
   .empty {
     text-align: center;
-    color: #FFB3C1;
+    color: var(--theme-shadow);
     font-size: 28rpx;
     margin-top: 80rpx;
   }
@@ -541,7 +544,7 @@ const touchEnd = (e, item) => {
       }
       .group-arrow {
         font-size: 24rpx;
-        color: #FF8DA1;
+        color: var(--theme-color);
         transition: transform 0.3s;
         &.rotated {
           transform: rotate(90deg);
@@ -601,8 +604,8 @@ const touchEnd = (e, item) => {
   }
 
   .cat-tag {
-    background: #FFF0F3;
-    color: #FF8DA1;
+    background: var(--theme-light);
+    color: var(--theme-color);
     font-size: 20rpx;
     padding: 6rpx 16rpx;
     border-radius: 8rpx;
@@ -627,7 +630,7 @@ const touchEnd = (e, item) => {
   .price {
     font-size: 34rpx;
     font-weight: bold;
-    color: #FF8DA1;
+    color: var(--theme-color);
   }
 }
 
@@ -636,11 +639,11 @@ const touchEnd = (e, item) => {
   position: fixed;
   right: 40rpx;
   bottom: 160rpx;
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--theme-grad);
   color: #fff;
   border-radius: 100rpx;
   padding: 24rpx 40rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255, 125, 168, 0.35);
+  box-shadow: 0 8rpx 24rpx var(--theme-shadow);
   font-size: 32rpx;
   font-weight: bold;
   z-index: 50;
@@ -694,7 +697,7 @@ const touchEnd = (e, item) => {
     border: 2rpx solid transparent;
     transition: border 0.3s;
     &:focus {
-      border: 2rpx solid #FF8DA1;
+      border: 2rpx solid var(--theme-color);
     }
   }
   .picker-line {
@@ -717,7 +720,7 @@ const touchEnd = (e, item) => {
     font-size: 26rpx;
     transition: all 0.2s;
     &.active {
-      background: #FF8DA1;
+      background: var(--theme-color);
       color: #fff;
     }
   }
@@ -741,9 +744,9 @@ const touchEnd = (e, item) => {
     color: #666;
   }
   .btn-confirm {
-    background: #FF8DA1;
+    background: var(--theme-color);
     color: #fff;
-    box-shadow: 0 4rpx 16rpx rgba(255, 141, 161, 0.3);
+    box-shadow: 0 4rpx 16rpx var(--theme-shadow);
   }
 }
 </style>

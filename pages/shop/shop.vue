@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view class="page" :style="themeStyle">
     <view class="top-bar">
       <text class="title">🛒 购物清单</text>
       <view class="top-actions">
@@ -29,9 +29,9 @@
           <view class="item-header">
             <view class="title-group">
               <text class="name">{{ item.name }}</text>
-              <text class="cat-tag" v-if="currentCategory === '全部'">{{ item.category || '其他' }}</text>
+              <text class="cat-tag" v-if="currentCategory === '全部'" :style="{ color: currentTheme.color, background: 'var(--theme-light)' }">{{ item.category || '其他' }}</text>
             </view>
-            <switch :checked="item.done" @change="toggle(item)" color="#FF93B6" style="transform: scale(0.8); margin-right: -10rpx;" />
+            <switch :checked="item.done" @change="toggle(item)" :color="currentTheme.color" style="transform: scale(0.8); margin-right: -10rpx;" />
           </view>
 
           <view class="item-body">
@@ -75,8 +75,8 @@
 
     <!-- 底部统计栏 -->
     <view class="stat-card">
-      <text class="stat-text">已购买 {{ doneCount }}/{{ list.length }} 件</text>
-      <text class="stat-money">本次花费：¥ <text class="stat-money-num" @click="checkCost">{{ totalCost }}</text></text>
+      <text class="stat-text" :style="{ color: currentTheme.color }">已购买 {{ doneCount }}/{{ list.length }} 件</text>
+      <text class="stat-money" :style="{ color: currentTheme.color }">本次花费：¥ <text class="stat-money-num" @click="checkCost">{{ totalCost }}</text></text>
     </view>
   </view>
 </template>
@@ -84,6 +84,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { useTheme } from '../../utils/theme.js'
+
+const { themeStyle, currentTheme } = useTheme()
 
 const list = ref([])
 const categories = ['蔬菜', '肉蛋', '水产', '调料', '其他']
@@ -152,7 +155,7 @@ const clearDone = () => {
   uni.showModal({
     title: '清理提示',
     content: '确定要一键清空所有已购买的项吗？',
-    confirmColor: '#FF7DA8',
+    confirmColor: currentTheme.value.color,
     success: (res) => {
       if (res.confirm) {
         list.value = list.value.filter(item => !item.done);
@@ -167,7 +170,7 @@ const deleteItem = (item) => {
   uni.showModal({
     title: '删除提示',
     content: `确定要移除「${item.name}」吗？`,
-    confirmColor: '#FF7DA8',
+    confirmColor: currentTheme.value.color,
     success: (res) => {
       if (res.confirm) {
         list.value = list.value.filter(v => v.id !== item.id);
@@ -239,7 +242,7 @@ const checkCost = () => {
   background: #FAFAFA;
   min-height: ~"calc(100vh - 60rpx)";
   padding-bottom: 40rpx;
-  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 400rpx);
+  background-image: linear-gradient(180deg, var(--theme-light) 0%, #FAFAFA 400rpx);
 }
 
 .top-bar {
@@ -272,14 +275,14 @@ const checkCost = () => {
   &:active { transform: scale(0.95); }
   &.clear {
     background: #FFF;
-    color: #FF7DA8;
-    border: 2rpx solid #FF93B6;
+    color: var(--theme-color);
+    border: 2rpx solid var(--theme-border-light);
   }
   &.add {
-    background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+    background: var(--theme-grad);
     color: #fff;
     border: none;
-    box-shadow: 0 6rpx 16rpx rgba(255, 125, 168, 0.25);
+    box-shadow: 0 6rpx 16rpx var(--theme-shadow);
   }
   &::after {
     border: none;
@@ -299,12 +302,10 @@ const checkCost = () => {
 
 .stat-text {
   font-size: 26rpx;
-  color: #FF7DA8;
 }
 
 .stat-money {
   font-size: 32rpx;
-  color: #FF7DA8;
   font-weight: bold;
 }
 
@@ -348,7 +349,7 @@ const checkCost = () => {
   
   &.active {
     .nav-text {
-      color: #FF7DA8;
+      color: var(--theme-color);
       font-weight: bold;
       font-size: 30rpx;
     }
@@ -359,7 +360,7 @@ const checkCost = () => {
       top: 25rpx;
       bottom: 25rpx;
       width: 8rpx;
-      background: #FF7DA8;
+      background: var(--theme-color);
       border-radius: 0 10rpx 10rpx 0;
     }
   }
@@ -430,8 +431,7 @@ const checkCost = () => {
 }
 
 .cat-tag {
-  background: #FFF1F5;
-  color: #FF7DA8;
+  color: var(--theme-color);
   font-size: 20rpx;
   padding: 6rpx 14rpx;
   border-radius: 20rpx;
@@ -520,7 +520,7 @@ const checkCost = () => {
   border: 2rpx solid transparent;
   transition: all 0.3s;
   &:focus {
-    border: 2rpx solid #FF8DA1;
+    border: 2rpx solid var(--theme-color);
     background: #FFF;
   }
 }
@@ -540,9 +540,9 @@ const checkCost = () => {
   font-size: 26rpx;
   transition: all 0.3s;
   &.active {
-    background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+    background: var(--theme-grad);
     color: #fff;
-    box-shadow: 0 6rpx 16rpx rgba(255, 125, 168, 0.25);
+    box-shadow: 0 6rpx 16rpx var(--theme-shadow);
   }
 }
 
@@ -570,9 +570,9 @@ const checkCost = () => {
 }
 
 .confirm-btn {
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--theme-grad);
   color: #fff;
-  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
+  box-shadow: 0 8rpx 20rpx var(--theme-shadow);
   &::after { border: none; }
 }
 </style>

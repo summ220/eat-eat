@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view class="page" :style="themeStyle">
     <view class="card">
       <text class="title">🛒 添加购物清单</text>
       
@@ -26,6 +26,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useTheme } from '../../utils/theme.js'
+
+const { themeStyle } = useTheme()
 
 const name = ref('')
 const num = ref('')
@@ -54,13 +57,13 @@ const save = () => {
   background: #FAFAFA;
   padding: 40rpx;
   min-height: ~"calc(100vh - 80rpx)";
-  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 400rpx);
+  background-image: linear-gradient(180deg, var(--theme-light) 0%, #FAFAFA 400rpx);
 }
 .card {
   background: #fff;
   border-radius: 40rpx;
   padding: 50rpx 40rpx;
-  box-shadow: 0 16rpx 40rpx rgba(255, 141, 161, 0.08);
+  box-shadow: 0 16rpx 40rpx var(--theme-shadow);
 }
 .title {
   font-size: 40rpx;
@@ -92,9 +95,9 @@ const save = () => {
   font-size: 26rpx;
   transition: all 0.3s;
   &.active {
-    background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+    background: var(--theme-grad);
     color: #fff;
-    box-shadow: 0 4rpx 12rpx rgba(255, 125, 168, 0.25);
+    box-shadow: 0 4rpx 12rpx var(--theme-shadow);
   }
 }
 .input {
@@ -107,12 +110,12 @@ const save = () => {
   transition: all 0.3s;
   margin-bottom: 30rpx;
   &:focus {
-    border: 2rpx solid #FF8DA1;
+    border: 2rpx solid var(--theme-color);
     background: #FFF;
   }
 }
 .save-btn {
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--theme-grad);
   color: #fff;
   border-radius: 100rpx;
   height: 90rpx;
@@ -121,7 +124,7 @@ const save = () => {
   font-weight: bold;
   margin-top: 40rpx;
   border: none;
-  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
+  box-shadow: 0 8rpx 20rpx var(--theme-shadow);
   transition: transform 0.2s;
   &:active { transform: scale(0.96); }
   &::after { border: none; }

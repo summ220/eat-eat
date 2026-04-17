@@ -1,25 +1,20 @@
 <script>
+import { useTheme } from './utils/theme.js'
+
 export default {
 	onLaunch() {
 		console.log("家庭小厨房启动啦")
+		// 初次加载时，应用对应的主题 tabBar 和 navBar 颜色
+		const savedTheme = uni.getStorageSync('activeThemeName') || '温柔粉'
+		const { changeTheme } = useTheme()
+		changeTheme(savedTheme)
 	}
 }
 </script>
 
 <style>
 page {
-	background-color: #FFE6E6;
-	font-family: PingFang SC, Helvetica Neue;
-}
-.card-cute {
-	background: #fff;
-	border-radius: 24rpx;
-	box-shadow: 0 6rpx 18rpx rgba(255,192,192,0.2);
-}
-.btn-cute {
-	background: #FFC0C0 !important;
-	border-radius: 100rpx !important;
-	color: #fff !important;
-	border: none !important;
+	background-color: #FAFAFA;
+	font-family: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
 }
 </style>
