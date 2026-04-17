@@ -4,90 +4,446 @@
       <text class="title">🍅 家里食材</text>
       <button class="add-btn" @click="goAdd">+ 添加</button>
     </view>
-
-    <view class="item-card" v-for="(item, i) in list" :key="i">
-      <view>
-        <text class="name">{{ item.name }}</text>
-        <text class="num">{{ item.num }}</text>
+    
+    <view class="main-layout">
+      <!-- 左侧分类导航 -->
+      <view class="sidebar">
+        <view 
+          class="nav-item" 
+          :class="{ active: currentCategory === '全部' }" 
+          @click="switchCategory('全部')"
+        >
+          <text class="nav-text">全部</text>
+        </view>
+        <view 
+          class="nav-item" 
+          v-for="cat in categories" 
+          :key="cat" 
+          :class="{ active: currentCategory === cat }" 
+          @click="switchCategory(cat)"
+        >
+          <text class="nav-text">{{ cat }}</text>
+        </view>
       </view>
-      <switch :checked="item.has" @change="toggle(i)" color="#FF93B6" />
-    </view>
 
-    <view class="empty" v-if="list.length === 0">
-      <text>冰箱空空哒～快去添加吧</text>
+      <!-- 右侧食材列表 -->
+      <view class="list-container">
+        <view class="empty" v-if="filteredList.length === 0">
+          <text>暂时没有食材哦～</text>
+        </view>
+        
+        <view class="item-card" v-for="item in filteredList" :key="item.id">
+          <view class="item-header">
+            <view class="title-group">
+              <text class="name">{{ item.name }}</text>
+              <text class="cat-tag" v-if="currentCategory === '全部'">{{ item.category || '其他' }}</text>
+            </view>
+            <switch :checked="item.has" @change="toggle(item)" color="#FF93B6" style="transform: scale(0.8); margin-right: -10rpx;" />
+          </view>
+          
+          <view class="item-body">
+            <text class="num">数量：{{ item.num || '-' }}</text>
+          </view>
+          
+          <view class="item-footer">
+            <text class="action-btn edit" @click="editItem(item)">✏️ 编辑</text>
+            <text class="action-btn delete" @click="deleteItem(item)">🗑️ 删除</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 编辑食材的弹窗 -->
+    <view class="modal-mask" v-if="showModal">
+      <view class="modal-content">
+        <text class="modal-title">编辑食材</text>
+        
+        <input class="modal-input" v-model="editData.name" placeholder="请输入食材名称" />
+        <input class="modal-input" v-model="editData.num" placeholder="数量 (选填)" />
+        
+        <view class="modal-tags">
+          <text 
+            class="tag" 
+            :class="{ active: editData.category === cat }"
+            v-for="cat in categories" 
+            :key="cat"
+            @click="editData.category = cat"
+          >{{ cat }}</text>
+        </view>
+        
+        <view class="modal-btns">
+          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="confirm-btn" @click="saveEdit">确定</button>
+        </view>
+      </view>
     </view>
   </view>
 </template>
 
-<script>
-export default {
-  data() {
-    return { list: [] }
-  },
-  onShow() { this.load() },
-  methods: {
-    load() { this.list = uni.getStorageSync('stock') || [] },
-    save() { uni.setStorageSync('stock', this.list) },
-    toggle(i) {
-      this.list[i].has = !this.list[i].has
-      this.save()
-    },
-    goAdd() {
-      uni.navigateTo({ url: '/pages/addStock/index' })
-    }
+<script setup>
+import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+
+const list = ref([])
+const categories = ['蔬菜', '肉蛋', '水产', '调料', '其他']
+const currentCategory = ref('全部')
+
+const showModal = ref(false)
+const editData = ref({
+  id: '',
+  name: '',
+  num: '',
+  category: ''
+})
+
+const filteredList = computed(() => {
+  if (currentCategory.value === '全部') {
+    return list.value;
   }
+  return list.value.filter(item => (item.category || '其他') === currentCategory.value);
+})
+
+onShow(() => {
+  load()
+})
+
+const load = () => {
+  let data = uni.getStorageSync('stock') || [];
+  list.value = data.map((item, index) => {
+    if (!item.id) item.id = 'stock_' + Date.now() + '_' + index;
+    return item;
+  });
+}
+
+const save = () => {
+  uni.setStorageSync('stock', list.value)
+}
+
+const switchCategory = (cat) => {
+  currentCategory.value = cat;
+}
+
+const toggle = (item) => {
+  item.has = !item.has;
+  save();
+}
+
+const goAdd = () => {
+  uni.navigateTo({ url: '/pages/addStock/addStock' });
+}
+
+const editItem = (item) => {
+  editData.value = {
+    id: item.id,
+    name: item.name,
+    num: item.num || '',
+    category: item.category || '其他'
+  };
+  showModal.value = true;
+}
+
+const saveEdit = () => {
+  if (!editData.value.name) {
+    return uni.showToast({ icon: 'none', title: '请输入名称' });
+  }
+  const index = list.value.findIndex(item => item.id === editData.value.id);
+  if (index !== -1) {
+    list.value[index].name = editData.value.name;
+    list.value[index].num = editData.value.num;
+    list.value[index].category = editData.value.category;
+    save();
+  }
+  showModal.value = false;
+  uni.showToast({ icon: 'success', title: '修改成功' });
+}
+
+const deleteItem = (item) => {
+  uni.showModal({
+    title: '提示',
+    content: `确定要删除「${item.name}」吗？`,
+    confirmColor: '#FF7DA8',
+    success: (res) => {
+      if (res.confirm) {
+        list.value = list.value.filter(v => v.id !== item.id);
+        save();
+        uni.showToast({ icon: 'success', title: '已删除' });
+      }
+    }
+  });
 }
 </script>
 
-<style scoped>
+<style lang="less" scoped>
 .page {
   background: #FFF1F5;
-  padding: 30rpx;
-  min-height: 100vh;
+  min-height: ~"calc(100vh - 60rpx)";
+  padding-bottom: 40rpx;
 }
+
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30rpx;
+  padding: 30rpx 40rpx;
 }
+
 .title {
   font-size: 38rpx;
   color: #FF7DA8;
   font-weight: bold;
 }
+
 .add-btn {
   background: #FF93B6;
   color: #fff;
   border-radius: 100rpx;
-  padding: 12rpx 26rpx;
-  font-size: 26rpx;
+  padding: 0 40rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  font-size: 28rpx;
   border: none;
+  margin: 0;
+  box-shadow: 0 6rpx 16rpx rgba(255, 147, 182, 0.3);
 }
+
+.main-layout {
+  display: flex;
+  align-items: flex-start;
+  padding: 0 20rpx;
+}
+
+.sidebar {
+  position: sticky;
+  top: 20rpx;
+  width: 170rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 20rpx 0;
+  box-shadow: 0 6rpx 20rpx rgba(255, 173, 199, 0.1);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.nav-item {
+  height: 90rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  
+  .nav-text {
+    font-size: 28rpx;
+    color: #666;
+    transition: color 0.2s, font-weight 0.2s;
+  }
+  
+  &.active {
+    .nav-text {
+      color: #FF7DA8;
+      font-weight: bold;
+      font-size: 30rpx;
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 25rpx;
+      bottom: 25rpx;
+      width: 8rpx;
+      background: #FF7DA8;
+      border-radius: 0 8rpx 8rpx 0;
+    }
+  }
+}
+
+.list-container {
+  flex: 1;
+  padding-left: 20rpx;
+  display: flex;
+  flex-direction: column;
+}
+
 .item-card {
   background: #fff;
   border-radius: 24rpx;
-  padding: 32rpx;
-  margin-bottom: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 6rpx 20rpx rgba(255, 173, 199, 0.1);
+}
+
+.item-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 6rpx 16rpx rgba(255, 173, 199, 0.1);
+  margin-bottom: 20rpx;
 }
+
+.title-group {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  overflow: hidden;
+}
+
 .name {
-  font-size: 32rpx;
-  color: #444;
+  font-size: 34rpx;
+  color: #333;
+  font-weight: bold;
+  margin-right: 16rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+.cat-tag {
+  background: #FFF1F5;
+  color: #FF7DA8;
+  font-size: 20rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 20rpx;
+  white-space: nowrap;
+}
+
+.item-body {
+  margin-bottom: 24rpx;
+}
+
 .num {
-  font-size: 24rpx;
-  color: #999;
-  margin-top: 6rpx;
-  display: block;
+  font-size: 26rpx;
+  color: #888;
 }
+
+.item-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 40rpx;
+  border-top: 2rpx dashed #FFEEF2;
+  padding-top: 20rpx;
+}
+
+.action-btn {
+  font-size: 26rpx;
+  display: flex;
+  align-items: center;
+  padding: 8rpx 0;
+  
+  &.edit {
+    color: #7A9BFF;
+  }
+  
+  &.delete {
+    color: #FF8F8F;
+  }
+}
+
 .empty {
-  text-align: center;
-  margin-top: 120rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 150rpx;
   color: #BC8DA7;
   font-size: 28rpx;
+}
+
+/* 编辑弹窗样式 */
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  width: 620rpx;
+  background: #fff;
+  border-radius: 36rpx;
+  padding: 50rpx 40rpx;
+  box-sizing: border-box;
+  box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.1);
+}
+
+.modal-title {
+  display: block;
+  text-align: center;
+  font-size: 38rpx;
+  color: #FF7DA8;
+  font-weight: bold;
+  margin-bottom: 40rpx;
+}
+
+.modal-input {
+  background: #F9F9F9;
+  height: 88rpx;
+  border-radius: 20rpx;
+  padding: 0 30rpx;
+  font-size: 30rpx;
+  margin-bottom: 30rpx;
+  border: 2rpx solid #F0F0F0;
+}
+
+.modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-bottom: 50rpx;
+}
+
+.tag {
+  background: #FEF0F4;
+  color: #FF93B6;
+  padding: 12rpx 28rpx;
+  border-radius: 40rpx;
+  font-size: 26rpx;
+  transition: all 0.2s;
+  
+  &.active {
+    background: #FF93B6;
+    color: #fff;
+  }
+}
+
+.modal-btns {
+  display: flex;
+  justify-content: space-between;
+  gap: 30rpx;
+}
+
+.cancel-btn, .confirm-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  margin: 0;
+  border: none;
+  &::after {
+    border: none;
+  }
+}
+
+.cancel-btn {
+  background: #F5F5F5;
+  color: #666;
+}
+
+.confirm-btn {
+  background: #FF93B6;
+  color: #fff;
+  box-shadow: 0 6rpx 16rpx rgba(255, 147, 182, 0.3);
 }
 </style>
