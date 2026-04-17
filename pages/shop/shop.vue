@@ -237,11 +237,15 @@ const checkCost = () => {
 <style lang="less" scoped>
 .page {
   background: #FFF1F5;
-  min-height: ~"calc(100vh - 60rpx)";
+  min-height: ~"calc(100vh - 100rpx)";
   padding-bottom: 40rpx;
 }
 
 .top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #FFF1F5;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -283,28 +287,35 @@ const checkCost = () => {
 }
 
 .stat-card {
-  margin: 0 30rpx 20rpx;
-  border-radius: 20rpx;
-  padding: 24rpx;
+  position: sticky;
+  bottom: 40rpx;
+  z-index: 100;
+  background: var(--theme-grad, linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%));
+  margin: 30rpx 40rpx;
+  border-radius: 40rpx;
+  padding: 30rpx 40rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-shadow: 0 12rpx 30rpx rgba(255, 125, 168, 0.4);
 }
 
 .stat-text {
-  font-size: 26rpx;
-  color: #FF7DA8;
+  font-size: 28rpx;
+  color: #fff;
+  opacity: 0.9;
 }
 
 .stat-money {
   font-size: 32rpx;
-  color: #FF7DA8;
-  font-weight: bold;
+  color: #fff;
+  font-weight: 900;
 }
 
 .stat-money-num {
-  font-weight: bold;
-  text-decoration: underline;
+  font-size: 40rpx;
+  margin-left: 10rpx;
+  text-decoration: none;
 }
 
 .main-layout {
@@ -316,7 +327,7 @@ const checkCost = () => {
 
 .sidebar {
   position: sticky;
-  top: 20rpx;
+  top: 130rpx; /* 顶部 top-bar 高度约为 100-120rpx */
   width: 170rpx;
   background: #fff;
   border-radius: 24rpx;
@@ -325,6 +336,7 @@ const checkCost = () => {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  height: fit-content;
 }
 
 .nav-item {

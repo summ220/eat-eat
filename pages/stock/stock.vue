@@ -181,6 +181,10 @@ const deleteItem = (item) => {
 }
 
 .top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #FFF1F5;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -214,7 +218,7 @@ const deleteItem = (item) => {
 
 .sidebar {
   position: sticky;
-  top: 20rpx;
+  top: 130rpx;
   width: 170rpx;
   background: #fff;
   border-radius: 24rpx;
@@ -223,6 +227,7 @@ const deleteItem = (item) => {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  height: fit-content;
 }
 
 .nav-item {
