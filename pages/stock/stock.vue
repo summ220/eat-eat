@@ -175,9 +175,10 @@ const deleteItem = (item) => {
 
 <style lang="less" scoped>
 .page {
-  background: #FFF1F5;
+  background: #FAFAFA;
   min-height: ~"calc(100vh - 60rpx)";
   padding-bottom: 40rpx;
+  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 400rpx);
 }
 
 .top-bar {
@@ -188,13 +189,13 @@ const deleteItem = (item) => {
 }
 
 .title {
-  font-size: 38rpx;
-  color: #FF7DA8;
-  font-weight: bold;
+  font-size: 42rpx;
+  color: #333;
+  font-weight: 800;
 }
 
 .add-btn {
-  background: #FF93B6;
+  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
   color: #fff;
   border-radius: 100rpx;
   padding: 0 40rpx;
@@ -203,7 +204,9 @@ const deleteItem = (item) => {
   font-size: 28rpx;
   border: none;
   margin: 0;
-  box-shadow: 0 6rpx 16rpx rgba(255, 147, 182, 0.3);
+  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
+  transition: transform 0.2s;
+  &:active { transform: scale(0.95); }
 }
 
 .main-layout {
@@ -217,9 +220,9 @@ const deleteItem = (item) => {
   top: 20rpx;
   width: 170rpx;
   background: #fff;
-  border-radius: 24rpx;
+  border-radius: 36rpx;
   padding: 20rpx 0;
-  box-shadow: 0 6rpx 20rpx rgba(255, 173, 199, 0.1);
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -234,8 +237,8 @@ const deleteItem = (item) => {
   
   .nav-text {
     font-size: 28rpx;
-    color: #666;
-    transition: color 0.2s, font-weight 0.2s;
+    color: #888;
+    transition: all 0.3s;
   }
   
   &.active {
@@ -253,7 +256,7 @@ const deleteItem = (item) => {
       bottom: 25rpx;
       width: 8rpx;
       background: #FF7DA8;
-      border-radius: 0 8rpx 8rpx 0;
+      border-radius: 0 10rpx 10rpx 0;
     }
   }
 }
@@ -267,10 +270,12 @@ const deleteItem = (item) => {
 
 .item-card {
   background: #fff;
-  border-radius: 24rpx;
+  border-radius: 32rpx;
   padding: 30rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 6rpx 20rpx rgba(255, 173, 199, 0.1);
+  box-shadow: 0 8rpx 30rpx rgba(0,0,0,0.03);
+  transition: transform 0.2s;
+  &:active { transform: translateY(2rpx) scale(0.99); }
 }
 
 .item-header {
@@ -371,29 +376,34 @@ const deleteItem = (item) => {
 .modal-content {
   width: 620rpx;
   background: #fff;
-  border-radius: 36rpx;
+  border-radius: 40rpx;
   padding: 50rpx 40rpx;
   box-sizing: border-box;
-  box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20rpx 50rpx rgba(0, 0, 0, 0.1);
 }
 
 .modal-title {
   display: block;
   text-align: center;
-  font-size: 38rpx;
-  color: #FF7DA8;
-  font-weight: bold;
+  font-size: 36rpx;
+  color: #333;
+  font-weight: 800;
   margin-bottom: 40rpx;
 }
 
 .modal-input {
-  background: #F9F9F9;
-  height: 88rpx;
-  border-radius: 20rpx;
+  background: #F8F9FA;
+  height: 90rpx;
+  border-radius: 24rpx;
   padding: 0 30rpx;
   font-size: 30rpx;
   margin-bottom: 30rpx;
-  border: 2rpx solid #F0F0F0;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+  &:focus {
+    border: 2rpx solid #FF8DA1;
+    background: #FFF;
+  }
 }
 
 .modal-tags {
@@ -404,16 +414,17 @@ const deleteItem = (item) => {
 }
 
 .tag {
-  background: #FEF0F4;
-  color: #FF93B6;
-  padding: 12rpx 28rpx;
-  border-radius: 40rpx;
+  background: #F8F9FA;
+  color: #888;
+  padding: 12rpx 32rpx;
+  border-radius: 100rpx;
   font-size: 26rpx;
-  transition: all 0.2s;
+  transition: all 0.3s;
   
   &.active {
-    background: #FF93B6;
+    background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
     color: #fff;
+    box-shadow: 0 6rpx 16rpx rgba(255, 125, 168, 0.25);
   }
 }
 
@@ -425,10 +436,11 @@ const deleteItem = (item) => {
 
 .cancel-btn, .confirm-btn {
   flex: 1;
-  height: 88rpx;
-  line-height: 88rpx;
-  border-radius: 44rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  border-radius: 100rpx;
   font-size: 32rpx;
+  font-weight: bold;
   margin: 0;
   border: none;
   &::after {
@@ -442,8 +454,8 @@ const deleteItem = (item) => {
 }
 
 .confirm-btn {
-  background: #FF93B6;
+  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
   color: #fff;
-  box-shadow: 0 6rpx 16rpx rgba(255, 147, 182, 0.3);
+  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
 }
 </style>

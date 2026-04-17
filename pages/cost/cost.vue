@@ -395,10 +395,11 @@ const touchEnd = (e, item) => {
 
 <style lang="less" scoped>
 .page {
-  background: #FFF5F7;
+  background: #FAFAFA;
   min-height: ~"calc(100vh - 60rpx)";
   padding: 30rpx;
   padding-bottom: 160rpx;
+  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 600rpx);
 }
 
 // 头部月份切换栏
@@ -425,12 +426,26 @@ const touchEnd = (e, item) => {
 
 // 顶部本月统计卡片
 .header-card {
-  background: #FF8DA1;
-  border-radius: 16rpx;
-  padding: 40rpx 30rpx;
+  position: relative;
+  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  border-radius: 40rpx;
+  padding: 60rpx 30rpx;
   text-align: center;
-  box-shadow: 0 8rpx 24rpx rgba(255, 141, 161, 0.25);
-  margin-bottom: 30rpx;
+  box-shadow: 0 16rpx 40rpx rgba(255, 141, 161, 0.25);
+  margin-bottom: 40rpx;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    right: -40rpx;
+    top: -40rpx;
+    width: 200rpx;
+    height: 200rpx;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+  }
+
   .title {
     color: rgba(255, 255, 255, 0.9);
     font-size: 28rpx;
@@ -439,19 +454,20 @@ const touchEnd = (e, item) => {
   }
   .total-money {
     color: #fff;
-    font-size: 64rpx;
-    font-weight: bold;
+    font-size: 72rpx;
+    font-weight: 800;
     display: block;
   }
   .ratio-wrap {
-    margin-top: 20rpx;
-    background: rgba(255,255,255,0.2);
+    margin-top: 30rpx;
+    background: rgba(255,255,255,0.25);
     display: inline-block;
-    padding: 6rpx 24rpx;
-    border-radius: 30rpx;
+    padding: 8rpx 30rpx;
+    border-radius: 100rpx;
     .ratio-text {
       color: #fff;
       font-size: 24rpx;
+      font-weight: 500;
     }
   }
 }
@@ -495,23 +511,23 @@ const touchEnd = (e, item) => {
 .month-group {
   margin-bottom: 30rpx;
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 32rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 10rpx rgba(255, 141, 161, 0.05);
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.03);
 
   .group-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24rpx 30rpx;
-    background: #fdfdfd;
-    border-bottom: 2rpx solid #FFF5F7;
+    padding: 30rpx 36rpx;
+    background: #fff;
+    border-bottom: 2rpx solid #FAFAFA;
     position: relative;
     z-index: 5;
     
     .group-title {
-      font-size: 30rpx;
-      font-weight: bold;
+      font-size: 32rpx;
+      font-weight: 800;
       color: #333;
     }
     
@@ -620,11 +636,11 @@ const touchEnd = (e, item) => {
   position: fixed;
   right: 40rpx;
   bottom: 160rpx;
-  background: #FF8DA1;
+  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
   color: #fff;
   border-radius: 100rpx;
   padding: 24rpx 40rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255, 141, 161, 0.4);
+  box-shadow: 0 8rpx 24rpx rgba(255, 125, 168, 0.35);
   font-size: 32rpx;
   font-weight: bold;
   z-index: 50;

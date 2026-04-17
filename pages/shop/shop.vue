@@ -236,9 +236,10 @@ const checkCost = () => {
 
 <style lang="less" scoped>
 .page {
-  background: #FFF1F5;
+  background: #FAFAFA;
   min-height: ~"calc(100vh - 60rpx)";
   padding-bottom: 40rpx;
+  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 400rpx);
 }
 
 .top-bar {
@@ -249,9 +250,9 @@ const checkCost = () => {
 }
 
 .title {
-  font-size: 38rpx;
-  color: #FF7DA8;
-  font-weight: bold;
+  font-size: 42rpx;
+  color: #333;
+  font-weight: 800;
 }
 
 .top-actions {
@@ -261,21 +262,24 @@ const checkCost = () => {
 
 .action-btn-top {
   border-radius: 100rpx;
-  padding: 0 30rpx;
-  height: 60rpx;
-  line-height: 56rpx;
+  padding: 0 36rpx;
+  height: 64rpx;
+  line-height: 60rpx;
   font-size: 26rpx;
+  font-weight: bold;
   margin: 0;
+  transition: transform 0.2s;
+  &:active { transform: scale(0.95); }
   &.clear {
-    background: #FFF1F5;
+    background: #FFF;
     color: #FF7DA8;
     border: 2rpx solid #FF93B6;
   }
   &.add {
-    background: #FF93B6;
+    background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
     color: #fff;
     border: none;
-    box-shadow: 0 4rpx 12rpx rgba(255, 147, 182, 0.3);
+    box-shadow: 0 6rpx 16rpx rgba(255, 125, 168, 0.25);
   }
   &::after {
     border: none;
@@ -283,9 +287,11 @@ const checkCost = () => {
 }
 
 .stat-card {
-  margin: 0 30rpx 20rpx;
-  border-radius: 20rpx;
-  padding: 24rpx;
+  margin: 0 40rpx 30rpx;
+  border-radius: 24rpx;
+  padding: 30rpx;
+  background: #fff;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.03);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -319,9 +325,9 @@ const checkCost = () => {
   top: 20rpx;
   width: 170rpx;
   background: #fff;
-  border-radius: 24rpx;
+  border-radius: 36rpx;
   padding: 20rpx 0;
-  box-shadow: 0 6rpx 20rpx rgba(255, 173, 199, 0.1);
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -336,8 +342,8 @@ const checkCost = () => {
   
   .nav-text {
     font-size: 28rpx;
-    color: #666;
-    transition: color 0.2s, font-weight 0.2s;
+    color: #888;
+    transition: all 0.3s;
   }
   
   &.active {
@@ -354,7 +360,7 @@ const checkCost = () => {
       bottom: 25rpx;
       width: 8rpx;
       background: #FF7DA8;
-      border-radius: 0 8rpx 8rpx 0;
+      border-radius: 0 10rpx 10rpx 0;
     }
   }
 }
@@ -372,20 +378,22 @@ const checkCost = () => {
   align-items: center;
   justify-content: center;
   padding-top: 150rpx;
-  color: #BC8DA7;
+  color: #C0C0C0;
   font-size: 28rpx;
 }
 
 .item-card {
   background: #fff;
-  border-radius: 24rpx;
+  border-radius: 32rpx;
   padding: 30rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 6rpx 20rpx rgba(255, 173, 199, 0.1);
-  transition: opacity 0.3s;
+  box-shadow: 0 8rpx 30rpx rgba(0,0,0,0.03);
+  transition: all 0.3s;
   
   &.is-done {
     opacity: 0.6;
+    background: #FAFAFA;
+    border-radius: 20rpx;
     .name {
       color: #A0A0A0;
       text-decoration: line-through;
@@ -487,29 +495,34 @@ const checkCost = () => {
 .modal-content {
   width: 620rpx;
   background: #fff;
-  border-radius: 36rpx;
+  border-radius: 40rpx;
   padding: 50rpx 40rpx;
   box-sizing: border-box;
-  box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20rpx 50rpx rgba(0, 0, 0, 0.1);
 }
 
 .modal-title {
   display: block;
   text-align: center;
-  font-size: 38rpx;
-  color: #FF7DA8;
-  font-weight: bold;
+  font-size: 36rpx;
+  color: #333;
+  font-weight: 800;
   margin-bottom: 40rpx;
 }
 
 .modal-input {
-  background: #F9F9F9;
-  height: 88rpx;
-  border-radius: 20rpx;
+  background: #F8F9FA;
+  height: 90rpx;
+  border-radius: 24rpx;
   padding: 0 30rpx;
   font-size: 30rpx;
   margin-bottom: 30rpx;
-  border: 2rpx solid #F0F0F0;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+  &:focus {
+    border: 2rpx solid #FF8DA1;
+    background: #FFF;
+  }
 }
 
 .modal-tags {
@@ -520,15 +533,16 @@ const checkCost = () => {
 }
 
 .tag {
-  background: #FEF0F4;
-  color: #FF93B6;
-  padding: 12rpx 28rpx;
-  border-radius: 40rpx;
+  background: #F8F9FA;
+  color: #888;
+  padding: 12rpx 32rpx;
+  border-radius: 100rpx;
   font-size: 26rpx;
-  transition: all 0.2s;
+  transition: all 0.3s;
   &.active {
-    background: #FF93B6;
+    background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
     color: #fff;
+    box-shadow: 0 6rpx 16rpx rgba(255, 125, 168, 0.25);
   }
 }
 
@@ -540,25 +554,25 @@ const checkCost = () => {
 
 .cancel-btn, .confirm-btn {
   flex: 1;
-  height: 88rpx;
-  line-height: 88rpx;
-  border-radius: 44rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  border-radius: 100rpx;
   font-size: 32rpx;
+  font-weight: bold;
   margin: 0;
+  border: none;
+  &::after { border: none; }
 }
 
 .cancel-btn {
   background: #F5F5F5;
   color: #666;
-  border: none;
-  &::after { border: none; }
 }
 
 .confirm-btn {
-  background: #FF93B6;
+  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
   color: #fff;
-  border: none;
-  box-shadow: 0 6rpx 16rpx rgba(255, 147, 182, 0.3);
+  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
   &::after { border: none; }
 }
 </style>

@@ -47,62 +47,79 @@ const save = () => {
 
 <style lang="less" scoped>
 .page {
-  background: #FFF1F5;
+  background: #FAFAFA;
   padding: 40rpx;
-  height: ~"calc(100vh - 60rpx)";
+  min-height: ~"calc(100vh - 80rpx)";
+  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 400rpx);
 }
 .card {
   background: #fff;
-  border-radius: 28rpx;
-  padding: 40rpx;
-  box-shadow: 0 8rpx 20rpx rgba(255, 173, 199, 0.12);
+  border-radius: 40rpx;
+  padding: 50rpx 40rpx;
+  box-shadow: 0 16rpx 40rpx rgba(255, 141, 161, 0.08);
 }
 .title {
-  font-size: 36rpx;
-  color: #FF7DA8;
-  font-weight: bold;
-  margin-bottom: 40rpx;
+  font-size: 40rpx;
+  color: #333;
+  font-weight: 800;
+  margin-bottom: 50rpx;
   display: block;
   text-align: center;
 }
 .category-wrap {
-  margin-bottom: 30rpx;
+  margin-bottom: 40rpx;
 }
 .label {
   font-size: 28rpx;
-  color: #666;
-  margin-bottom: 16rpx;
+  color: #888;
+  margin-bottom: 24rpx;
   display: block;
 }
 .tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: 20rpx;
 }
 .tag {
-  background: #f5f5f5;
-  color: #666;
-  padding: 10rpx 24rpx;
-  border-radius: 30rpx;
+  background: #F8F9FA;
+  color: #888;
+  padding: 12rpx 32rpx;
+  border-radius: 100rpx;
   font-size: 26rpx;
+  transition: all 0.3s;
   &.active {
-    background: #FF93B6;
+    background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
     color: #fff;
+    box-shadow: 0 4rpx 12rpx rgba(255, 125, 168, 0.25);
   }
 }
 .input {
-  border-bottom: 2rpx solid #FFC9D9;
-  padding: 16rpx 0;
-  font-size: 28rpx;
+  background: #F8F9FA;
+  border-radius: 24rpx;
+  height: 90rpx;
+  padding: 0 30rpx;
+  font-size: 30rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
   margin-bottom: 30rpx;
+  &:focus {
+    border: 2rpx solid #FF8DA1;
+    background: #FFF;
+  }
 }
 .save-btn {
-  background: #FF93B6;
+  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
   color: #fff;
   border-radius: 100rpx;
-  padding: 20rpx 0;
-  font-size: 30rpx;
-  margin-top: 20rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-top: 40rpx;
   border: none;
+  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
+  transition: transform 0.2s;
+  &:active { transform: scale(0.96); }
+  &::after { border: none; }
 }
 </style>
