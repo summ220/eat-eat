@@ -15,6 +15,10 @@
         <text class="icon">🍅</text>
         <text>食材库存</text>
       </view>
+      <view class="quick-item" @click="goToRecipe">
+        <text class="icon">🍳</text>
+        <text>食谱</text>
+      </view>
       <view class="quick-item" @click="goToShop">
         <text class="icon">🛒</text>
         <text>购物清单</text>
@@ -23,37 +27,35 @@
   </view>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      menuList: [
-        '番茄炒蛋', '可乐鸡翅', '青椒肉丝', '蒜蓉西兰花',
-        '红烧肉', '酸辣土豆丝', '水煮肉片', '香菇滑鸡', '蛋炒饭'
-      ],
-      result: '点击开始抽菜～'
-    }
-  },
-  methods: {
-    getRandomDish() {
-      const i = Math.floor(Math.random() * this.menuList.length)
-      this.result = this.menuList[i]
-    },
-    goToStock() {
-      uni.switchTab({ url: '/pages/stock/index' })
-    },
-    goToShop() {
-      uni.switchTab({ url: '/pages/shop/index' })
-    }
-  }
+<script setup>
+import { ref } from 'vue'
+
+const menuList = [
+  '番茄炒蛋', '可乐鸡翅', '青椒肉丝', '蒜蓉西兰花',
+  '红烧肉', '酸辣土豆丝', '水煮肉片', '香菇滑鸡', '蛋炒饭'
+]
+const result = ref('点击开始抽菜～')
+
+const getRandomDish = () => {
+  const i = Math.floor(Math.random() * menuList.length)
+  result.value = menuList[i]
+}
+const goToStock = () => {
+  uni.switchTab({ url: '/pages/stock/stock' })
+}
+const goToRecipe = () => {
+  uni.switchTab({ url: '/pages/recipe/recipe' })
+}
+const goToShop = () => {
+  uni.switchTab({ url: '/pages/shop/shop' })
 }
 </script>
 
-<style scoped>
+<style lang="less" scoped>
 .page {
   padding: 30rpx;
   background-color: #FFF1F5;
-  height: calc(100vh - 70rpx);
+  height: ~"calc(100vh - 60rpx)";
 }
 .header {
   text-align: center;
@@ -104,14 +106,14 @@ export default {
   padding: 40rpx 20rpx;
   text-align: center;
   box-shadow: 0 8rpx 20rpx rgba(255, 173, 199, 0.1);
-}
-.quick-item .icon {
-  font-size: 40rpx;
-  margin-bottom: 10rpx;
-  display: block;
-}
-.quick-item text {
-  font-size: 28rpx;
-  color: #666;
+  .icon {
+    font-size: 40rpx;
+    margin-bottom: 10rpx;
+    display: block;
+  }
+  text {
+    font-size: 28rpx;
+    color: #666;
+  }
 }
 </style>

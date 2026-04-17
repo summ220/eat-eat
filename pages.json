@@ -16,6 +16,13 @@
 			}
 		},
 		{
+			"path": "pages/recipe/recipe",
+			"style": {
+				"navigationBarTitleText": "菜谱",
+				"navigationBarBackgroundColor": "#FFE6E6"
+			}
+		},
+		{
 			"path": "pages/shop/shop",
 			"style": {
 				"navigationBarTitleText": "购物清单",
@@ -40,6 +47,13 @@
 			"style": {
 				"navigationBarTitleText": "添加购物"
 			}
+		},
+		{
+			"path": "pages/cost/cost",
+			"style": {
+				"navigationBarTitleText": "花费统计",
+				"navigationBarBackgroundColor": "#FFE6E6"
+			}
 		}
 	],
 	"tabBar": {
@@ -51,25 +65,31 @@
 		"list": [
 			{
 				"pagePath": "pages/index/index",
-				"text": "吃什么",
+				// "text": "吃什么",
 				"iconPath": "static/tabbar/home.png",
 				"selectedIconPath": "static/tabbar/home-active.png"
 			},
 			{
 				"pagePath": "pages/stock/stock",
-				"text": "食材",
+				// "text": "食材",
 				"iconPath": "static/tabbar/stock.png",
 				"selectedIconPath": "static/tabbar/stock-active.png"
 			},
 			{
+				"pagePath": "pages/recipe/recipe",
+				// "text": "菜谱",
+				"iconPath": "static/tabbar/recipe.png",
+				"selectedIconPath": "static/tabbar/recipe-active.png"
+			},
+			{
 				"pagePath": "pages/shop/shop",
-				"text": "购物",
+				// "text": "购物车",
 				"iconPath": "static/tabbar/shop.png",
 				"selectedIconPath": "static/tabbar/shop-active.png"
 			},
 			{
 				"pagePath": "pages/family/family",
-				"text": "家庭",
+				// "text": "家庭",
 				"iconPath": "static/tabbar/family.png",
 				"selectedIconPath": "static/tabbar/family-active.png"
 			}

@@ -18,27 +18,22 @@
   </view>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      familyName: '快乐干饭小家',
-      members: ['爸爸', '妈妈', '宝宝']
-    }
-  },
-  methods: {
-    save() {
-      uni.showToast({ title: '保存成功', icon: 'success' })
-    }
-  }
+<script setup>
+import { ref } from 'vue'
+
+const familyName = ref('快乐干饭小家')
+const members = ref(['爸爸', '妈妈', '宝宝'])
+
+const save = () => {
+  uni.showToast({ title: '保存成功', icon: 'success' })
 }
 </script>
 
-<style scoped>
+<style lang="less" scoped>
 .page {
   background: #FFF1F5;
   padding: 30rpx;
-  min-height: 100vh;
+  height: ~"calc(100vh - 60rpx)";
 }
 .card {
   background: #fff;
@@ -56,12 +51,12 @@ export default {
 }
 .input-item {
   margin-bottom: 30rpx;
-}
-.input-item text {
-  font-size: 28rpx;
-  color: #666;
-  margin-bottom: 10rpx;
-  display: block;
+  text {
+    font-size: 28rpx;
+    color: #666;
+    margin-bottom: 10rpx;
+    display: block;
+  }
 }
 input {
   border-bottom: 2rpx solid #FFC9D9;
