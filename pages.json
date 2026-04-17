@@ -4,7 +4,7 @@
 			"path": "pages/index/index",
 			"style": {
 				"navigationBarTitleText": "吃什么",
-				"navigationBarBackgroundColor": "#FFE6E6",
+				"navigationBarBackgroundColor": "#FFF5F7",
 				"navigationBarTextStyle": "black"
 			}
 		},
@@ -12,54 +12,56 @@
 			"path": "pages/stock/stock",
 			"style": {
 				"navigationBarTitleText": "食材库存",
-				"navigationBarBackgroundColor": "#FFE6E6"
+				"navigationBarBackgroundColor": "#FFF5F7"
 			}
 		},
 		{
 			"path": "pages/recipe/recipe",
 			"style": {
 				"navigationBarTitleText": "菜谱",
-				"navigationBarBackgroundColor": "#FFE6E6"
+				"navigationBarBackgroundColor": "#FFF5F7"
 			}
 		},
 		{
 			"path": "pages/shop/shop",
 			"style": {
 				"navigationBarTitleText": "购物清单",
-				"navigationBarBackgroundColor": "#FFE6E6"
+				"navigationBarBackgroundColor": "#FFF5F7"
 			}
 		},
 		{
 			"path": "pages/family/family",
 			"style": {
 				"navigationBarTitleText": "家庭",
-				"navigationBarBackgroundColor": "#FFE6E6"
+				"navigationBarBackgroundColor": "#FFF5F7"
 			}
 		},
 		{
 			"path": "pages/addStock/addStock",
 			"style": {
-				"navigationBarTitleText": "添加食材"
+				"navigationBarTitleText": "添加食材",
+				"navigationBarBackgroundColor": "#FFF5F7"
 			}
 		},
 		{
 			"path": "pages/addShop/addShop",
 			"style": {
-				"navigationBarTitleText": "添加购物"
+				"navigationBarTitleText": "添加购物",
+				"navigationBarBackgroundColor": "#FFF5F7"
 			}
 		},
 		{
 			"path": "pages/cost/cost",
 			"style": {
-				"navigationBarTitleText": "花费统计",
-				"navigationBarBackgroundColor": "#FFE6E6"
+				"navigationBarTitleText": "花费账本",
+				"navigationBarBackgroundColor": "#FFF5F7"
 			}
 		}
 	],
 	"tabBar": {
-		"color": "#999",
-		"selectedColor": "#FF7A9A",
-		"backgroundColor": "#fff",
+		"color": "#A0A0A0",
+		"selectedColor": "#FF8DA1",
+		"backgroundColor": "#ffffff",
 		"borderStyle": "white",
 		"fontSize": 16,
 		"list": [
@@ -96,8 +98,9 @@
 		]
 	},
 	"globalStyle": {
-		"navigationBarBackgroundColor": "#FFE6E6",
+		"navigationBarBackgroundColor": "#FFF5F7",
 		"navigationBarTitleText": "家庭小厨房",
-		"navigationBarTextStyle": "black"
+		"navigationBarTextStyle": "black",
+		"backgroundColor": "#FAFAFA"
 	}
 }

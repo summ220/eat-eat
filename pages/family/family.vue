@@ -31,49 +31,65 @@ const save = () => {
 
 <style lang="less" scoped>
 .page {
-  background: #FFF1F5;
-  padding: 30rpx;
-  height: ~"calc(100vh - 60rpx)";
+  background: #FAFAFA;
+  padding: 40rpx;
+  min-height: ~"calc(100vh - 80rpx)";
+  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 400rpx);
 }
 .card {
   background: #fff;
-  border-radius: 28rpx;
-  padding: 40rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 8rpx 20rpx rgba(255, 173, 199, 0.12);
+  border-radius: 40rpx;
+  padding: 50rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 16rpx 40rpx rgba(255, 141, 161, 0.08);
 }
 .title {
-  font-size: 34rpx;
-  color: #FF7DA8;
-  font-weight: bold;
-  margin-bottom: 30rpx;
+  font-size: 36rpx;
+  color: #333;
+  font-weight: 800;
+  margin-bottom: 40rpx;
   display: block;
 }
 .input-item {
-  margin-bottom: 30rpx;
+  margin-bottom: 40rpx;
   text {
     font-size: 28rpx;
-    color: #666;
-    margin-bottom: 10rpx;
+    color: #888;
+    margin-bottom: 20rpx;
     display: block;
   }
 }
 input {
-  border-bottom: 2rpx solid #FFC9D9;
-  padding: 10rpx 0;
-  font-size: 28rpx;
+  background: #F8F9FA;
+  border-radius: 24rpx;
+  height: 90rpx;
+  padding: 0 30rpx;
+  font-size: 30rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+  &:focus {
+    border: 2rpx solid #FF8DA1;
+    background: #FFF;
+  }
 }
 .save-btn {
-  background: #FF93B6;
+  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
   color: #fff;
   border-radius: 100rpx;
-  padding: 18rpx 0;
-  font-size: 28rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  font-size: 32rpx;
+  font-weight: bold;
   border: none;
+  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
+  transition: transform 0.2s;
+  &:active { transform: scale(0.96); }
+  &::after { border: none; }
 }
 .member {
-  font-size: 28rpx;
-  color: #555;
-  padding: 10rpx 0;
+  font-size: 30rpx;
+  color: #333;
+  padding: 16rpx 0;
+  font-weight: 500;
 }
 </style>
