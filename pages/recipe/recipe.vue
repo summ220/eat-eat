@@ -1,7 +1,6 @@
 <template>
   <view class="page">
-    <view class="sticky-search">
-      <view class="search-panel">
+    <view class="search-panel">
       <view class="search-box">
         <text class="search-icon">🔍</text>
         <input
@@ -12,7 +11,6 @@
         />
       </view>
       <button class="create-btn" @click="openEditor">+ 新建</button>
-    </view>
     </view>
 
     <scroll-view class="category-bar" scroll-x="true" show-scrollbar="false">
@@ -195,25 +193,7 @@ onReachBottom(() => {
 .page {
   background: #FFF5F7;
   min-height: ~"calc(100vh - 80rpx)";
-  padding: 0 0 40rpx;
-}
-
-/* 吸顶搜索框 */
-.sticky-search {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: #FFF5F7;
-  padding: 30rpx 24rpx 20rpx;
-}
-
-/* 吸顶搜索框 */
-.sticky-search {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: #FFF5F7;
-  padding: 30rpx 24rpx 20rpx;
+  padding: 30rpx 24rpx 40rpx;
 }
 
 /* 顶部搜索与操作区 */
@@ -226,6 +206,7 @@ onReachBottom(() => {
   display: flex;
   align-items: center;
   gap: 20rpx;
+  margin-bottom: 30rpx;
 }
 .search-box {
   flex: 1;
@@ -275,7 +256,6 @@ onReachBottom(() => {
   width: 100%;
   white-space: nowrap;
   margin-bottom: 30rpx;
-  padding: 10rpx 24rpx 0;
 }
 .category-chip {
   display: inline-block;
