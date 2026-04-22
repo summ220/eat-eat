@@ -85,11 +85,14 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
 const list = ref([])
-const categories = ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+const categories = ref([])
 const currentCategory = ref('全部')
 
 const showModal = ref(false)
+const eatCo = uniCloud.importObject('eat-co')
+
 const editData = ref({
+  _id: '',
   id: '',
   name: '',
   num: '',
@@ -104,28 +107,38 @@ const filteredList = computed(() => {
 })
 
 onShow(() => {
+  categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+  if (!categories.value.includes(currentCategory.value) && currentCategory.value !== '全部') {
+    currentCategory.value = '全部'
+  }
   load()
 })
 
-const load = () => {
-  let data = uni.getStorageSync('stock') || [];
-  list.value = data.map((item, index) => {
-    if (!item.id) item.id = 'stock_' + Date.now() + '_' + index;
-    return item;
-  });
-}
-
-const save = () => {
-  uni.setStorageSync('stock', list.value)
+const load = async () => {
+  uni.showLoading({ title: '加载中...' });
+  try {
+    const data = await eatCo.getStockList();
+    list.value = data.map(item => ({ ...item, id: item._id }));
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' });
+  } finally {
+    uni.hideLoading();
+  }
 }
 
 const switchCategory = (cat) => {
   currentCategory.value = cat;
 }
 
-const toggle = (item) => {
-  item.has = !item.has;
-  save();
+const toggle = async (item) => {
+  const newHas = !item.has;
+  item.has = newHas; // 乐观更新
+  try {
+    await eatCo.updateStock(item._id, { has: newHas });
+  } catch(e) {
+    item.has = !newHas; // 失败回滚
+    uni.showToast({ title: '状态更新失败', icon: 'none' });
+  }
 }
 
 const goAdd = () => {
@@ -134,6 +147,7 @@ const goAdd = () => {
 
 const editItem = (item) => {
   editData.value = {
+    _id: item._id,
     id: item.id,
     name: item.name,
     num: item.num || '',
@@ -142,19 +156,32 @@ const editItem = (item) => {
   showModal.value = true;
 }
 
-const saveEdit = () => {
+const saveEdit = async () => {
   if (!editData.value.name) {
     return uni.showToast({ icon: 'none', title: '请输入名称' });
   }
-  const index = list.value.findIndex(item => item.id === editData.value.id);
-  if (index !== -1) {
-    list.value[index].name = editData.value.name;
-    list.value[index].num = editData.value.num;
-    list.value[index].category = editData.value.category;
-    save();
+  
+  uni.showLoading({ title: '保存中...' });
+  try {
+    await eatCo.updateStock(editData.value._id, {
+      name: editData.value.name,
+      num: editData.value.num,
+      category: editData.value.category
+    });
+    
+    const index = list.value.findIndex(item => item.id === editData.value.id);
+    if (index !== -1) {
+      list.value[index].name = editData.value.name;
+      list.value[index].num = editData.value.num;
+      list.value[index].category = editData.value.category;
+    }
+    showModal.value = false;
+    uni.showToast({ icon: 'success', title: '修改成功' });
+  } catch(e) {
+    uni.showToast({ title: '修改失败', icon: 'none' });
+  } finally {
+    uni.hideLoading();
   }
-  showModal.value = false;
-  uni.showToast({ icon: 'success', title: '修改成功' });
 }
 
 const deleteItem = (item) => {
@@ -162,11 +189,18 @@ const deleteItem = (item) => {
     title: '提示',
     content: `确定要删除「${item.name}」吗？`,
     confirmColor: '#FF7DA8',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        list.value = list.value.filter(v => v.id !== item.id);
-        save();
-        uni.showToast({ icon: 'success', title: '已删除' });
+        uni.showLoading({ title: '删除中...' });
+        try {
+          await eatCo.deleteStock(item._id);
+          list.value = list.value.filter(v => v.id !== item.id);
+          uni.showToast({ icon: 'success', title: '已删除' });
+        } catch(e) {
+          uni.showToast({ title: '删除失败', icon: 'none' });
+        } finally {
+          uni.hideLoading();
+        }
       }
     }
   });

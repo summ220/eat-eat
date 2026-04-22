@@ -25,23 +25,41 @@
 
 <script setup>
 import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 
 const name = ref('')
 const num = ref('')
 const category = ref('蔬菜')
-const categories = ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+const categories = ref([])
 
-const save = () => {
+onShow(() => {
+  categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+  if (!categories.value.includes(category.value)) {
+    category.value = categories.value[0] || '其他'
+  }
+})
+
+const eatCo = uniCloud.importObject('eat-co')
+
+const save = async () => {
   if (!name.value) return uni.showToast({ icon: 'none', title: '请输入名称' })
-  let list = uni.getStorageSync('stock') || []
-  list.unshift({ 
-    name: name.value, 
-    num: num.value, 
-    category: category.value, 
-    has: true 
-  })
-  uni.setStorageSync('stock', list)
-  uni.navigateBack()
+  uni.showLoading({ title: '保存中...' })
+  try {
+    await eatCo.addStock({ 
+      name: name.value, 
+      num: num.value, 
+      category: category.value, 
+      has: true 
+    })
+    uni.showToast({ icon: 'success', title: '添加成功' })
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 1000)
+  } catch(e) {
+    uni.showToast({ title: '保存失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
 }
 </script>
 

@@ -86,7 +86,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
 const list = ref([])
-const categories = ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+const categories = ref([])
 const currentCategory = ref('全部')
 
 const showModal = ref(false)
@@ -124,6 +124,10 @@ const totalCost = computed(() => {
 })
 
 onShow(() => {
+  categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+  if (!categories.value.includes(currentCategory.value) && currentCategory.value !== '全部') {
+    currentCategory.value = '全部'
+  }
   load()
 })
 

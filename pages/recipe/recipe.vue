@@ -77,65 +77,9 @@ const makeRecipe = (item, index) => ({
   own: item.own !== undefined ? item.own : true
 })
 
-const sampleRecipes = () => [
-  {
-    id: 'recipe_001',
-    name: '蒜香鸡腿煲',
-    category: '家常菜',
-    cover: 'https://img.zcool.cn/community/016c62572de38faa801219c7722b65.jpg',
-    duration: '45分钟',
-    difficulty: '中等',
-    ingredients: [
-      { name: '鸡腿', amount: '2只' },
-      { name: '大蒜', amount: '5瓣' },
-      { name: '生抽', amount: '2勺' }
-    ],
-    steps: ['鸡腿清洗后切块', '热锅放油放入蒜末爆香', '加入鸡腿煸炒并加入调料慢炖'],
-    favorite: false,
-    own: false
-  },
-  {
-    id: 'recipe_002',
-    name: '番茄鸡蛋面',
-    category: '快手菜',
-    cover: 'https://img.zcool.cn/community/01d8e458cf4abea801215a0bbd2ae8.jpg',
-    duration: '20分钟',
-    difficulty: '简单',
-    ingredients: [
-      { name: '番茄', amount: '2个' },
-      { name: '鸡蛋', amount: '2个' },
-      { name: '挂面', amount: '1把' }
-    ],
-    steps: ['番茄切块炒软', '鸡蛋打散炒熟', '煮面并加入番茄鸡蛋同煮'],
-    favorite: false,
-    own: false
-  },
-  {
-    id: 'recipe_003',
-    name: '香菇青菜汤',
-    category: '汤品',
-    cover: 'https://img.zcool.cn/community/0195d95978a608a801215a0bf88a5a.jpg',
-    duration: '25分钟',
-    difficulty: '简单',
-    ingredients: [
-      { name: '香菇', amount: '6朵' },
-      { name: '青菜', amount: '200g' },
-      { name: '鸡汤', amount: '500ml' }
-    ],
-    steps: ['香菇泡发切片', '青菜洗净', '煮开汤底放入材料煮熟'],
-    favorite: false,
-    own: false
-  }
-]
-
 const loadRecipes = () => {
   const stored = uni.getStorageSync('recipe_list') || []
-  if (!stored.length) {
-    recipes.value = sampleRecipes().map((item, index) => makeRecipe(item, index))
-    saveRecipes()
-  } else {
-    recipes.value = stored.map((item, index) => makeRecipe(item, index))
-  }
+  recipes.value = stored.map((item, index) => makeRecipe(item, index))
 }
 
 const saveRecipes = () => {

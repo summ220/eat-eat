@@ -26,12 +26,20 @@
 
 <script setup>
 import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 
 const name = ref('')
 const num = ref('')
 const price = ref('')
 const category = ref('蔬菜')
-const categories = ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+const categories = ref([])
+
+onShow(() => {
+  categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+  if (!categories.value.includes(category.value)) {
+    category.value = categories.value[0] || '其他'
+  }
+})
 
 const save = () => {
   if (!name.value) return uni.showToast({ icon: 'none', title: '请输入名称' })
