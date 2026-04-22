@@ -236,17 +236,16 @@ const checkCost = () => {
 
 <style lang="less" scoped>
 .page {
-  background: #FAFAFA;
-  min-height: ~"calc(100vh - 60rpx)";
-  padding-bottom: 180rpx;
-  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 400rpx);
+  background: #FFF1F5;
+  min-height: ~"calc(100vh - 80rpx)";
+  padding-bottom: 40rpx;
 }
 
 .top-bar {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #FFF5F7;
+  background: #FFF1F5;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -291,35 +290,35 @@ const checkCost = () => {
 }
 
 .stat-card {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 200;
-  margin: 0 40rpx 30rpx;
-  border-radius: 24rpx;
-  padding: 30rpx;
-  background: #fff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
+  position: sticky;
+  bottom: 40rpx;
+  z-index: 100;
+  background: var(--theme-grad, linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%));
+  margin: 30rpx 40rpx;
+  border-radius: 40rpx;
+  padding: 30rpx 40rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-shadow: 0 12rpx 30rpx rgba(255, 125, 168, 0.4);
 }
 
 .stat-text {
-  font-size: 26rpx;
-  color: #FF7DA8;
+  font-size: 28rpx;
+  color: #fff;
+  opacity: 0.9;
 }
 
 .stat-money {
   font-size: 32rpx;
-  color: #FF7DA8;
-  font-weight: bold;
+  color: #fff;
+  font-weight: 900;
 }
 
 .stat-money-num {
-  font-weight: bold;
-  text-decoration: underline;
+  font-size: 40rpx;
+  margin-left: 10rpx;
+  text-decoration: none;
 }
 
 .main-layout {
@@ -331,7 +330,7 @@ const checkCost = () => {
 
 .sidebar {
   position: sticky;
-  top: 130rpx;
+  top: 130rpx; /* 顶部 top-bar 高度约为 100-120rpx */
   width: 170rpx;
   background: #fff;
   border-radius: 36rpx;
@@ -340,8 +339,7 @@ const checkCost = () => {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  max-height: calc(100vh - 280rpx);
-  overflow-y: auto;
+  height: fit-content;
 }
 
 .nav-item {

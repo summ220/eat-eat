@@ -175,8 +175,8 @@ const deleteItem = (item) => {
 
 <style lang="less" scoped>
 .page {
-  background: #FAFAFA;
-  min-height: ~"calc(100vh - 60rpx)";
+  background: #FFF1F5;
+  min-height: ~"calc(100vh - 80rpx)";
   padding-bottom: 40rpx;
   background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 400rpx);
 }
@@ -185,7 +185,7 @@ const deleteItem = (item) => {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #FFF5F7;
+  background: #FFF1F5;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -230,8 +230,7 @@ const deleteItem = (item) => {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  max-height: calc(100vh - 160rpx);
-  overflow-y: auto;
+  height: fit-content;
 }
 
 .nav-item {
