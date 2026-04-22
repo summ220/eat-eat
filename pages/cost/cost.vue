@@ -396,7 +396,7 @@ const touchEnd = (e, item) => {
 <style lang="less" scoped>
 .page {
   background: #FFF5F7;
-  min-height: ~"calc(100vh - 60rpx)";
+  min-height: ~"calc(100vh - 80rpx)";
   padding: 30rpx;
   padding-bottom: 160rpx;
 }

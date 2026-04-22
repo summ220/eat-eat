@@ -176,7 +176,7 @@ const deleteItem = (item) => {
 <style lang="less" scoped>
 .page {
   background: #FFF1F5;
-  min-height: ~"calc(100vh - 60rpx)";
+  min-height: ~"calc(100vh - 80rpx)";
   padding-bottom: 40rpx;
 }
 
