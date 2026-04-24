@@ -1,205 +1,944 @@
 <template>
-  <view class="page">
-    <view class="card">
-      <text class="title">🏠 我的家庭</text>
-      <view class="input-item">
-        <text>家庭名称</text>
-        <input v-model="familyName" placeholder="取个可爱名字" />
+  <view class="page-container" :style="themeStyle">
+    <!-- 1. 顶部大卡片 -->
+    <view class="top-card">
+      <view class="top-header">
+        <view class="user-info">
+          <image class="avatar" src="https://img-blog.csdnimg.cn/20240110133807328.png" mode="aspectFill" />
+          <view class="name-box">
+            <input class="family-name" v-model="familyName" placeholder="输入家庭名称" />
+            <text class="greeting">{{ greeting }}</text>
+          </view>
+        </view>
+        <view class="weather-icon">
+          <text class="emoji">🌤️</text>
+          <text class="tip">宜煲汤</text>
+        </view>
       </view>
-      <button class="save-btn" @click="save">保存</button>
     </view>
 
-    <view class="card member-card">
-      <text class="title">👨‍👩‍👧‍👦 家庭成员</text>
-      <view class="member" v-for="(item, i) in members" :key="i">
-        <text>🥰 {{ item }}</text>
-      </view>
-    <view class="card category-card">
-      <text class="title">🏷️ 食材分类设置</text>
-      <view class="tags">
-        <view class="tag" v-for="(cat, index) in categories" :key="index">
-          <text>{{ cat }}</text>
-          <text class="del" v-if="cat !== '其他'" @click="delCategory(index)">×</text>
+    <view class="main-content">
+      <!-- 6. 主题切换 -->
+      <view class="section theme-section">
+        <view class="section-title">
+          <text class="title-text">个性主题</text>
         </view>
-        <view class="tag add-tag" @click="showAddCategory = true" v-if="!showAddCategory">+ 添加</view>
+        <view class="theme-list">
+          <view 
+            class="theme-item" 
+            v-for="(t, idx) in themes" 
+            :key="idx"
+            :class="{ active: currentTheme === idx }"
+            :style="{ background: t.color }"
+            @click="switchTheme(idx)"
+          >
+            <text class="check" v-if="currentTheme === idx">✓</text>
+          </view>
+        </view>
       </view>
-      
-      <view class="add-box" v-if="showAddCategory">
-        <input v-model="newCategory" placeholder="输入新分类名称" maxlength="6" />
-        <button class="small-btn" @click="addCategory">确定</button>
-        <button class="small-btn cancel" @click="showAddCategory = false; newCategory = ''">取消</button>
+
+      <!-- 2. 数据统计区 -->
+      <view class="section">
+        <view class="stat-grid">
+          <view class="stat-item" v-for="(item, idx) in stats" :key="idx">
+            <view class="stat-icon-wrap" :class="'bg-' + (idx % 4)">
+              <text class="stat-icon">{{ item.icon }}</text>
+            </view>
+            <view class="stat-info">
+              <text class="stat-num">{{ item.num }}</text>
+              <text class="stat-label">{{ item.label }}</text>
+            </view>
+          </view>
+        </view>
       </view>
+
+      <!-- 10. 家庭消费目标 -->
+      <view class="section budget-section">
+        <view class="section-title">
+          <text class="title-text">月度预算</text>
+          <text class="action-text">设置</text>
+        </view>
+        <view class="budget-card">
+          <view class="budget-info">
+            <view class="b-item">
+              <text class="b-label">已花费</text>
+              <text class="b-val spent">¥{{ budget.spent }}</text>
+            </view>
+            <view class="b-item right">
+              <text class="b-label">剩余可用</text>
+              <text class="b-val remain">¥{{ budget.total - budget.spent }}</text>
+            </view>
+          </view>
+          <view class="progress-bar">
+            <view class="progress-inner" :style="{ width: (budget.spent / budget.total * 100) + '%' }"></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 7. 智能提醒 -->
+      <view class="section reminders-section">
+        <view class="section-title"><text class="title-text">智能管家</text></view>
+        <view class="reminder-list">
+          <view class="reminder-item" v-for="(rem, idx) in reminders" :key="idx" :class="rem.type">
+            <view class="r-icon-box"><text class="r-icon">{{ rem.icon }}</text></view>
+            <text class="r-text">{{ rem.text }}</text>
+            <view class="r-btn" v-if="rem.action">{{ rem.action }}</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 3. 今日三餐计划 -->
+      <view class="section meals-section">
+        <view class="section-title"><text class="title-text">今日三餐</text></view>
+        <view class="meal-list">
+          <view class="meal-item" v-for="(meal, idx) in meals" :key="idx">
+            <view class="m-left">
+              <view class="m-icon-box"><text class="m-icon">{{ meal.icon }}</text></view>
+              <view class="m-info">
+                <text class="m-name">{{ meal.name }}</text>
+                <text class="m-desc" :class="{ empty: !meal.recipe }">{{ meal.recipe || '尚未安排，点击挑选' }}</text>
+              </view>
+            </view>
+            <view class="m-right">
+              <view class="m-btn add" v-if="meal.recipe"><text class="btn-icon">🛒</text></view>
+              <view class="m-btn primary" v-else>安排</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 8. 快捷功能宫格 -->
+      <view class="section quick-section">
+        <view class="section-title"><text class="title-text">快捷功能</text></view>
+        <view class="quick-grid">
+          <view class="quick-item" v-for="(func, idx) in quickFuncs" :key="idx">
+            <view class="q-icon-wrap"><text class="q-icon">{{ func.icon }}</text></view>
+            <text class="q-text">{{ func.name }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 4. 家庭成员 -->
+      <view class="section members-section">
+        <view class="section-title">
+          <text class="title-text">家庭成员</text>
+          <text class="action-text">+ 邀请</text>
+        </view>
+        <scroll-view scroll-x class="member-scroll" :show-scrollbar="false">
+          <view class="member-list">
+            <view class="member-card" v-for="(m, idx) in members" :key="idx">
+              <image class="m-avatar" :src="m.avatar" mode="aspectFill" />
+              <text class="m-nick">{{ m.nick }}</text>
+              <view class="m-role"><text>{{ m.role }}</text></view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 9. 消费趋势卡片 -->
+      <view class="section trend-section">
+        <view class="section-title"><text class="title-text">近7日开销</text></view>
+        <view class="chart-box">
+          <view class="chart-bars">
+            <view class="bar-col" v-for="(val, day) in trends" :key="day">
+              <view class="bar-track">
+                <view class="bar-fill" :style="{ height: (val / 200 * 100) + '%' }">
+                  <text class="bar-val" v-if="val > 0">{{ val }}</text>
+                </view>
+              </view>
+              <text class="bar-label">{{ day }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 5. 饮食偏好设置 -->
+      <view class="section prefs-section">
+        <view class="section-title"><text class="title-text">饮食偏好</text></view>
+        <view class="pref-group">
+          <text class="p-label">全家口味</text>
+          <view class="p-options">
+            <view 
+              class="p-tag" 
+              :class="{ active: prefs.taste === t }" 
+              v-for="t in ['清淡', '适中', '重口']" 
+              :key="t" 
+              @click="prefs.taste = t"
+            >
+              <text>{{ t }}</text>
+            </view>
+          </view>
+        </view>
+        <view class="pref-group">
+          <text class="p-label">忌口不吃 (多选)</text>
+          <view class="p-options">
+            <view 
+              class="p-tag" 
+              :class="{ active: prefs.avoid.includes(a) }" 
+              v-for="a in ['海鲜', '羊肉', '香菜', '葱', '蒜', '辣']" 
+              :key="a" 
+              @click="toggleAvoid(a)"
+            >
+              <text>{{ a }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 11. 底部设置模块 -->
+      <view class="bottom-settings">
+        <view class="set-list">
+          <view class="set-item" @click="handleSetting('分类设置')">
+            <text class="set-icon">🏷️</text>
+            <text class="set-text">分类设置</text>
+            <text class="set-arrow">></text>
+          </view>
+          <view class="set-item">
+            <text class="set-icon">🧹</text>
+            <text class="set-text">清除缓存</text>
+            <text class="set-arrow">></text>
+          </view>
+          <view class="set-item">
+            <text class="set-icon">📖</text>
+            <text class="set-text">使用帮助</text>
+            <text class="set-arrow">></text>
+          </view>
+          <view class="set-item">
+            <text class="set-icon">💬</text>
+            <text class="set-text">意见反馈</text>
+            <text class="set-arrow">></text>
+          </view>
+          <view class="set-item version">
+            <text class="set-icon">✨</text>
+            <text class="set-text">当前版本</text>
+            <text class="set-desc">v1.3.0</text>
+          </view>
+        </view>
+        <view class="brand-info">
+          <text>家庭小厨房 • 用心记录每一餐</text>
+        </view>
+      </view>
+
+      <view class="footer-safe"></view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { ref, computed } from 'vue'
 
 const familyName = ref('快乐干饭小家')
-const members = ref(['爸爸', '妈妈', '宝宝'])
 
-const categories = ref([])
-const showAddCategory = ref(false)
-const newCategory = ref('')
+// 自动问候语
+const hour = new Date().getHours()
+let greetingStr = '晚上好，准备明天的食材吧'
+if (hour < 9) greetingStr = '早上好，记得吃一顿丰盛的早餐哦'
+else if (hour < 12) greetingStr = '上午好，今天也要好好吃饭'
+else if (hour < 14) greetingStr = '中午好，午餐吃得开心吗'
+else if (hour < 19) greetingStr = '下午好，构思一下今晚的大餐吧'
+const greeting = ref(greetingStr)
 
-onShow(() => {
-  categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+// 主题系统
+const themes = [
+  { name: '温柔粉', color: '#FF8DA1', gradient: 'linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%)', light: '#FFF5F7', shadow: 'rgba(255,141,161,0.2)' },
+  { name: '清新绿', color: '#68CBA6', gradient: 'linear-gradient(135deg, #8EE0C0 0%, #68CBA6 100%)', light: '#F2FBF7', shadow: 'rgba(104,203,166,0.2)' },
+  { name: '雾霾蓝', color: '#7AA3ED', gradient: 'linear-gradient(135deg, #9CBDF5 0%, #7AA3ED 100%)', light: '#F3F7FE', shadow: 'rgba(122,163,237,0.2)' },
+  { name: '暖杏黄', color: '#F5B96B', gradient: 'linear-gradient(135deg, #FAD699 0%, #F5B96B 100%)', light: '#FEFAF3', shadow: 'rgba(245,185,107,0.2)' }
+]
+const currentTheme = ref(0)
+const switchTheme = (idx) => {
+  currentTheme.value = idx
+}
+const themeStyle = computed(() => {
+  const t = themes[currentTheme.value]
+  return `
+    --primary: ${t.color};
+    --primary-grad: ${t.gradient};
+    --primary-light: ${t.light};
+    --primary-shadow: ${t.shadow};
+  `
 })
 
-const save = () => {
-  uni.showToast({ title: '保存成功', icon: 'success' })
+// 数据统计
+const stats = ref([
+  { icon: '🍅', num: '24', label: '食材总数' },
+  { icon: '🛒', num: '8', label: '待采购' },
+  { icon: '💰', num: '1256', label: '本月花费' },
+  { icon: '❤️', num: '32', label: '收藏菜谱' },
+  { icon: '🛍️', num: '5', label: '买菜次数' },
+  { icon: '🥚', num: '鸡蛋', label: '常吃食材' }
+])
+
+// 预算
+const budget = ref({ total: 3000, spent: 1256 })
+
+// 智能提醒
+const reminders = ref([
+  { type: 'warning', icon: '⚠️', text: '库存预警：鸡蛋仅剩 2 个', action: '加购' },
+  { type: 'danger', icon: '⏳', text: '过期提醒：鲜牛奶还有 2 天过期', action: '处理' },
+  { type: 'info', icon: '💡', text: '今日推荐：根据天气为您推荐「冬瓜排骨汤」', action: '查看' }
+])
+
+// 三餐
+const meals = ref([
+  { name: '早餐', icon: '🥛', recipe: '燕麦牛奶 + 葱香小煎蛋' },
+  { name: '午餐', icon: '🍱', recipe: '番茄炒蛋 + 红烧肉' },
+  { name: '晚餐', icon: '🥗', recipe: '' }
+])
+
+// 快捷功能
+const quickFuncs = ref([
+  { icon: '🎲', name: '随机推荐' },
+  { icon: '🧺', name: '补齐食材' },
+  { icon: '🗑️', name: '清空购物车' },
+  { icon: '💵', name: '清空花费' },
+  { icon: '🧹', name: '清理数据' },
+  { icon: '📤', name: '导出清单' },
+  { icon: '📥', name: '导入食材' },
+  { icon: '📊', name: '月度账单' }
+])
+
+// 家庭成员
+const members = ref([
+  { nick: '爸爸', role: '大主厨', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png' },
+  { nick: '妈妈', role: '采购总监', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png' },
+  { nick: '宝宝', role: '干饭人', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png' }
+])
+
+// 消费趋势
+const trends = ref({
+  '一': 120, '二': 45, '三': 180, '四': 0, '五': 80, '六': 150, '日': 110
+})
+
+// 偏好
+const prefs = ref({
+  taste: '适中',
+  avoid: ['香菜', '辣']
+})
+const toggleAvoid = (a) => {
+  if (prefs.value.avoid.includes(a)) {
+    prefs.value.avoid = prefs.value.avoid.filter(x => x !== a)
+  } else {
+    prefs.value.avoid.push(a)
+  }
 }
 
-const saveCategories = () => {
-  uni.setStorageSync('ingredient_categories', categories.value)
-}
-
-const delCategory = (index) => {
-  uni.showModal({
-    title: '提示',
-    content: `确定删除分类「${categories.value[index]}」吗？`,
-    confirmColor: '#FF7DA8',
-    success: (res) => {
-      if (res.confirm) {
-        categories.value.splice(index, 1)
-        saveCategories()
-      }
-    }
-  })
-}
-
-const addCategory = () => {
-  const name = newCategory.value.trim()
-  if (!name) return uni.showToast({ title: '请输入名称', icon: 'none' })
-  if (categories.value.includes(name)) return uni.showToast({ title: '分类已存在', icon: 'none' })
-  
-  categories.value.push(name)
-  saveCategories()
-  showAddCategory.value = false
-  newCategory.value = ''
+const handleSetting = (name) => {
+  uni.showToast({ title: `点击了: ${name}`, icon: 'none' })
 }
 </script>
 
 <style lang="less" scoped>
-.page {
-  background: #FAFAFA;
-  padding: 40rpx;
-  min-height: ~"calc(100vh - 80rpx)";
-  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 400rpx);
+.page-container {
+  background-color: #F6F7F9;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-.card {
+
+/* 1. 顶部大卡片 */
+.top-card {
+  height: 380rpx;
+  background: var(--primary-grad);
+  border-radius: 0 0 60rpx 60rpx;
+  padding: 60rpx 40rpx 0;
+  box-shadow: 0 16rpx 40rpx var(--primary-shadow);
+  color: #fff;
+  position: relative;
+  transition: background 0.5s ease;
+  
+  .top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40rpx;
+  }
+  
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 24rpx;
+    
+    .avatar {
+      width: 110rpx;
+      height: 110rpx;
+      border-radius: 50%;
+      border: 6rpx solid rgba(255,255,255,0.4);
+      background: #fff;
+    }
+    
+    .name-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8rpx;
+      
+      .family-name {
+        font-size: 38rpx;
+        font-weight: 900;
+        color: #fff;
+        height: 50rpx;
+        text-shadow: 0 2rpx 10rpx rgba(0,0,0,0.1);
+      }
+      
+      .greeting {
+        font-size: 24rpx;
+        color: rgba(255,255,255,0.9);
+      }
+    }
+  }
+  
+  .weather-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255,255,255,0.2);
+    padding: 16rpx 20rpx;
+    border-radius: 30rpx;
+    backdrop-filter: blur(10px);
+    
+    .emoji {
+      font-size: 40rpx;
+      margin-bottom: 4rpx;
+    }
+    .tip {
+      font-size: 20rpx;
+      font-weight: bold;
+    }
+  }
+}
+
+/* 主体内边距调整 */
+.main-content {
+  margin-top: -60rpx;
+  position: relative;
+  z-index: 10;
+  padding: 0 30rpx;
+  padding-bottom: 40rpx;
+}
+
+/* 通用模块样式 */
+.section {
   background: #fff;
   border-radius: 40rpx;
-  padding: 50rpx;
-  margin-bottom: 40rpx;
-  box-shadow: 0 16rpx 40rpx rgba(255, 141, 161, 0.08);
+  padding: 40rpx 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 8rpx 30rpx rgba(0,0,0,0.02);
 }
-.title {
-  font-size: 36rpx;
-  color: #333;
-  font-weight: 800;
-  margin-bottom: 40rpx;
-  display: block;
-}
-.input-item {
-  margin-bottom: 40rpx;
-  text {
-    font-size: 28rpx;
-    color: #888;
-    margin-bottom: 20rpx;
-    display: block;
-  }
-}
-input {
-  background: #F8F9FA;
-  border-radius: 24rpx;
-  height: 90rpx;
-  padding: 0 30rpx;
-  font-size: 30rpx;
-  border: 2rpx solid transparent;
-  transition: all 0.3s;
-  &:focus {
-    border: 2rpx solid #FF8DA1;
-    background: #FFF;
-  }
-}
-.save-btn {
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
-  color: #fff;
-  border-radius: 100rpx;
-  height: 90rpx;
-  line-height: 90rpx;
-  font-size: 32rpx;
-  font-weight: bold;
-  border: none;
-  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
-  transition: transform 0.2s;
-  &:active { transform: scale(0.96); }
-  &::after { border: none; }
-}
-.member {
-  font-size: 30rpx;
-  color: #333;
-  padding: 16rpx 0;
-  font-weight: 500;
-}
-.category-card {
-  margin-bottom: 40rpx;
-}
-.tags {
+
+.section-title {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20rpx;
-}
-.tag {
-  background: #F8F9FA;
-  color: #555;
-  padding: 12rpx 24rpx;
-  border-radius: 100rpx;
-  font-size: 26rpx;
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12rpx;
-  .del {
-    color: #FF8F8F;
+  margin-bottom: 30rpx;
+  
+  .title-text {
     font-size: 32rpx;
-    line-height: 26rpx;
+    font-weight: 800;
+    color: #2C3E50;
+    position: relative;
+    padding-left: 20rpx;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8rpx;
+      height: 28rpx;
+      background: var(--primary);
+      border-radius: 10rpx;
+      transition: background 0.5s ease;
+    }
+  }
+  
+  .action-text {
+    font-size: 24rpx;
+    color: var(--primary);
     font-weight: bold;
-    padding-left: 8rpx;
-    border-left: 2rpx solid #EAEAEA;
+    background: var(--primary-light);
+    padding: 8rpx 20rpx;
+    border-radius: 100rpx;
+    transition: all 0.5s ease;
   }
 }
-.add-tag {
-  color: #FF7DA8;
-  background: #FFF1F5;
-  font-weight: bold;
+
+/* 6. 主题切换 */
+.theme-section {
+  padding: 30rpx !important;
+  .theme-list {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding-top: 10rpx;
+  }
+  .theme-item {
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
+    
+    &.active {
+      transform: scale(1.15);
+      box-shadow: 0 8rpx 24rpx var(--primary-shadow);
+      border: 4rpx solid #fff;
+    }
+    
+    .check {
+      color: #fff;
+      font-weight: bold;
+      font-size: 32rpx;
+    }
+  }
 }
-.add-box {
-  margin-top: 30rpx;
+
+/* 2. 数据统计区 */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30rpx 20rpx;
+}
+.stat-item {
   display: flex;
-  gap: 20rpx;
+  flex-direction: column;
   align-items: center;
-  input {
-    flex: 1;
-    margin-bottom: 0;
-    height: 70rpx;
+  gap: 16rpx;
+  
+  .stat-icon-wrap {
+    width: 88rpx;
+    height: 88rpx;
+    border-radius: 30rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    &.bg-0 { background: #FFF5F7; color: #FF8DA1; }
+    &.bg-1 { background: #F2FBF7; color: #68CBA6; }
+    &.bg-2 { background: #F3F7FE; color: #7AA3ED; }
+    &.bg-3 { background: #FEFAF3; color: #F5B96B; }
+    
+    .stat-icon {
+      font-size: 40rpx;
+    }
+  }
+  
+  .stat-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    .stat-num {
+      font-size: 34rpx;
+      font-weight: 900;
+      color: #2C3E50;
+      margin-bottom: 4rpx;
+    }
+    .stat-label {
+      font-size: 22rpx;
+      color: #95A5A6;
+    }
   }
 }
-.small-btn {
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
-  color: #fff;
-  border-radius: 100rpx;
-  height: 70rpx;
-  line-height: 70rpx;
-  font-size: 26rpx;
-  padding: 0 30rpx;
-  margin: 0;
-  &::after { border: none; }
-  &.cancel {
-    background: #F5F5F5;
-    color: #666;
+
+/* 10. 家庭消费目标 */
+.budget-card {
+  background: var(--primary-light);
+  border-radius: 30rpx;
+  padding: 40rpx 30rpx;
+  transition: background 0.5s ease;
+  
+  .budget-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 24rpx;
+    
+    .b-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8rpx;
+      
+      &.right { align-items: flex-end; }
+      
+      .b-label { font-size: 24rpx; color: #7F8C8D; }
+      .b-val { 
+        font-size: 40rpx; 
+        font-weight: 900; 
+        
+        &.spent { color: var(--primary); }
+        &.remain { color: #2C3E50; }
+      }
+    }
   }
+  
+  .progress-bar {
+    height: 16rpx;
+    background: #EAECEF;
+    border-radius: 100rpx;
+    overflow: hidden;
+    
+    .progress-inner {
+      height: 100%;
+      background: var(--primary-grad);
+      border-radius: 100rpx;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s ease;
+    }
+  }
+}
+
+/* 7. 智能提醒 */
+.reminders-section {
+  .reminder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20rpx;
+  }
+  .reminder-item {
+    display: flex;
+    align-items: center;
+    padding: 24rpx;
+    border-radius: 24rpx;
+    background: #F8F9FA;
+    gap: 20rpx;
+    
+    &.warning { background: #FFF9E6; .r-icon { color: #FFAA00; } }
+    &.danger { background: #FFEEEE; .r-icon { color: #FF4D4F; } }
+    &.info { background: var(--primary-light); .r-icon { color: var(--primary); } }
+    
+    .r-icon-box {
+      width: 50rpx;
+      display: flex;
+      justify-content: center;
+    }
+    
+    .r-text {
+      flex: 1;
+      font-size: 26rpx;
+      color: #34495E;
+      font-weight: 500;
+    }
+    
+    .r-btn {
+      font-size: 24rpx;
+      color: #fff;
+      background: var(--primary);
+      padding: 8rpx 24rpx;
+      border-radius: 100rpx;
+      font-weight: bold;
+      transition: background 0.5s ease;
+    }
+  }
+}
+
+/* 3. 今日三餐计划 */
+.meals-section {
+  .meal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24rpx;
+  }
+  .meal-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30rpx;
+    border-radius: 30rpx;
+    border: 2rpx solid #F0F2F5;
+    background: #fff;
+    
+    .m-left {
+      display: flex;
+      align-items: center;
+      gap: 24rpx;
+      flex: 1;
+      
+      .m-icon-box {
+        width: 80rpx;
+        height: 80rpx;
+        border-radius: 24rpx;
+        background: #F8F9FA;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 40rpx;
+      }
+      
+      .m-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8rpx;
+        
+        .m-name {
+          font-size: 28rpx;
+          font-weight: 800;
+          color: #2C3E50;
+        }
+        .m-desc {
+          font-size: 24rpx;
+          color: #7F8C8D;
+          &.empty {
+            color: #BDC3C7;
+          }
+        }
+      }
+    }
+    
+    .m-right {
+      .m-btn {
+        padding: 12rpx 30rpx;
+        border-radius: 100rpx;
+        font-size: 24rpx;
+        font-weight: bold;
+        
+        &.primary {
+          background: var(--primary);
+          color: #fff;
+        }
+        &.add {
+          background: var(--primary-light);
+          padding: 12rpx 20rpx;
+          .btn-icon { font-size: 28rpx; }
+        }
+      }
+    }
+  }
+}
+
+/* 8. 快捷功能宫格 */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30rpx 0;
+}
+.quick-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  
+  .q-icon-wrap {
+    width: 90rpx;
+    height: 90rpx;
+    background: #F8F9FA;
+    border-radius: 30rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s;
+    &:active { transform: scale(0.9); }
+    
+    .q-icon { font-size: 40rpx; }
+  }
+  
+  .q-text {
+    font-size: 22rpx;
+    color: #7F8C8D;
+    font-weight: 500;
+  }
+}
+
+/* 4. 家庭成员 */
+.members-section {
+  .member-scroll {
+    width: 100%;
+    white-space: nowrap;
+  }
+  .member-list {
+    display: inline-flex;
+    gap: 30rpx;
+    padding: 10rpx 0;
+  }
+  .member-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #F8F9FA;
+    padding: 30rpx 40rpx;
+    border-radius: 30rpx;
+    min-width: 160rpx;
+    
+    .m-avatar {
+      width: 100rpx;
+      height: 100rpx;
+      border-radius: 50%;
+      margin-bottom: 16rpx;
+      border: 4rpx solid #fff;
+      box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+    }
+    .m-nick {
+      font-size: 28rpx;
+      font-weight: bold;
+      color: #2C3E50;
+      margin-bottom: 8rpx;
+    }
+    .m-role {
+      font-size: 20rpx;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 4rpx 16rpx;
+      border-radius: 100rpx;
+      transition: all 0.5s ease;
+    }
+  }
+}
+
+/* 9. 消费趋势卡片 */
+.trend-section {
+  .chart-box {
+    background: #F8F9FA;
+    border-radius: 30rpx;
+    padding: 40rpx 20rpx 20rpx;
+    height: 280rpx;
+    display: flex;
+    align-items: flex-end;
+  }
+  .chart-bars {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    height: 100%;
+    align-items: flex-end;
+  }
+  .bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16rpx;
+    flex: 1;
+    height: 100%;
+  }
+  .bar-track {
+    flex: 1;
+    width: 20rpx;
+    background: #EAECEF;
+    border-radius: 20rpx;
+    display: flex;
+    align-items: flex-end;
+    overflow: visible;
+  }
+  .bar-fill {
+    width: 100%;
+    background: var(--primary-grad);
+    border-radius: 20rpx;
+    position: relative;
+    transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s ease;
+    
+    .bar-val {
+      position: absolute;
+      top: -36rpx;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18rpx;
+      color: #95A5A6;
+      font-weight: bold;
+    }
+  }
+  .bar-label {
+    font-size: 22rpx;
+    color: #7F8C8D;
+  }
+}
+
+/* 5. 饮食偏好设置 */
+.prefs-section {
+  .pref-group {
+    margin-bottom: 30rpx;
+    &:last-child { margin-bottom: 0; }
+    
+    .p-label {
+      font-size: 26rpx;
+      color: #7F8C8D;
+      display: block;
+      margin-bottom: 20rpx;
+    }
+    
+    .p-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20rpx;
+    }
+    
+    .p-tag {
+      padding: 12rpx 32rpx;
+      border-radius: 100rpx;
+      background: #F8F9FA;
+      color: #7F8C8D;
+      font-size: 24rpx;
+      font-weight: 500;
+      border: 2rpx solid transparent;
+      transition: all 0.3s;
+      
+      &.active {
+        background: var(--primary-light);
+        color: var(--primary);
+        border-color: var(--primary);
+      }
+    }
+  }
+}
+
+/* 11. 底部设置模块 */
+.bottom-settings {
+  margin-top: 40rpx;
+  
+  .set-list {
+    background: #fff;
+    border-radius: 40rpx;
+    padding: 10rpx 40rpx;
+    box-shadow: 0 8rpx 30rpx rgba(0,0,0,0.02);
+  }
+  
+  .set-item {
+    display: flex;
+    align-items: center;
+    padding: 36rpx 0;
+    border-bottom: 2rpx solid #F0F2F5;
+    
+    &:last-child { border-bottom: none; }
+    
+    .set-icon {
+      font-size: 32rpx;
+      margin-right: 20rpx;
+    }
+    
+    .set-text {
+      flex: 1;
+      font-size: 28rpx;
+      color: #2C3E50;
+      font-weight: 500;
+    }
+    
+    .set-arrow {
+      color: #BDC3C7;
+      font-size: 28rpx;
+      font-weight: bold;
+    }
+    
+    .set-desc {
+      color: #95A5A6;
+      font-size: 26rpx;
+    }
+    
+    &.version {
+      .set-text { color: #7F8C8D; }
+    }
+  }
+  
+  .brand-info {
+    text-align: center;
+    padding: 60rpx 0 40rpx;
+    
+    text {
+      font-size: 22rpx;
+      color: #BDC3C7;
+      letter-spacing: 2rpx;
+    }
+  }
+}
+
+.footer-safe {
+  height: 40rpx;
 }
 </style>
