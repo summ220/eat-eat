@@ -8,7 +8,18 @@
 
       <view class="input-group">
         <text class="label">菜名</text>
-        <input class="input-line" v-model="form.name" placeholder="起个响亮的名字" />
+        <view class="name-input-row">
+          <input class="input-line" v-model="form.name" placeholder="起个响亮的名字" />
+          <view class="template-btn-wrap">
+            <view class="template-tip-pop" v-if="form.name && filteredTemplates.length > 0">
+              ✨ 发现模板
+            </view>
+            <view class="template-btn" @click="showTemplateModal = true" :class="{ 'pulse-ani': form.name && filteredTemplates.length > 0 }">
+              <text class="btn-icon">💡</text>
+              <text class="btn-text">找模板</text>
+            </view>
+          </view>
+        </view>
       </view>
 
       <view class="horizontal-group">
@@ -77,12 +88,39 @@
     </view>
 
     <button class="save-btn" @click="save">保存菜谱</button>
+
+    <!-- 菜谱模板弹窗 -->
+    <view class="modal-mask" v-if="showTemplateModal" @click="showTemplateModal = false">
+      <view class="template-modal" @click.stop>
+        <view class="modal-header">
+          <text class="modal-title">发现好菜谱模板</text>
+          <text class="modal-close" @click="showTemplateModal = false">✕</text>
+        </view>
+        <scroll-view scroll-y class="template-scroll">
+          <view class="template-item" v-for="(tpl, idx) in filteredTemplates" :key="idx">
+            <view class="tpl-info">
+              <text class="tpl-name">{{ tpl.name }}</text>
+              <view class="tpl-tags">
+                <text class="tpl-tag">{{ tpl.category }}</text>
+                <text class="tpl-tag">{{ tpl.duration }}</text>
+                <text class="tpl-tag">{{ tpl.difficulty }}</text>
+              </view>
+            </view>
+            <view class="tpl-use-btn" @click="applyTemplate(tpl)">使用</view>
+          </view>
+          <view class="empty-tpl" v-if="filteredTemplates.length === 0">
+            <text>没有找到相关模板，换个菜名试试</text>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import eatCo from '@/common/localDB.js'
 
 const isEdit = ref(false)
 const recipeId = ref('')
@@ -110,6 +148,38 @@ const form = ref({
 const mainIngs = ref([{ name: '', amount: '' }])
 const seasoningIngs = ref([])
 
+// --- 模板功能相关数据 ---
+const showTemplateModal = ref(false)
+import { recipeTemplates } from '@/common/recipeOptions.js'
+
+const filteredTemplates = computed(() => {
+  const nameInput = form.value.name.trim().toLowerCase()
+  if (!nameInput) return recipeTemplates
+  return recipeTemplates.filter(t => 
+    t.name.toLowerCase().includes(nameInput) || 
+    (t.keywords && t.keywords.some(k => k.toLowerCase().includes(nameInput)))
+  )
+})
+
+const applyTemplate = (tpl) => {
+  form.value.name = tpl.name
+  form.value.category = tpl.category
+  form.value.duration = tpl.duration
+  form.value.difficulty = tpl.difficulty
+  form.value.steps = [...tpl.steps]
+  
+  // 处理食材分类
+  mainIngs.value = tpl.ingredients.filter(i => !i.isSeasoning).map(i => ({ name: i.name, amount: i.amount }))
+  seasoningIngs.value = tpl.ingredients.filter(i => i.isSeasoning).map(i => ({ name: i.name, amount: i.amount }))
+  
+  // 更新 picker 索引
+  categoryIndex.value = Math.max(0, categories.indexOf(tpl.category))
+  difficultyIndex.value = Math.max(0, difficulties.indexOf(tpl.difficulty))
+  
+  showTemplateModal.value = false
+  uni.showToast({ title: '模板填充成功', icon: 'none' })
+}
+
 onLoad((options) => {
   if (options.recipeId) {
     isEdit.value = true
@@ -117,8 +187,6 @@ onLoad((options) => {
     loadData()
   }
 })
-
-import eatCo from '@/common/localDB.js'
 
 const loadData = async () => {
   uni.showLoading({ title: '加载中...' })
@@ -262,12 +330,195 @@ const save = async () => {
   border: 4rpx solid transparent;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   font-weight: 500;
+  flex: 1;
   &:focus {
     border: 4rpx solid #FF7DA8;
     background: #ffffff;
     box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
   }
 }
+
+.name-input-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.template-btn-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.template-tip-pop {
+  position: absolute;
+  top: -60rpx;
+  right: 0;
+  background: #FF5C8D;
+  color: #fff;
+  font-size: 20rpx;
+  font-weight: bold;
+  padding: 6rpx 16rpx;
+  border-radius: 100rpx;
+  white-space: nowrap;
+  box-shadow: 0 4rpx 10rpx rgba(255, 92, 141, 0.3);
+  animation: bounce 2s infinite;
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -8rpx;
+    right: 40rpx;
+    border-left: 10rpx solid transparent;
+    border-right: 10rpx solid transparent;
+    border-top: 10rpx solid #FF5C8D;
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+  40% {transform: translateY(-10rpx);}
+  60% {transform: translateY(-5rpx);}
+}
+
+.template-btn {
+  width: 140rpx;
+  height: 96rpx;
+  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  border-radius: 48rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.3);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  flex-shrink: 0;
+  
+  &.pulse-ani {
+    animation: pulse-border 1.5s infinite;
+    transform: scale(1.05);
+    background: linear-gradient(135deg, #FF7DA8 0%, #FF5C8D 100%);
+  }
+
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+  .btn-icon {
+    font-size: 32rpx;
+    line-height: 1;
+    margin-bottom: 4rpx;
+  }
+  .btn-text {
+    font-size: 20rpx;
+    color: #fff;
+    font-weight: 800;
+    line-height: 1;
+  }
+}
+
+@keyframes pulse-border {
+  0% { box-shadow: 0 0 0 0 rgba(255, 125, 168, 0.7); }
+  70% { box-shadow: 0 0 0 15rpx rgba(255, 125, 168, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 125, 168, 0); }
+}
+
+/* 遮罩 */
+.modal-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* 模板弹窗样式 */
+.template-modal {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 40rpx 40rpx 0 0;
+  padding: 40rpx;
+  position: relative;
+  z-index: 1001;
+  box-sizing: border-box;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40rpx;
+}
+.modal-title {
+  font-size: 34rpx;
+  font-weight: 900;
+  color: #2c3e50;
+}
+.modal-close {
+  font-size: 36rpx;
+  color: #bdc3c7;
+  padding: 10rpx;
+}
+
+.template-scroll {
+  max-height: 60vh;
+}
+
+.template-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx 0;
+  border-bottom: 2rpx solid #f8f9fa;
+  &:last-child { border-bottom: none; }
+}
+
+.tpl-info {
+  flex: 1;
+  .tpl-name {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #333;
+    display: block;
+    margin-bottom: 12rpx;
+  }
+  .tpl-tags {
+    display: flex;
+    gap: 12rpx;
+  }
+  .tpl-tag {
+    font-size: 20rpx;
+    color: #FF7DA8;
+    background: #FFF5F7;
+    padding: 4rpx 16rpx;
+    border-radius: 100rpx;
+    font-weight: 800;
+  }
+}
+
+.tpl-use-btn {
+  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 800;
+  padding: 16rpx 36rpx;
+  border-radius: 100rpx;
+  box-shadow: 0 6rpx 12rpx rgba(255, 125, 168, 0.2);
+  &:active { opacity: 0.8; }
+}
+
+.empty-tpl {
+  padding: 60rpx 0;
+  text-align: center;
+  color: #95a5a6;
+  font-size: 28rpx;
+}
+
 .picker-view {
   color: #2c3e50;
 }
