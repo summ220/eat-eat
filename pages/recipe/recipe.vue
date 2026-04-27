@@ -77,13 +77,21 @@ const makeRecipe = (item, index) => ({
   own: item.own !== undefined ? item.own : true
 })
 
-const loadRecipes = () => {
-  const stored = uni.getStorageSync('recipe_list') || []
-  recipes.value = stored.map((item, index) => makeRecipe(item, index))
-}
+const eatCo = uniCloud.importObject('eat-co')
 
-const saveRecipes = () => {
-  uni.setStorageSync('recipe_list', recipes.value)
+const loadRecipes = async () => {
+  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  try {
+    const data = await eatCo.getRecipeList(familyId)
+    recipes.value = data.map((item, index) => {
+      const formatted = makeRecipe(item, index)
+      formatted.id = item._id
+      formatted._id = item._id
+      return formatted
+    })
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  }
 }
 
 const filteredRecipes = computed(() => {
@@ -110,10 +118,16 @@ const loadMore = () => {
   }
 }
 
-const toggleFavorite = (item) => {
-  item.favorite = !item.favorite
-  saveRecipes()
-  uni.showToast({ title: item.favorite ? '已收藏' : '已取消', icon: 'none' })
+const toggleFavorite = async (item) => {
+  const newFav = !item.favorite
+  item.favorite = newFav // 乐观更新
+  try {
+    await eatCo.updateRecipe(item._id, { favorite: newFav })
+    uni.showToast({ title: newFav ? '已收藏' : '已取消', icon: 'none' })
+  } catch (e) {
+    item.favorite = !newFav // 失败回滚
+    uni.showToast({ title: '操作失败', icon: 'none' })
+  }
 }
 
 const goDetail = (id) => {

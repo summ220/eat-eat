@@ -2,6 +2,11 @@
 export default {
 	onLaunch() {
 		console.log("家庭小厨房启动啦")
+		// 初始化分类配置
+		const cats = uni.getStorageSync('ingredient_categories')
+		if (!cats || cats.length === 0) {
+			uni.setStorageSync('ingredient_categories', ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他'])
+		}
 	}
 }
 </script>

@@ -1,6 +1,6 @@
 {
   "bsonType": "object",
-  "required": ["name", "category"],
+  "required": ["price", "date"],
   "permission": {
     "read": true,
     "create": true,
@@ -9,28 +9,23 @@
   },
   "properties": {
     "_id": {
-      "description": "ID",
-      "bsonType": "string"
+      "description": "存储箱ID，系统自动生成"
     },
     "name": {
       "bsonType": "string",
-      "description": "食材名称"
+      "description": "备注/物品名称"
     },
-    "count": {
+    "price": {
+      "bsonType": "double",
+      "description": "金额"
+    },
+    "date": {
       "bsonType": "string",
-      "description": "数量"
+      "description": "日期 yyyy-MM-dd"
     },
     "category": {
       "bsonType": "string",
       "description": "分类"
-    },
-    "expire_date": {
-      "bsonType": "string",
-      "description": "过期日期 yyyy-MM-dd"
-    },
-    "has": {
-      "bsonType": "boolean",
-      "description": "是否有货"
     },
     "create_time": {
       "bsonType": "timestamp",

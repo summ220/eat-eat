@@ -86,8 +86,8 @@
     </view>
 
     <!-- 添加与编辑表单弹窗 -->
-    <view class="modal-mask" v-if="showModal">
-      <view class="modal-content">
+    <view class="modal-mask" v-if="showModal" @click="showModal = false">
+      <view class="modal-content" @click.stop>
         <text class="modal-title">{{ modalMode === 'add' ? '新增花费' : '编辑花费' }}</text>
         <view class="input-group">
           <input type="digit" v-model="editForm.price" placeholder="金额 ¥ (必填)" class="input-line" />
@@ -120,6 +120,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+
+const eatCo = uniCloud.importObject('eat-co')
 
 // ---- 核心状态 ----
 const categories = ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
@@ -173,51 +175,27 @@ onShow(() => {
   load()
 })
 
-const load = () => {
-  let data = uni.getStorageSync('costRecords')
-  if (!data || data.length === 0) {
-    // 注入模拟数据，演示折叠与当年当月统计功能
-    const d = new Date()
-    const ty = d.getFullYear()
-    const tm = String(d.getMonth() + 1).padStart(2, '0')
-    const td = String(d.getDate()).padStart(2, '0')
+const load = async () => {
+  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  try {
+    const data = await eatCo.getCostList(familyId)
+    list.value = data.map(item => {
+      item.id = item._id
+      item.translateX = 0
+      return item
+    })
     
-    // 上月
-    const lmD = new Date()
-    lmD.setMonth(lmD.getMonth() - 1)
-    const lmy = lmD.getFullYear()
-    const lmm = String(lmD.getMonth() + 1).padStart(2, '0')
-
-    data = [
-      { id: '1', date: `${ty}-${tm}-${td}`, name: '排骨和五花肉', price: '65.50', category: '肉蛋' },
-      { id: '2', date: `${ty}-${tm}-02`, name: '生菜洋葱', price: '12.80', category: '蔬菜' },
-      { id: '3', date: `${lmy}-${lmm}-15`, name: '海鱼', price: '45.00', category: '水产' },
-      { id: '4', date: `${lmy}-${lmm}-10`, name: '盐和酱油', price: '15.00', category: '调料' }
-    ]
-    uni.setStorageSync('costRecords', data)
-  }
-  
-  list.value = data.map(item => {
-    item.translateX = 0
-    return item
-  })
-  
-  // 默认展开当前月
-  if (!expandedMonths.value.includes(currentMonthKey.value)) {
-    expandedMonths.value.push(currentMonthKey.value)
+    // 默认展开当前月
+    if (!expandedMonths.value.includes(currentMonthKey.value)) {
+      expandedMonths.value.push(currentMonthKey.value)
+    }
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
 
-const save = () => {
-  const dataToSave = list.value.map(item => ({
-    id: item.id,
-    price: item.price,
-    name: item.name,
-    date: item.date,
-    category: item.category
-  }))
-  uni.setStorageSync('costRecords', dataToSave)
-}
+// 移除本地 save 方法
+// const save = () => { ... }
 
 // ---- 数据计算 ----
 const filteredList = computed(() => {
@@ -316,49 +294,58 @@ const openModal = (mode, item = null) => {
   showModal.value = true
 }
 
-const saveModal = () => {
+const saveModal = async () => {
   if (!editForm.value.price) {
     return uni.showToast({ title: '请输入金额', icon: 'none' })
   }
-  if (modalMode.value === 'add') {
-    list.value.unshift({
-      id: 'cost_' + Date.now(),
-      price: editForm.value.price,
+  
+  const priceNum = parseFloat(editForm.value.price)
+  if (isNaN(priceNum)) return uni.showToast({ title: '请输入有效金额', icon: 'none' })
+
+  uni.showLoading({ title: '保存中...' })
+  try {
+    const costData = {
+      price: priceNum,
       name: editForm.value.name,
       date: editForm.value.date,
       category: editForm.value.category,
-      translateX: 0
-    })
-    
-    // 如果新增了不在当前选中月的数据，可以自动选过去或展开
-    const mk = editForm.value.date.substring(0, 7)
-    if (!expandedMonths.value.includes(mk)) {
-      expandedMonths.value.push(mk)
+      family_id: uni.getStorageSync('family_id') || 'default_family'
+    }
+
+    if (modalMode.value === 'add') {
+      await eatCo.addCost(costData)
+      uni.showToast({ title: '添加成功', icon: 'success' })
+    } else {
+      await eatCo.updateCost(editForm.value.id, costData)
+      uni.showToast({ title: '修改成功', icon: 'success' })
     }
     
-  } else {
-    const idx = list.value.findIndex(v => v.id === editForm.value.id)
-    if (idx !== -1) {
-      list.value[idx].price = editForm.value.price
-      list.value[idx].name = editForm.value.name
-      list.value[idx].date = editForm.value.date
-      list.value[idx].category = editForm.value.category
-      
-      const mk = editForm.value.date.substring(0, 7)
-      if (!expandedMonths.value.includes(mk)) {
-        expandedMonths.value.push(mk)
-      }
-    }
+    showModal.value = false
+    load() // 重新加载
+  } catch (e) {
+    uni.showToast({ title: '保存失败', icon: 'none' })
   }
-  save()
-  showModal.value = false
-  uni.showToast({ title: '保存成功', icon: 'success' })
 }
 
 const deleteItem = (item) => {
-  list.value = list.value.filter(v => v.id !== item.id)
-  save()
-  uni.showToast({ title: '已删除', icon: 'none' })
+  uni.showModal({
+    title: '确认删除',
+    content: '确定要删除这条花费记录吗？',
+    success: async (res) => {
+      if (res.confirm) {
+        uni.showLoading({ title: '删除中...' })
+        try {
+          await eatCo.deleteCost(item.id)
+          uni.showToast({ title: '已删除', icon: 'success' })
+          load()
+        } catch (e) {
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        } finally {
+          uni.hideLoading()
+        }
+      }
+    }
+  })
 }
 
 // ---- 左滑删除原生控制 ----

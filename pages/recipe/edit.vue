@@ -118,23 +118,32 @@ onLoad((options) => {
   }
 })
 
-const loadData = () => {
-  const list = uni.getStorageSync('recipe_list') || []
-  const target = list.find(r => r.id === recipeId.value)
-  if (target) {
-    form.value = JSON.parse(JSON.stringify(target))
-    categoryIndex.value = Math.max(0, categories.indexOf(form.value.category))
-    difficultyIndex.value = Math.max(0, difficulties.indexOf(form.value.difficulty))
-    
-    if (form.value.ingredients && form.value.ingredients.length > 0) {
-      mainIngs.value = []
-      seasoningIngs.value = []
-      form.value.ingredients.forEach(ing => {
-        const isS = ing.isSeasoning !== undefined ? ing.isSeasoning : seasoningKeywords.some(k => ing.name.includes(k))
-        if (isS) seasoningIngs.value.push({ name: ing.name, amount: ing.amount })
-        else mainIngs.value.push({ name: ing.name, amount: ing.amount })
-      })
+const eatCo = uniCloud.importObject('eat-co')
+
+const loadData = async () => {
+  uni.showLoading({ title: '加载中...' })
+  try {
+    const list = await eatCo.getRecipeList()
+    const target = list.find(r => r._id === recipeId.value)
+    if (target) {
+      form.value = { ...target, id: target._id }
+      categoryIndex.value = Math.max(0, categories.indexOf(form.value.category))
+      difficultyIndex.value = Math.max(0, difficulties.indexOf(form.value.difficulty))
+      
+      if (form.value.ingredients && form.value.ingredients.length > 0) {
+        mainIngs.value = []
+        seasoningIngs.value = []
+        form.value.ingredients.forEach(ing => {
+          const isS = ing.isSeasoning !== undefined ? ing.isSeasoning : seasoningKeywords.some(k => ing.name.includes(k))
+          if (isS) seasoningIngs.value.push({ name: ing.name, amount: ing.amount })
+          else mainIngs.value.push({ name: ing.name, amount: ing.amount })
+        })
+      }
     }
+    uni.hideLoading().catch(() => {})
+  } catch (e) {
+    uni.hideLoading().catch(() => {})
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
 
@@ -157,7 +166,7 @@ const removeSeasoning = (i) => seasoningIngs.value.splice(i, 1)
 const addStep = () => form.value.steps.push('')
 const removeStep = (i) => form.value.steps.splice(i, 1)
 
-const save = () => {
+const save = async () => {
   if (!form.value.name.trim()) return uni.showToast({ title: '菜名不能为空', icon: 'none' })
   
   const filteredMain = mainIngs.value.filter(ing => ing.name.trim()).map(ing => ({ ...ing, isSeasoning: false }))
@@ -169,22 +178,33 @@ const save = () => {
   if (form.value.ingredients.length === 0) return uni.showToast({ title: '请至少保留一个食材或调料', icon: 'none' })
   if (form.value.steps.length === 0) return uni.showToast({ title: '请至少保留一个步骤', icon: 'none' })
 
-  let list = uni.getStorageSync('recipe_list') || []
-  
-  if (isEdit.value) {
-    const idx = list.findIndex(r => r.id === recipeId.value)
-    if (idx > -1) {
-      list[idx] = { ...form.value }
+  uni.showLoading({ title: '保存中...' })
+  try {
+    const submitData = {
+      name: form.value.name,
+      category: form.value.category,
+      cover: form.value.cover,
+      duration: form.value.duration,
+      difficulty: form.value.difficulty,
+      ingredients: form.value.ingredients,
+      steps: form.value.steps,
+      favorite: form.value.favorite,
+      own: true
     }
-  } else {
-    form.value.id = `recipe_${Date.now()}`
-    form.value.own = true
-    list.unshift({ ...form.value })
+
+    if (isEdit.value) {
+      await eatCo.updateRecipe(recipeId.value, submitData)
+    } else {
+      await eatCo.addRecipe(submitData)
+    }
+    
+    uni.hideLoading().catch(() => {})
+    uni.showToast({ title: isEdit.value ? '修改成功' : '保存成功', icon: 'success' })
+    setTimeout(() => uni.navigateBack(), 1000)
+  } catch (e) {
+    uni.hideLoading().catch(() => {})
+    uni.showToast({ title: '保存失败', icon: 'none' })
   }
-  
-  uni.setStorageSync('recipe_list', list)
-  uni.showToast({ title: '保存成功', icon: 'success' })
-  setTimeout(() => uni.navigateBack(), 1000)
 }
 </script>
 

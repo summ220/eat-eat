@@ -18,6 +18,14 @@
 
       <input v-model="name" placeholder="请输入食材名称" class="input" />
       <input v-model="num" placeholder="数量：例如 3个 (选填)" class="input" />
+      
+      <picker mode="date" @change="onDateChange">
+        <view class="input picker-view">
+          <text class="picker-label">过期时间：</text>
+          <text class="picker-val">{{ expireDate || '请选择 (选填)' }}</text>
+        </view>
+      </picker>
+
       <button class="save-btn" @click="save">保存</button>
     </view>
   </view>
@@ -29,8 +37,13 @@ import { onShow } from '@dcloudio/uni-app'
 
 const name = ref('')
 const num = ref('')
+const expireDate = ref('')
 const category = ref('蔬菜')
 const categories = ref([])
+
+const onDateChange = (e) => {
+  expireDate.value = e.detail.value
+}
 
 onShow(() => {
   categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
@@ -43,13 +56,14 @@ const eatCo = uniCloud.importObject('eat-co')
 
 const save = async () => {
   if (!name.value) return uni.showToast({ icon: 'none', title: '请输入名称' })
-  uni.showLoading({ title: '保存中...' })
   try {
     await eatCo.addStock({ 
       name: name.value, 
       num: num.value, 
-      category: category.value, 
-      has: true 
+      category: category.value,
+      expire_date: expireDate.value,
+      has: true,
+      family_id: uni.getStorageSync('family_id') || 'default_family'
     })
     uni.showToast({ icon: 'success', title: '添加成功' })
     setTimeout(() => {
@@ -57,8 +71,6 @@ const save = async () => {
     }, 1000)
   } catch(e) {
     uni.showToast({ title: '保存失败', icon: 'none' })
-  } finally {
-    uni.hideLoading()
   }
 }
 </script>
@@ -123,6 +135,18 @@ const save = async () => {
   &:focus {
     border: 2rpx solid #FF8DA1;
     background: #FFF;
+  }
+}
+.picker-view {
+  display: flex;
+  align-items: center;
+  .picker-label {
+    color: #888;
+    margin-right: 10rpx;
+  }
+  .picker-val {
+    color: #333;
+    flex: 1;
   }
 }
 .save-btn {

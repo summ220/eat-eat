@@ -48,21 +48,40 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
-const menuList = [
+const eatCo = uniCloud.importObject('eat-co')
+
+const defaultMenu = [
   '番茄炒蛋', '可乐鸡翅', '青椒肉丝', '蒜蓉西兰花',
   '红烧肉', '酸辣土豆丝', '水煮肉片', '香菇滑鸡', '蛋炒饭',
   '粉蒸排骨', '糖醋里脊', '麻婆豆腐', '手撕包菜', '清炒菜心'
 ]
+const menuList = ref([...defaultMenu])
 const result = ref('点击开始抽菜～')
 
+const loadMenu = async () => {
+  try {
+    const data = await eatCo.getRecipeList()
+    if (data && data.length > 0) {
+      menuList.value = data.map(item => item.name)
+    }
+  } catch (e) {
+    console.error('获取菜谱失败', e)
+  }
+}
+
+onMounted(() => {
+  loadMenu()
+})
+
 const getRandomDish = () => {
+  if (menuList.value.length === 0) return
   let times = 0
   let timer = setInterval(() => {
     times++
-    const i = Math.floor(Math.random() * menuList.length)
-    result.value = menuList[i]
+    const i = Math.floor(Math.random() * menuList.value.length)
+    result.value = menuList.value[i]
     if (times > 10) clearInterval(timer)
   }, 50)
 }

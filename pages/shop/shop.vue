@@ -48,8 +48,8 @@
     </view>
 
     <!-- 添加与编辑共用弹窗 -->
-    <view class="modal-mask" v-if="showModal">
-      <view class="modal-content">
+    <view class="modal-mask" v-if="showModal" @click="showModal = false">
+      <view class="modal-content" @click.stop>
         <text class="modal-title">{{ modalMode === 'add' ? '添加物品' : '编辑物品' }}</text>
         
         <input class="modal-input" v-model="editData.name" placeholder="物品名称 (必填)" />
@@ -123,6 +123,8 @@ const totalCost = computed(() => {
   return cost.toFixed(2);
 })
 
+const eatCo = uniCloud.importObject('eat-co')
+
 onShow(() => {
   categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
   if (!categories.value.includes(currentCategory.value) && currentCategory.value !== '全部') {
@@ -131,22 +133,32 @@ onShow(() => {
   load()
 })
 
-const load = () => {
-  let data = uni.getStorageSync('shop') || [];
-  list.value = data.map((item, index) => {
-    if (!item.id) item.id = 'shop_' + Date.now() + '_' + index;
-    item.done = !!item.done; 
-    return item;
-  });
+const load = async () => {
+  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  try {
+    const data = await eatCo.getShopList(familyId)
+    list.value = data.map(item => {
+      item.id = item._id
+      item.done = !!item.done
+      return item
+    })
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  }
 }
 
-const save = () => {
-  uni.setStorageSync('shop', list.value);
-}
+// 移除本地 save 方法
+// const save = () => { ... }
 
-const toggle = (item) => {
-  item.done = !item.done;
-  save();
+const toggle = async (item) => {
+  const newDone = !item.done
+  item.done = newDone // 乐观更新
+  try {
+    await eatCo.updateShop(item._id, { done: newDone })
+  } catch (e) {
+    item.done = !newDone // 回滚
+    uni.showToast({ title: '更新失败', icon: 'none' })
+  }
 }
 
 const clearDone = () => {
@@ -157,11 +169,43 @@ const clearDone = () => {
     title: '清理提示',
     content: '确定要一键清空所有已购买的项吗？',
     confirmColor: '#FF7DA8',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        list.value = list.value.filter(item => !item.done);
-        save();
-        uni.showToast({ title: '已清空', icon: 'success' });
+        uni.showLoading({ title: '清理中...' })
+        try {
+          // 1. 先同步到库存 (如果是新增物品)
+          const doneItems = list.value.filter(item => item.done)
+          if (doneItems.length > 0) {
+            const syncRes = await uni.showModal({
+              title: '同步提示',
+              content: '是否将这些已购物品同步到「食材库存」中？',
+              confirmText: '同步',
+              cancelText: '仅清理'
+            })
+            
+            if (syncRes.confirm) {
+              uni.showLoading({ title: '同步中...' })
+              for (const item of doneItems) {
+                await eatCo.addStock({
+                  name: item.name,
+                  num: item.num,
+                  category: item.category || '其他',
+                  has: true,
+                  family_id: uni.getStorageSync('family_id') || 'default_family'
+                })
+              }
+            }
+          }
+
+          // 2. 执行清理
+          await eatCo.clearDoneShop()
+          list.value = list.value.filter(item => !item.done)
+          uni.showToast({ title: '操作完成', icon: 'success' })
+        } catch (e) {
+          uni.showToast({ title: '操作失败', icon: 'none' })
+        } finally {
+          uni.hideLoading()
+        }
       }
     }
   });
@@ -172,11 +216,18 @@ const deleteItem = (item) => {
     title: '删除提示',
     content: `确定要移除「${item.name}」吗？`,
     confirmColor: '#FF7DA8',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        list.value = list.value.filter(v => v.id !== item.id);
-        save();
-        uni.showToast({ title: '删除成功', icon: 'success' });
+        uni.showLoading({ title: '删除中...' })
+        try {
+          await eatCo.deleteShop(item._id)
+          list.value = list.value.filter(v => v.id !== item.id)
+          uni.showToast({ title: '删除成功', icon: 'success' })
+        } catch (e) {
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        } finally {
+          uni.hideLoading()
+        }
       }
     }
   });
@@ -204,33 +255,39 @@ const openEditModal = (item) => {
   showModal.value = true;
 }
 
-const saveModal = () => {
+const saveModal = async () => {
   if (!editData.value.name) {
     return uni.showToast({ title: '必须要填写物品名称哦', icon: 'none' });
   }
-  if (modalMode.value === 'add') {
-    const newItem = {
-      id: editData.value.id || ('shop_' + Date.now() + '_' + Math.floor(Math.random() * 1000)),
-      name: editData.value.name,
-      num: editData.value.num,
-      price: editData.value.price,
-      category: editData.value.category,
-      done: false
-    };
-    list.value.unshift(newItem); 
-    uni.showToast({ title: '添加成功', icon: 'success' });
-  } else {
-    const index = list.value.findIndex(item => item.id === editData.value.id);
-    if (index !== -1) {
-      list.value[index].name = editData.value.name;
-      list.value[index].num = editData.value.num;
-      list.value[index].price = editData.value.price;
-      list.value[index].category = editData.value.category;
-      uni.showToast({ title: '修改成功', icon: 'success' });
+  
+  uni.showLoading({ title: '保存中...' })
+  try {
+    if (modalMode.value === 'add') {
+      const newItem = {
+        name: editData.value.name,
+        num: editData.value.num,
+        price: editData.value.price,
+        category: editData.value.category,
+        done: false
+      }
+      await eatCo.addShop(newItem)
+      uni.showToast({ title: '添加成功', icon: 'success' })
+    } else {
+      await eatCo.updateShop(editData.value.id, {
+        name: editData.value.name,
+        num: editData.value.num,
+        price: editData.value.price,
+        category: editData.value.category
+      })
+      uni.showToast({ title: '修改成功', icon: 'success' })
     }
+    showModal.value = false
+    load() // 重新加载获取真实 ID
+  } catch (e) {
+    uni.showToast({ title: '保存失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
   }
-  save();
-  showModal.value = false;
 }
 
 const checkCost = () => {

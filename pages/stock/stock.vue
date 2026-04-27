@@ -42,7 +42,13 @@
           </view>
           
           <view class="item-body">
-            <text class="num">数量：{{ item.num || '-' }}</text>
+            <view class="num-row">
+              <text class="num">数量：{{ item.num || '-' }}</text>
+              <view class="expire-tag" v-if="item.expire_date" :class="getExpireStatus(item.expire_date).type">
+                <text>{{ getExpireStatus(item.expire_date).text }}</text>
+              </view>
+            </view>
+            <text class="expire-date" v-if="item.expire_date">📅 过期：{{ item.expire_date }}</text>
           </view>
           
           <view class="item-footer">
@@ -54,12 +60,19 @@
     </view>
     
     <!-- 编辑食材的弹窗 -->
-    <view class="modal-mask" v-if="showModal">
-      <view class="modal-content">
+    <view class="modal-mask" v-if="showModal" @click="showModal = false">
+      <view class="modal-content" @click.stop>
         <text class="modal-title">编辑食材</text>
         
         <input class="modal-input" v-model="editData.name" placeholder="请输入食材名称" />
         <input class="modal-input" v-model="editData.num" placeholder="数量 (选填)" />
+        
+        <picker mode="date" @change="onEditDateChange">
+          <view class="modal-input picker-item">
+            <text class="p-label">过期日期：</text>
+            <text class="p-val">{{ editData.expire_date || '请选择 (选填)' }}</text>
+          </view>
+        </picker>
         
         <view class="modal-tags">
           <text 
@@ -96,8 +109,28 @@ const editData = ref({
   id: '',
   name: '',
   num: '',
-  category: ''
+  category: '',
+  expire_date: ''
 })
+
+const onEditDateChange = (e) => {
+  editData.value.expire_date = e.detail.value
+}
+
+const getExpireStatus = (dateStr) => {
+  if (!dateStr) return { type: '', text: '' }
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const target = new Date(dateStr)
+  target.setHours(0, 0, 0, 0)
+  
+  const diffTime = target.getTime() - now.getTime()
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  
+  if (diffDays < 0) return { type: 'expired', text: '已过期' }
+  if (diffDays <= 3) return { type: 'warning', text: `剩 ${diffDays} 天` }
+  return { type: 'safe', text: '新鲜' }
+}
 
 const filteredList = computed(() => {
   if (currentCategory.value === '全部') {
@@ -115,14 +148,12 @@ onShow(() => {
 })
 
 const load = async () => {
-  uni.showLoading({ title: '加载中...' });
+  const familyId = uni.getStorageSync('family_id') || 'default_family';
   try {
-    const data = await eatCo.getStockList();
+    const data = await eatCo.getStockList(familyId);
     list.value = data.map(item => ({ ...item, id: item._id }));
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' });
-  } finally {
-    uni.hideLoading();
   }
 }
 
@@ -151,7 +182,8 @@ const editItem = (item) => {
     id: item.id,
     name: item.name,
     num: item.num || '',
-    category: item.category || '其他'
+    category: item.category || '其他',
+    expire_date: item.expire_date || ''
   };
   showModal.value = true;
 }
@@ -161,26 +193,25 @@ const saveEdit = async () => {
     return uni.showToast({ icon: 'none', title: '请输入名称' });
   }
   
-  uni.showLoading({ title: '保存中...' });
   try {
     await eatCo.updateStock(editData.value._id, {
       name: editData.value.name,
       num: editData.value.num,
-      category: editData.value.category
+      category: editData.value.category,
+      expire_date: editData.value.expire_date
     });
+    uni.showToast({ icon: 'success', title: '修改成功' });
     
     const index = list.value.findIndex(item => item.id === editData.value.id);
     if (index !== -1) {
       list.value[index].name = editData.value.name;
       list.value[index].num = editData.value.num;
       list.value[index].category = editData.value.category;
+      list.value[index].expire_date = editData.value.expire_date;
     }
     showModal.value = false;
-    uni.showToast({ icon: 'success', title: '修改成功' });
   } catch(e) {
     uni.showToast({ title: '修改失败', icon: 'none' });
-  } finally {
-    uni.hideLoading();
   }
 }
 
@@ -353,11 +384,36 @@ const deleteItem = (item) => {
 
 .item-body {
   margin-bottom: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.num-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .num {
   font-size: 26rpx;
   color: #888;
+}
+
+.expire-tag {
+  font-size: 20rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 100rpx;
+  font-weight: bold;
+  
+  &.expired { background: #FFE5E5; color: #FF4757; }
+  &.warning { background: #FFF4E5; color: #F39C12; }
+  &.safe { background: #E8F7ED; color: #27AE60; }
+}
+
+.expire-date {
+  font-size: 22rpx;
+  color: #999;
 }
 
 .item-footer {
@@ -444,6 +500,13 @@ const deleteItem = (item) => {
     border: 2rpx solid #FF8DA1;
     background: #FFF;
   }
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  .p-label { color: #888; margin-right: 10rpx; }
+  .p-val { color: #333; flex: 1; }
 }
 
 .modal-tags {

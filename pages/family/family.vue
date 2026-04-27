@@ -6,7 +6,7 @@
         <view class="user-info">
           <image class="avatar" src="https://img-blog.csdnimg.cn/20240110133807328.png" mode="aspectFill" />
           <view class="name-box">
-            <input class="family-name" v-model="familyName" placeholder="输入家庭名称" />
+            <input class="family-name" v-model="familyName" @blur="saveFamilyName" placeholder="输入家庭名称" />
             <text class="greeting">{{ greeting }}</text>
           </view>
         </view>
@@ -18,6 +18,37 @@
     </view>
 
     <view class="main-content">
+      <!-- 4. 家庭成员 (挪到最上方) -->
+      <view class="section members-section">
+        <view class="section-title">
+          <text class="title-text">家庭成员</text>
+          <view class="title-actions">
+            <text class="action-text secondary" @click="showJoinModal = true">加入</text>
+            <text class="action-text" @click="openInvite">邀请</text>
+          </view>
+        </view>
+        <scroll-view scroll-x class="member-scroll" :show-scrollbar="false">
+          <view class="member-list">
+            <view 
+              class="member-card" 
+              v-for="(m, idx) in members" 
+              :key="idx"
+              @click="handleMemberClick(m)"
+            >
+              <view class="avatar-wrap">
+                <image class="m-avatar" :src="m.avatar" mode="aspectFill" />
+                <view class="edit-tag" v-if="m.isSelf">✏️</view>
+              </view>
+              <text class="m-nick">{{ m.nick }}{{ m.isSelf ? ' (我)' : '' }}</text>
+              <view class="m-role"><text>{{ m.role }}</text></view>
+            </view>
+          </view>
+        </scroll-view>
+        <view class="family-ops" v-if="members.length > 1">
+          <text class="exit-btn" @click="leaveFamily">退出当前家庭</text>
+        </view>
+      </view>
+
       <!-- 6. 主题切换 -->
       <view class="section theme-section">
         <view class="section-title">
@@ -35,104 +66,6 @@
             <text class="check" v-if="currentTheme === idx">✓</text>
           </view>
         </view>
-      </view>
-
-      <!-- 2. 数据统计区 -->
-      <view class="section">
-        <view class="stat-grid">
-          <view class="stat-item" v-for="(item, idx) in stats" :key="idx">
-            <view class="stat-icon-wrap" :class="'bg-' + (idx % 4)">
-              <text class="stat-icon">{{ item.icon }}</text>
-            </view>
-            <view class="stat-info">
-              <text class="stat-num">{{ item.num }}</text>
-              <text class="stat-label">{{ item.label }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 10. 家庭消费目标 -->
-      <view class="section budget-section">
-        <view class="section-title">
-          <text class="title-text">月度预算</text>
-          <text class="action-text">设置</text>
-        </view>
-        <view class="budget-card">
-          <view class="budget-info">
-            <view class="b-item">
-              <text class="b-label">已花费</text>
-              <text class="b-val spent">¥{{ budget.spent }}</text>
-            </view>
-            <view class="b-item right">
-              <text class="b-label">剩余可用</text>
-              <text class="b-val remain">¥{{ budget.total - budget.spent }}</text>
-            </view>
-          </view>
-          <view class="progress-bar">
-            <view class="progress-inner" :style="{ width: (budget.spent / budget.total * 100) + '%' }"></view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 7. 智能提醒 -->
-      <view class="section reminders-section">
-        <view class="section-title"><text class="title-text">智能管家</text></view>
-        <view class="reminder-list">
-          <view class="reminder-item" v-for="(rem, idx) in reminders" :key="idx" :class="rem.type">
-            <view class="r-icon-box"><text class="r-icon">{{ rem.icon }}</text></view>
-            <text class="r-text">{{ rem.text }}</text>
-            <view class="r-btn" v-if="rem.action">{{ rem.action }}</view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 3. 今日三餐计划 -->
-      <view class="section meals-section">
-        <view class="section-title"><text class="title-text">今日三餐</text></view>
-        <view class="meal-list">
-          <view class="meal-item" v-for="(meal, idx) in meals" :key="idx">
-            <view class="m-left">
-              <view class="m-icon-box"><text class="m-icon">{{ meal.icon }}</text></view>
-              <view class="m-info">
-                <text class="m-name">{{ meal.name }}</text>
-                <text class="m-desc" :class="{ empty: !meal.recipe }">{{ meal.recipe || '尚未安排，点击挑选' }}</text>
-              </view>
-            </view>
-            <view class="m-right">
-              <view class="m-btn add" v-if="meal.recipe"><text class="btn-icon">🛒</text></view>
-              <view class="m-btn primary" v-else>安排</view>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 8. 快捷功能宫格 -->
-      <view class="section quick-section">
-        <view class="section-title"><text class="title-text">快捷功能</text></view>
-        <view class="quick-grid">
-          <view class="quick-item" v-for="(func, idx) in quickFuncs" :key="idx">
-            <view class="q-icon-wrap"><text class="q-icon">{{ func.icon }}</text></view>
-            <text class="q-text">{{ func.name }}</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 4. 家庭成员 -->
-      <view class="section members-section">
-        <view class="section-title">
-          <text class="title-text">家庭成员</text>
-          <text class="action-text">+ 邀请</text>
-        </view>
-        <scroll-view scroll-x class="member-scroll" :show-scrollbar="false">
-          <view class="member-list">
-            <view class="member-card" v-for="(m, idx) in members" :key="idx">
-              <image class="m-avatar" :src="m.avatar" mode="aspectFill" />
-              <text class="m-nick">{{ m.nick }}</text>
-              <view class="m-role"><text>{{ m.role }}</text></view>
-            </view>
-          </view>
-        </scroll-view>
       </view>
 
       <!-- 9. 消费趋势卡片 -->
@@ -219,6 +152,72 @@
         </view>
       </view>
 
+      <!-- 邀请弹窗 -->
+      <view class="modal-mask" v-if="showInviteModal" @click="showInviteModal = false">
+        <view class="modal-content invite-modal" @click.stop>
+          <text class="modal-title">邀请家人加入</text>
+          <view class="invite-info">
+            <text class="invite-desc">让家人扫描二维码或输入邀请码</text>
+            <view class="invite-code-box">
+              <text class="code-val">{{ inviteCode }}</text>
+              <text class="copy-btn" @click="copyCode">复制</text>
+            </view>
+            <view class="qr-placeholder">
+              <text class="qr-icon">📱</text>
+              <text>扫码加入家庭</text>
+            </view>
+          </view>
+          <button class="close-modal-btn prim" @click="showInviteModal = false">完成</button>
+        </view>
+      </view>
+
+      <!-- 加入弹窗 -->
+      <view class="modal-mask" v-if="showJoinModal" @click="showJoinModal = false">
+        <view class="modal-content" @click.stop>
+          <text class="modal-title">加入新家庭</text>
+          <view class="input-box">
+            <input class="join-input" v-model="joinCode" placeholder="请输入邀请码" />
+          </view>
+          <view class="modal-tips">加入后将同步该家庭的所有数据</view>
+          <view class="modal-btns">
+            <button class="m-btn-sub" @click="showJoinModal = false">取消</button>
+            <button class="m-btn-main" @click="confirmJoin">加入</button>
+          </view>
+        </view>
+      </view>
+
+      <!-- 修改昵称弹窗 -->
+      <view class="modal-mask" v-if="showNickModal" @click="showNickModal = false">
+        <view class="modal-content" @click.stop>
+          <text class="modal-title">修改我的昵称</text>
+          <view class="input-box">
+            <input class="join-input" v-model="tempNick" placeholder="请输入新昵称" />
+          </view>
+          <view class="modal-btns">
+            <button class="m-btn-sub" @click="showNickModal = false">取消</button>
+            <button class="m-btn-main" @click="confirmNick">保存</button>
+          </view>
+        </view>
+      </view>
+
+      <!-- 分类管理弹窗 -->
+      <view class="modal-mask" v-if="showCatModal" @click="showCatModal = false">
+        <view class="modal-content" @click.stop>
+          <text class="modal-title">管理分类</text>
+          <view class="cat-manage-list">
+            <view class="cat-manage-item" v-for="(cat, idx) in categories" :key="idx">
+              <text>{{ cat }}</text>
+              <text class="del-cat" @click="removeCategory(idx)">删除</text>
+            </view>
+          </view>
+          <view class="add-cat-box">
+            <input class="add-cat-input" v-model="newCat" placeholder="新分类名称" />
+            <view class="add-cat-btn" @click="addCategory">添加</view>
+          </view>
+          <button class="close-modal-btn" @click="showCatModal = false">完成</button>
+        </view>
+      </view>
+
       <view class="footer-safe"></view>
     </view>
   </view>
@@ -226,8 +225,78 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 
-const familyName = ref('快乐干饭小家')
+const eatCo = uniCloud.importObject('eat-co')
+const familyName = ref(uni.getStorageSync('family_name') || '快乐干饭小家')
+const familyId = ref(uni.getStorageSync('family_id') || 'default_family')
+
+// 监听名称修改并保存
+const saveFamilyName = () => {
+  uni.setStorageSync('family_name', familyName.value)
+  // 此处应同步到云端
+}
+
+// 家庭成员功能
+const showInviteModal = ref(false)
+const showJoinModal = ref(false)
+const showNickModal = ref(false)
+const inviteCode = ref('EAT' + Math.random().toString(36).substr(2, 6).toUpperCase())
+const joinCode = ref('')
+const tempNick = ref('')
+
+const openInvite = () => {
+  // 重新生成一个随机码模拟
+  inviteCode.value = 'EAT' + Math.random().toString(36).substr(2, 6).toUpperCase()
+  showInviteModal.value = true
+}
+
+const copyCode = () => {
+  uni.setClipboardData({
+    data: inviteCode.value,
+    success: () => uni.showToast({ title: '复制成功' })
+  })
+}
+
+const confirmJoin = () => {
+  if (!joinCode.value) return uni.showToast({ title: '请输入邀请码', icon: 'none' })
+  uni.showToast({ title: '成功加入家庭' })
+  showJoinModal.value = false
+  // 模拟数据同步逻辑
+  refreshStats()
+}
+
+const handleMemberClick = (m) => {
+  if (m.isSelf) {
+    tempNick.value = m.nick
+    showNickModal.value = true
+  }
+}
+
+const confirmNick = () => {
+  const self = members.value.find(m => m.isSelf)
+  if (self) {
+    self.nick = tempNick.value
+    uni.showToast({ title: '昵称已更新' })
+  }
+  showNickModal.value = false
+}
+
+const leaveFamily = () => {
+  uni.showModal({
+    title: '退出提醒',
+    content: '确定要退出当前家庭吗？退出后将无法查看该家庭数据。',
+    confirmColor: '#FF4D4F',
+    success: (res) => {
+      if (res.confirm) {
+        uni.showToast({ title: '已退出家庭' })
+        // 重置为个人模式
+        members.value = members.value.filter(m => m.isSelf)
+        refreshStats()
+      }
+    }
+  })
+}
 
 // 自动问候语
 const hour = new Date().getHours()
@@ -245,9 +314,10 @@ const themes = [
   { name: '雾霾蓝', color: '#7AA3ED', gradient: 'linear-gradient(135deg, #9CBDF5 0%, #7AA3ED 100%)', light: '#F3F7FE', shadow: 'rgba(122,163,237,0.2)' },
   { name: '暖杏黄', color: '#F5B96B', gradient: 'linear-gradient(135deg, #FAD699 0%, #F5B96B 100%)', light: '#FEFAF3', shadow: 'rgba(245,185,107,0.2)' }
 ]
-const currentTheme = ref(0)
+const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
 const switchTheme = (idx) => {
   currentTheme.value = idx
+  uni.setStorageSync('current_theme', idx)
 }
 const themeStyle = computed(() => {
   const t = themes[currentTheme.value]
@@ -261,16 +331,56 @@ const themeStyle = computed(() => {
 
 // 数据统计
 const stats = ref([
-  { icon: '🍅', num: '24', label: '食材总数' },
-  { icon: '🛒', num: '8', label: '待采购' },
-  { icon: '💰', num: '1256', label: '本月花费' },
-  { icon: '❤️', num: '32', label: '收藏菜谱' },
-  { icon: '🛍️', num: '5', label: '买菜次数' },
-  { icon: '🥚', num: '鸡蛋', label: '常吃食材' }
+  { icon: '🍅', num: '0', label: '食材总数' },
+  { icon: '🛒', num: '0', label: '待采购' },
+  { icon: '💰', num: '0', label: '本月花费' },
+  { icon: '❤️', num: '0', label: '收藏菜谱' },
+  { icon: '🛍️', num: '0', label: '买菜次数' },
+  { icon: '🥚', num: '-', label: '常用食材' }
 ])
 
 // 预算
-const budget = ref({ total: 3000, spent: 1256 })
+const budget = ref({ total: 3000, spent: 0 })
+
+const refreshStats = async () => {
+  try {
+    const fId = familyId.value
+    const [stocks, shops, costs, recipes] = await Promise.all([
+      eatCo.getStockList(fId),
+      eatCo.getShopList(fId),
+      eatCo.getCostList(fId),
+      eatCo.getRecipeList(fId)
+    ])
+
+    // 1. 食材总数
+    stats.value[0].num = stocks.length
+    
+    // 2. 待采购
+    stats.value[1].num = shops.filter(s => !s.done).length
+    
+    // 3. 本月花费
+    const now = new Date()
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const monthCosts = costs.filter(c => c.date && c.date.startsWith(monthKey))
+    const totalSpent = monthCosts.reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0)
+    stats.value[2].num = Math.round(totalSpent)
+    budget.value.spent = Math.round(totalSpent)
+
+    // 4. 收藏菜谱
+    stats.value[3].num = recipes.filter(r => r.favorite).length
+
+    // 5. 自动算一些趣味数据 (如常吃食材)
+    if (stocks.length > 0) {
+      stats.value[5].num = stocks[0].name
+    }
+  } catch (e) {
+    console.error('统计加载失败', e)
+  }
+}
+
+onShow(() => {
+  refreshStats()
+})
 
 // 智能提醒
 const reminders = ref([
@@ -300,9 +410,9 @@ const quickFuncs = ref([
 
 // 家庭成员
 const members = ref([
-  { nick: '爸爸', role: '大主厨', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png' },
-  { nick: '妈妈', role: '采购总监', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png' },
-  { nick: '宝宝', role: '干饭人', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png' }
+  { nick: '爸爸', role: '大主厨', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png', isSelf: true },
+  { nick: '妈妈', role: '采购总监', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png', isSelf: false },
+  { nick: '宝宝', role: '干饭人', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png', isSelf: false }
 ])
 
 // 消费趋势
@@ -323,8 +433,37 @@ const toggleAvoid = (a) => {
   }
 }
 
+// 分类管理
+const showCatModal = ref(false)
+const categories = ref([])
+const newCat = ref('')
+
+const loadCategories = () => {
+  categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+}
+
+const addCategory = () => {
+  if (!newCat.value.trim()) return
+  if (categories.value.includes(newCat.value.trim())) {
+    return uni.showToast({ title: '分类已存在', icon: 'none' })
+  }
+  categories.value.push(newCat.value.trim())
+  newCat.value = ''
+  uni.setStorageSync('ingredient_categories', categories.value)
+}
+
+const removeCategory = (idx) => {
+  categories.value.splice(idx, 1)
+  uni.setStorageSync('ingredient_categories', categories.value)
+}
+
 const handleSetting = (name) => {
-  uni.showToast({ title: `点击了: ${name}`, icon: 'none' })
+  if (name === '分类设置') {
+    loadCategories()
+    showCatModal.value = true
+  } else {
+    uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
+  }
 }
 </script>
 
@@ -422,6 +561,94 @@ const handleSetting = (name) => {
   padding: 40rpx 30rpx;
   margin-bottom: 30rpx;
   box-shadow: 0 8rpx 30rpx rgba(0,0,0,0.02);
+}
+
+/* 弹窗通用样式 */
+.modal-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(5px);
+}
+.modal-content {
+  width: 600rpx;
+  background: #fff;
+  border-radius: 40rpx;
+  padding: 40rpx;
+  
+  .modal-title {
+    display: block;
+    text-align: center;
+    font-size: 34rpx;
+    font-weight: 800;
+    color: #2C3E50;
+    margin-bottom: 40rpx;
+  }
+}
+
+.cat-manage-list {
+  max-height: 400rpx;
+  overflow-y: auto;
+  margin-bottom: 30rpx;
+  
+  .cat-manage-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24rpx 0;
+    border-bottom: 2rpx solid #F8F9FA;
+    font-size: 28rpx;
+    color: #2C3E50;
+    
+    .del-cat {
+      color: #FF4757;
+      font-size: 24rpx;
+      font-weight: bold;
+    }
+  }
+}
+
+.add-cat-box {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 40rpx;
+  
+  .add-cat-input {
+    flex: 1;
+    background: #F8F9FA;
+    height: 80rpx;
+    border-radius: 20rpx;
+    padding: 0 30rpx;
+    font-size: 26rpx;
+  }
+  
+  .add-cat-btn {
+    background: var(--primary);
+    color: #fff;
+    height: 80rpx;
+    line-height: 80rpx;
+    padding: 0 30rpx;
+    border-radius: 20rpx;
+    font-size: 26rpx;
+    font-weight: bold;
+  }
+}
+
+.close-modal-btn {
+  width: 100%;
+  height: 90rpx;
+  line-height: 90rpx;
+  background: #F8F9FA;
+  color: #2C3E50;
+  border-radius: 100rpx;
+  font-size: 30rpx;
+  font-weight: bold;
+  border: none;
+  &::after { border: none; }
 }
 
 .section-title {
@@ -741,6 +968,17 @@ const handleSetting = (name) => {
 
 /* 4. 家庭成员 */
 .members-section {
+  .section-title {
+    .title-actions {
+      display: flex;
+      gap: 20rpx;
+    }
+    .action-text.secondary {
+      background: #F0F2F5;
+      color: #7F8C8D;
+    }
+  }
+
   .member-scroll {
     width: 100%;
     white-space: nowrap;
@@ -756,16 +994,37 @@ const handleSetting = (name) => {
     align-items: center;
     background: #F8F9FA;
     padding: 30rpx 40rpx;
-    border-radius: 30rpx;
+    border-radius: 36rpx;
     min-width: 160rpx;
+    position: relative;
+    transition: all 0.3s;
+    &:active { transform: scale(0.95); background: #F0F2F5; }
     
-    .m-avatar {
-      width: 100rpx;
-      height: 100rpx;
-      border-radius: 50%;
+    .avatar-wrap {
+      position: relative;
       margin-bottom: 16rpx;
-      border: 4rpx solid #fff;
-      box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+      .m-avatar {
+        width: 100rpx;
+        height: 100rpx;
+        border-radius: 50%;
+        border: 4rpx solid #fff;
+        box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+      }
+      .edit-tag {
+        position: absolute;
+        right: -6rpx;
+        bottom: -6rpx;
+        background: var(--primary);
+        color: #fff;
+        width: 36rpx;
+        height: 36rpx;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 20rpx;
+        border: 2rpx solid #fff;
+      }
     }
     .m-nick {
       font-size: 28rpx;
@@ -781,6 +1040,131 @@ const handleSetting = (name) => {
       border-radius: 100rpx;
       transition: all 0.5s ease;
     }
+  }
+  
+  .family-ops {
+    margin-top: 30rpx;
+    display: flex;
+    justify-content: center;
+    .exit-btn {
+      font-size: 24rpx;
+      color: #BDC3C7;
+      text-decoration: underline;
+      padding: 10rpx;
+    }
+  }
+}
+
+/* 邀请弹窗特有样式 */
+.invite-modal {
+  .invite-info {
+    text-align: center;
+    padding: 20rpx 0;
+    
+    .invite-desc {
+      font-size: 26rpx;
+      color: #7F8C8D;
+      display: block;
+      margin-bottom: 40rpx;
+    }
+    
+    .invite-code-box {
+      background: #F8F9FA;
+      padding: 30rpx;
+      border-radius: 24rpx;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 50rpx;
+      border: 2rpx dashed var(--primary);
+      
+      .code-val {
+        font-size: 48rpx;
+        font-weight: 900;
+        color: var(--primary);
+        letter-spacing: 4rpx;
+      }
+      
+      .copy-btn {
+        font-size: 24rpx;
+        color: #fff;
+        background: var(--primary);
+        padding: 10rpx 24rpx;
+        border-radius: 100rpx;
+        font-weight: bold;
+      }
+    }
+    
+    .qr-placeholder {
+      width: 280rpx;
+      height: 280rpx;
+      background: #fff;
+      border: 2rpx solid #F0F2F5;
+      border-radius: 30rpx;
+      margin: 0 auto 30rpx;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 16rpx;
+      color: #BDC3C7;
+      font-size: 22rpx;
+      
+      .qr-icon { font-size: 80rpx; }
+    }
+  }
+  
+  .close-modal-btn.prim {
+    background: var(--primary);
+    color: #fff;
+  }
+}
+
+.input-box {
+  margin: 20rpx 0 40rpx;
+  .join-input {
+    background: #F8F9FA;
+    height: 100rpx;
+    border-radius: 24rpx;
+    padding: 0 40rpx;
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #2C3E50;
+    text-align: center;
+  }
+}
+
+.modal-tips {
+  font-size: 24rpx;
+  color: #BDC3C7;
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.modal-btns {
+  display: flex;
+  gap: 30rpx;
+  
+  button {
+    flex: 1;
+    height: 90rpx;
+    line-height: 90rpx;
+    border-radius: 100rpx;
+    font-size: 28rpx;
+    font-weight: bold;
+    border: none;
+    &::after { border: none; }
+  }
+  
+  .m-btn-sub {
+    background: #F8F9FA;
+    color: #7F8C8D;
+  }
+  
+  .m-btn-main {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 8rpx 20rpx var(--primary-shadow);
   }
 }
 

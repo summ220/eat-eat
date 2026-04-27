@@ -41,19 +41,27 @@ onShow(() => {
   }
 })
 
-const save = () => {
+const eatCo = uniCloud.importObject('eat-co')
+
+const save = async () => {
   if (!name.value) return uni.showToast({ icon: 'none', title: '请输入名称' })
-  let list = uni.getStorageSync('shop') || []
-  list.unshift({ 
-    id: 'shop_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-    name: name.value, 
-    num: num.value, 
-    category: category.value, 
-    price: price.value,
-    done: false 
-  })
-  uni.setStorageSync('shop', list)
-  uni.navigateBack()
+  
+  try {
+    await eatCo.addShop({
+      name: name.value,
+      num: num.value,
+      category: category.value,
+      price: price.value,
+      done: false,
+      family_id: uni.getStorageSync('family_id') || 'default_family'
+    })
+    uni.showToast({ icon: 'success', title: '添加成功' })
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 1000)
+  } catch (e) {
+    uni.showToast({ title: '添加失败', icon: 'none' })
+  }
 }
 </script>
 
