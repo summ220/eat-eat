@@ -77,7 +77,7 @@ const makeRecipe = (item, index) => ({
   own: item.own !== undefined ? item.own : true
 })
 
-const eatCo = uniCloud.importObject('eat-co')
+import eatCo from '@/common/localDB.js'
 
 const loadRecipes = async () => {
   const familyId = uni.getStorageSync('family_id') || 'default_family';

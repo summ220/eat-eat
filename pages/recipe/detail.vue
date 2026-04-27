@@ -78,8 +78,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import eatCo from '@/common/localDB.js'
 
 const recipeId = ref('')
 const recipe = ref(null)
@@ -94,13 +93,19 @@ onLoad((options) => {
 })
 
 onShow(() => {
-  stockList.value = uni.getStorageSync('stock') || []
+  loadStock()
   loadRecipe()
 })
 
-const loadRecipe = () => {
-  const list = uni.getStorageSync('recipe_list') || []
-  const target = list.find(r => r.id === recipeId.value)
+const loadStock = async () => {
+  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  stockList.value = await eatCo.getStockList(familyId)
+}
+
+const loadRecipe = async () => {
+  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  const list = await eatCo.getRecipeList(familyId)
+  const target = list.find(r => (r._id || r.id) === recipeId.value)
   if (target) {
     recipe.value = target
   } else {
@@ -132,40 +137,41 @@ const seasoningIngredients = computed(() => {
   return ingredientsWithStock.value.filter(ing => ing.isSeasoning)
 })
 
-const toggleFavorite = () => {
+const toggleFavorite = async () => {
   if (!recipe.value) return
-  recipe.value.favorite = !recipe.value.favorite
+  const newFav = !recipe.value.favorite
+  recipe.value.favorite = newFav
   
-  const list = uni.getStorageSync('recipe_list') || []
-  const idx = list.findIndex(r => r.id === recipe.value.id)
-  if (idx > -1) {
-    list[idx].favorite = recipe.value.favorite
-    uni.setStorageSync('recipe_list', list)
-    uni.showToast({ title: recipe.value.favorite ? '已收藏' : '已取消', icon: 'none' })
+  try {
+    await eatCo.updateRecipe(recipe.value._id || recipe.value.id, { favorite: newFav })
+    uni.showToast({ title: newFav ? '已收藏' : '已取消', icon: 'none' })
+  } catch (e) {
+    recipe.value.favorite = !newFav
+    uni.showToast({ title: '操作失败', icon: 'none' })
   }
 }
 
 // 供一键加入和单点加入调用
-const pushToShop = (ing) => {
-  let shopList = uni.getStorageSync('shop') || []
+const pushToShop = async (ing) => {
+  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  const shopList = await eatCo.getShopList(familyId)
   const alreadyInShop = shopList.some(s => !s.done && s.name.includes(ing.name))
   if (!alreadyInShop) {
-    shopList.unshift({
-      id: 'shop_' + Date.now() + '_' + Math.random().toString().slice(-4),
+    await eatCo.addShop({
       name: ing.name,
       num: ing.amount,
       price: '',
       category: '其他',
-      done: false
+      done: false,
+      family_id: familyId
     })
-    uni.setStorageSync('shop', shopList)
     return true
   }
   return false
 }
 
-const addSingleToCart = (ing) => {
-  const added = pushToShop(ing)
+const addSingleToCart = async (ing) => {
+  const added = await pushToShop(ing)
   if (added) {
     uni.showToast({ title: '已加入购物清单', icon: 'none' })
   } else {
@@ -173,7 +179,7 @@ const addSingleToCart = (ing) => {
   }
 }
 
-const addMissingToCart = () => {
+const addMissingToCart = async () => {
   // 不过滤调料，如果不是调料且没有库存，就加入。如果是调料则忽略（用户通过单点旁边的加号添加）
   const missing = ingredientsWithStock.value.filter(ing => !ing.isSeasoning && !ing.hasInStock)
   if (missing.length === 0) {
@@ -181,9 +187,9 @@ const addMissingToCart = () => {
   }
   
   let addedCount = 0
-  missing.forEach(ing => {
-    if (pushToShop(ing)) addedCount++
-  })
+  for (const ing of missing) {
+    if (await pushToShop(ing)) addedCount++
+  }
   
   if (addedCount > 0) {
     uni.showToast({ title: `已将 ${addedCount} 种材料加入清单`, icon: 'none' })
@@ -210,13 +216,15 @@ const deleteRecipe = () => {
     title: '确认删除',
     content: '确定要删除这个菜谱吗？',
     confirmColor: '#FF7DA8',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        let list = uni.getStorageSync('recipe_list') || []
-        list = list.filter(r => r.id !== recipeId.value)
-        uni.setStorageSync('recipe_list', list)
-        uni.showToast({ title: '已删除', icon: 'success' })
-        setTimeout(() => uni.navigateBack(), 1000)
+        try {
+          await eatCo.deleteRecipe(recipe.value._id || recipe.value.id)
+          uni.showToast({ title: '已删除', icon: 'success' })
+          setTimeout(() => uni.navigateBack(), 1000)
+        } catch (e) {
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        }
       }
     }
   })

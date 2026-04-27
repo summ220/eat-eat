@@ -118,7 +118,7 @@ onLoad((options) => {
   }
 })
 
-const eatCo = uniCloud.importObject('eat-co')
+import eatCo from '@/common/localDB.js'
 
 const loadData = async () => {
   uni.showLoading({ title: '加载中...' })

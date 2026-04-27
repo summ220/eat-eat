@@ -52,7 +52,7 @@ onShow(() => {
   }
 })
 
-const eatCo = uniCloud.importObject('eat-co')
+import eatCo from '@/common/localDB.js'
 
 const save = async () => {
   if (!name.value) return uni.showToast({ icon: 'none', title: '请输入名称' })

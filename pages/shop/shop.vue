@@ -123,7 +123,7 @@ const totalCost = computed(() => {
   return cost.toFixed(2);
 })
 
-const eatCo = uniCloud.importObject('eat-co')
+import eatCo from '@/common/localDB.js'
 
 onShow(() => {
   categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']

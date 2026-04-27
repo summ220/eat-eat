@@ -121,7 +121,7 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
-const eatCo = uniCloud.importObject('eat-co')
+import eatCo from '@/common/localDB.js'
 
 // ---- 核心状态 ----
 const categories = ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']

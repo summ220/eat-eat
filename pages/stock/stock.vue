@@ -102,7 +102,7 @@ const categories = ref([])
 const currentCategory = ref('全部')
 
 const showModal = ref(false)
-const eatCo = uniCloud.importObject('eat-co')
+import eatCo from '@/common/localDB.js'
 
 const editData = ref({
   _id: '',

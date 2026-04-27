@@ -227,7 +227,7 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
-const eatCo = uniCloud.importObject('eat-co')
+import eatCo from '@/common/localDB.js'
 const familyName = ref(uni.getStorageSync('family_name') || '快乐干饭小家')
 const familyId = ref(uni.getStorageSync('family_id') || 'default_family')
 

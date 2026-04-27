@@ -50,7 +50,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const eatCo = uniCloud.importObject('eat-co')
+import eatCo from '@/common/localDB.js'
 
 const defaultMenu = [
   '番茄炒蛋', '可乐鸡翅', '青椒肉丝', '蒜蓉西兰花',
