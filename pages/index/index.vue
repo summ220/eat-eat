@@ -48,7 +48,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 
 import eatCo from '@/common/localDB.js'
 
@@ -61,17 +62,21 @@ const menuList = ref([...defaultMenu])
 const result = ref('点击开始抽菜～')
 
 const loadMenu = async () => {
+  const familyId = uni.getStorageSync('family_id') || 'default_family'
   try {
-    const data = await eatCo.getRecipeList()
+    const data = await eatCo.getRecipeList(familyId)
     if (data && data.length > 0) {
       menuList.value = data.map(item => item.name)
+    } else {
+      menuList.value = [...defaultMenu]
     }
   } catch (e) {
     console.error('获取菜谱失败', e)
+    menuList.value = [...defaultMenu]
   }
 }
 
-onMounted(() => {
+onShow(() => {
   loadMenu()
 })
 

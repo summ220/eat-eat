@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view class="page" @click="exitEditMode">
     <view class="search-panel">
       <view class="search-box">
         <text class="search-icon">🔍</text>
@@ -23,8 +23,26 @@
       >{{ category }}</view>
     </scroll-view>
 
+    <!-- 编辑模式提示栏 -->
+    <view class="edit-bar" v-if="editMode" @click.stop>
+      <text class="edit-bar-tip">长按菜谱可删除，点击空白退出</text>
+      <text class="edit-bar-done" @click="exitEditMode">完成</text>
+    </view>
+
     <view class="card-list">
-      <view class="recipe-card" v-for="recipe in visibleRecipes" :key="recipe.id" @click="goDetail(recipe.id)">
+      <view
+        class="recipe-card"
+        :class="{ 'edit-shake': editMode }"
+        v-for="recipe in visibleRecipes"
+        :key="recipe.id"
+        @click.stop="handleCardClick(recipe.id)"
+        @longpress="enterEditMode"
+      >
+        <!-- 删除角标按钮 -->
+        <view class="delete-badge" v-if="editMode" @click.stop="confirmDelete(recipe)">
+          <text class="delete-badge-icon">✕</text>
+        </view>
+
         <image class="cover" :src="recipe.cover || defaultCover" mode="aspectFill" />
         <view class="card-body">
           <view class="card-header">
@@ -45,7 +63,7 @@
       </view>
 
       <view class="more-row" v-if="page * pageSize < filteredRecipes.length">
-        <button class="more-btn" @click="loadMore">加载更多</button>
+        <button class="more-btn" @click.stop="loadMore">加载更多</button>
       </view>
     </view>
   </view>
@@ -62,7 +80,7 @@ const pageSize = ref(6)
 const recipes = ref([])
 
 const categories = ['全部', '家常菜', '快手菜', '素食', '肉类', '汤品']
-const defaultCover = 'https://img-blog.csdnimg.cn/20240110133807328.png'
+const defaultCover = 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png'
 
 const makeRecipe = (item, index) => ({
   id: item.id || `recipe_${Date.now()}_${index}`,
@@ -138,8 +156,48 @@ const openEditor = () => {
   uni.navigateTo({ url: '/pages/recipe/edit' })
 }
 
+// ===== 编辑模式 & 删除 =====
+const editMode = ref(false)
+
+const enterEditMode = () => {
+  editMode.value = true
+}
+
+const exitEditMode = () => {
+  editMode.value = false
+}
+
+const handleCardClick = (id) => {
+  if (editMode.value) {
+    // 编辑模式下点卡片主体退出编辑模式（@click.stop 阻断了冒泡，需在此处主动退出）
+    exitEditMode()
+    return
+  }
+  goDetail(id)
+}
+
+const confirmDelete = (recipe) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${recipe.name}」吗？此操作不可恢复。`,
+    confirmColor: '#FF7DA8',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await eatCo.deleteRecipe(recipe._id)
+          recipes.value = recipes.value.filter(r => r._id !== recipe._id)
+          uni.showToast({ title: '已删除', icon: 'success' })
+        } catch (e) {
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        }
+      }
+    }
+  })
+}
+
 onShow(() => {
   loadRecipes()
+  exitEditMode()
 })
 
 onReachBottom(() => {
@@ -234,6 +292,31 @@ onReachBottom(() => {
   box-shadow: 0 12rpx 24rpx rgba(255, 125, 168, 0.3);
 }
 
+/* 编辑模式提示栏 */
+.edit-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 125, 168, 0.1);
+  border-radius: 20rpx;
+  padding: 18rpx 30rpx;
+  margin-bottom: 20rpx;
+  border: 2rpx solid rgba(255, 125, 168, 0.3);
+}
+.edit-bar-tip {
+  font-size: 24rpx;
+  color: #FF7DA8;
+}
+.edit-bar-done {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #FF7DA8;
+  padding: 8rpx 20rpx;
+  background: #fff;
+  border-radius: 100rpx;
+  box-shadow: 0 4rpx 12rpx rgba(255, 125, 168, 0.2);
+}
+
 /* 卡片列表 */
 .card-list {
   display: flex;
@@ -241,14 +324,58 @@ onReachBottom(() => {
   gap: 32rpx;
 }
 .recipe-card {
+  position: relative;
   background: #ffffff;
   border-radius: 40rpx;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.04);
   transition: transform 0.2s;
   &:active {
     transform: scale(0.98);
   }
+}
+
+/* 卡片主体圆角裁切：让图片不溢出 */
+.recipe-card > .cover {
+  border-radius: 40rpx 40rpx 0 0;
+  overflow: hidden;
+}
+
+/* 删除角标 */
+.delete-badge {
+  position: absolute;
+  top: -18rpx;
+  right: -18rpx;
+  z-index: 10;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: #FF4757;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6rpx 20rpx rgba(255, 71, 87, 0.45);
+  animation: badge-pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.delete-badge-icon {
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* 编辑模式抖动动画 */
+.edit-shake {
+  animation: card-shake 0.5s ease infinite alternate;
+  transform-origin: center;
+}
+@keyframes card-shake {
+  0%   { transform: rotate(-0.5deg); }
+  100% { transform: rotate(0.5deg); }
+}
+@keyframes badge-pop {
+  0%   { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 .cover {
   width: 100%;

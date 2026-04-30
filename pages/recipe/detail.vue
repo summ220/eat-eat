@@ -78,6 +78,8 @@
 </template>
 
 <script setup>
+import { ref, computed } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import eatCo from '@/common/localDB.js'
 
 const recipeId = ref('')

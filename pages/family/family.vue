@@ -410,9 +410,9 @@ const quickFuncs = ref([
 
 // 家庭成员
 const members = ref([
-  { nick: '爸爸', role: '大主厨', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png', isSelf: true },
-  { nick: '妈妈', role: '采购总监', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png', isSelf: false },
-  { nick: '宝宝', role: '干饭人', avatar: 'https://img-blog.csdnimg.cn/20240110133807328.png', isSelf: false }
+  { nick: '爸爸', role: '大主厨', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: true },
+  { nick: '妈妈', role: '采购总监', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: false },
+  { nick: '宝宝', role: '干饭人', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: false }
 ])
 
 // 消费趋势
