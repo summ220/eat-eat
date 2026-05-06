@@ -1,8 +1,6 @@
 <template>
+  <custom-header title="花费账本" icon="💰" />
   <view class="page" :style="themeStyle">
-    <custom-header title="花费账本" icon="💰" />
-
-    
     <!-- 月份切换栏 -->
     <view class="month-selector">
       <view class="arrow-btn" @click="changeMonth(-1)"><text class="arrow">◀</text></view>
@@ -403,11 +401,10 @@ const touchEnd = (e, item) => {
 
 <style lang="less" scoped>
 .page {
-  background: #FAFAFA;
+  background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 100%);
+  background-color: var(--primary-light);
   min-height: ~"calc(100vh - 80rpx)";
-  padding: 30rpx;
-  padding-bottom: 160rpx;
-  background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 600rpx);
+  padding: 30rpx 24rpx 40rpx;
 }
 
 // 头部月份切换栏

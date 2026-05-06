@@ -1,7 +1,6 @@
 <template>
+  <custom-header title="家里食材" icon="🍅" />
   <view class="page" :style="themeStyle">
-    <custom-header title="家里食材" icon="🍅" />
-
     <view class="top-actions-bar">
       <button class="add-btn" @click="goAdd">+ 添加</button>
     </view>
@@ -109,7 +108,7 @@
           <input class="add-cat-input" v-model="newCat" placeholder="新分类名称" />
           <view class="add-cat-btn-modal" @click="addCategory">添加</view>
         </view>
-        <button class="close-modal-btn" @click="showCatModal = false">完成</button>
+        <!-- <button class="close-modal-btn" @click="showCatModal = false">完成</button> -->
       </view>
     </view>
   </view>
@@ -138,6 +137,7 @@ const addCategory = () => {
   categories.value.push(newCat.value.trim())
   newCat.value = ''
   uni.setStorageSync('ingredient_categories', categories.value)
+  showCatModal.value = false
 }
 const removeCategory = (idx) => {
   categories.value.splice(idx, 1)

@@ -1,6 +1,6 @@
 <template>
   <view>
-    <view class="custom-header" :style="{ paddingTop: statusBarHeight + 'px', background: bg }">
+    <view class="custom-header" :style="headerStyle">
       <view class="header-content">
         <view class="left-icon" v-if="back" @click="goBack">
           <text class="back-icon">←</text>
@@ -17,17 +17,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 
 const props = defineProps({
   title: String,
   icon: String,
   back: { type: Boolean, default: false },
-  bg: { type: String, default: 'var(--primary-light, #FFF5F7)' },
   placeholder: { type: Boolean, default: true }
 })
 
+const themes = [
+  { light: '#FFE8EE' },
+  { light: '#E6F7F0' },
+  { light: '#E8F0FE' },
+  { light: '#FEF4E8' }
+]
+
 const statusBarHeight = ref(20)
+const currentTheme = ref(0)
 
 onMounted(() => {
   try {
@@ -35,6 +43,19 @@ onMounted(() => {
     statusBarHeight.value = info.statusBarHeight || 20
   } catch (e) {
     statusBarHeight.value = 20
+  }
+  currentTheme.value = uni.getStorageSync('current_theme') || 0
+})
+
+onShow(() => {
+  currentTheme.value = uni.getStorageSync('current_theme') || 0
+})
+
+const headerStyle = computed(() => {
+  const t = themes[currentTheme.value] || themes[0]
+  return {
+    paddingTop: statusBarHeight.value + 'px',
+    background: t.light
   }
 })
 
