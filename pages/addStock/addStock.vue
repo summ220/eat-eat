@@ -1,5 +1,6 @@
 <template>
-  <view class="page">
+  <view class="page" :style="themeStyle">
+    <custom-header title="添加食材" icon="🍅" :back="true" />
     <view class="card">
       <text class="title">🍅 添加食材</text>
       
@@ -32,7 +33,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
 const name = ref('')
@@ -50,6 +51,20 @@ onShow(() => {
   if (!categories.value.includes(category.value)) {
     category.value = categories.value[0] || '其他'
   }
+  currentTheme.value = uni.getStorageSync('current_theme') || 0
+})
+
+// 主题
+ const themes = [
+  { color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
+  { color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
+  { color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
+  { color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
+]
+const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
+const themeStyle = computed(() => {
+  const t = themes[currentTheme.value]
+  return `--primary:${t.color};--primary-grad:${t.gradient};--primary-light:${t.light};--primary-shadow:${t.shadow};`
 })
 
 import eatCo from '@/common/localDB.js'
@@ -80,7 +95,7 @@ const save = async () => {
   background: #FAFAFA;
   padding: 40rpx;
   min-height: ~"calc(100vh - 80rpx)";
-  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 400rpx);
+  background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }
 .card {
   background: #fff;
@@ -118,9 +133,9 @@ const save = async () => {
   font-size: 26rpx;
   transition: all 0.3s;
   &.active {
-    background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+    background: var(--primary-grad);
     color: #fff;
-    box-shadow: 0 4rpx 12rpx rgba(255, 125, 168, 0.25);
+    box-shadow: 0 4rpx 12rpx var(--primary-shadow);
   }
 }
 .input {
@@ -133,7 +148,7 @@ const save = async () => {
   transition: all 0.3s;
   margin-bottom: 30rpx;
   &:focus {
-    border: 2rpx solid #FF8DA1;
+    border: 2rpx solid var(--primary);
     background: #FFF;
   }
 }
@@ -150,7 +165,7 @@ const save = async () => {
   }
 }
 .save-btn {
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--primary-grad);
   color: #fff;
   border-radius: 100rpx;
   height: 90rpx;
@@ -159,7 +174,7 @@ const save = async () => {
   font-weight: bold;
   margin-top: 40rpx;
   border: none;
-  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
+  box-shadow: 0 8rpx 20rpx var(--primary-shadow);
   transition: transform 0.2s;
   &:active { transform: scale(0.96); }
   &::after { border: none; }

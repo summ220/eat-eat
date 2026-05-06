@@ -309,15 +309,16 @@ const greeting = ref(greetingStr)
 
 // 主题系统
 const themes = [
-  { name: '温柔粉', color: '#FF8DA1', gradient: 'linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%)', light: '#FFF5F7', shadow: 'rgba(255,141,161,0.2)' },
-  { name: '清新绿', color: '#68CBA6', gradient: 'linear-gradient(135deg, #8EE0C0 0%, #68CBA6 100%)', light: '#F2FBF7', shadow: 'rgba(104,203,166,0.2)' },
-  { name: '雾霾蓝', color: '#7AA3ED', gradient: 'linear-gradient(135deg, #9CBDF5 0%, #7AA3ED 100%)', light: '#F3F7FE', shadow: 'rgba(122,163,237,0.2)' },
-  { name: '暖杏黄', color: '#F5B96B', gradient: 'linear-gradient(135deg, #FAD699 0%, #F5B96B 100%)', light: '#FEFAF3', shadow: 'rgba(245,185,107,0.2)' }
+  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
+  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
+  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
+  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
 ]
 const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
 const switchTheme = (idx) => {
   currentTheme.value = idx
   uni.setStorageSync('current_theme', idx)
+  uni.setTabBarStyle({ selectedColor: themes[idx].color })
 }
 const themeStyle = computed(() => {
   const t = themes[currentTheme.value]
@@ -476,10 +477,10 @@ const handleSetting = (name) => {
 
 /* 1. 顶部大卡片 */
 .top-card {
-  height: 380rpx;
+  height: 320rpx;
   background: var(--primary-grad);
   border-radius: 0 0 60rpx 60rpx;
-  padding: 60rpx 40rpx 0;
+  padding: 140rpx 40rpx 0;
   box-shadow: 0 16rpx 40rpx var(--primary-shadow);
   color: #fff;
   position: relative;
@@ -539,7 +540,7 @@ const handleSetting = (name) => {
       margin-bottom: 4rpx;
     }
     .tip {
-      font-size: 20rpx;
+      font-size: 18rpx;
       font-weight: bold;
     }
   }

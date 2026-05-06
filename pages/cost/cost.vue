@@ -1,5 +1,7 @@
 <template>
-  <view class="page">
+  <view class="page" :style="themeStyle">
+    <custom-header title="花费账本" icon="💰" />
+
     
     <!-- 月份切换栏 -->
     <view class="month-selector">
@@ -128,6 +130,24 @@ const categories = ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
 const currentCategory = ref('全部')
 const list = ref([])
 
+// 主题系统
+const themes = [
+  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
+  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
+  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
+  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
+]
+const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
+const themeStyle = computed(() => {
+  const t = themes[currentTheme.value]
+  return `
+    --primary: ${t.color};
+    --primary-grad: ${t.gradient};
+    --primary-light: ${t.light};
+    --primary-shadow: ${t.shadow};
+  `
+})
+
 // 月份选中逻辑
 const currentDate = ref(new Date())
 
@@ -172,6 +192,7 @@ const editForm = ref({
 
 // ---- 初始化与加载 ----
 onShow(() => {
+  currentTheme.value = uni.getStorageSync('current_theme') || 0
   load()
 })
 
@@ -386,7 +407,7 @@ const touchEnd = (e, item) => {
   min-height: ~"calc(100vh - 80rpx)";
   padding: 30rpx;
   padding-bottom: 160rpx;
-  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 600rpx);
+  background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 600rpx);
 }
 
 // 头部月份切换栏
@@ -398,7 +419,7 @@ const touchEnd = (e, item) => {
   .arrow-btn {
     padding: 10rpx 40rpx;
     .arrow {
-      color: #FF8DA1;
+      color: var(--primary);
       font-size: 28rpx;
     }
   }
@@ -414,11 +435,11 @@ const touchEnd = (e, item) => {
 // 顶部本月统计卡片
 .header-card {
   position: relative;
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--primary-grad);
   border-radius: 40rpx;
   padding: 60rpx 30rpx;
   text-align: center;
-  box-shadow: 0 16rpx 40rpx rgba(255, 141, 161, 0.25);
+  box-shadow: 0 16rpx 40rpx var(--primary-shadow);
   margin-bottom: 40rpx;
   overflow: hidden;
   
@@ -477,10 +498,10 @@ const touchEnd = (e, item) => {
     font-size: 26rpx;
     transition: all 0.3s;
     &.active {
-      background: #FF8DA1;
+      background: var(--primary);
       color: #fff;
       font-weight: bold;
-      box-shadow: 0 4rpx 12rpx rgba(255, 141, 161, 0.2);
+      box-shadow: 0 4rpx 12rpx var(--primary-shadow);
     }
   }
 }
@@ -489,7 +510,7 @@ const touchEnd = (e, item) => {
 .list-section {
   .empty {
     text-align: center;
-    color: #FFB3C1;
+    color: var(--primary);
     font-size: 28rpx;
     margin-top: 80rpx;
   }
@@ -528,7 +549,7 @@ const touchEnd = (e, item) => {
       }
       .group-arrow {
         font-size: 24rpx;
-        color: #FF8DA1;
+        color: var(--primary);
         transition: transform 0.3s;
         &.rotated {
           transform: rotate(90deg);
@@ -546,7 +567,7 @@ const touchEnd = (e, item) => {
 .list-item {
   position: relative;
   overflow: hidden;
-  border-bottom: 2rpx solid #FFF5F7;
+  border-bottom: 2rpx solid var(--primary-light);
   &:last-child {
     border-bottom: none;
   }
@@ -588,8 +609,8 @@ const touchEnd = (e, item) => {
   }
 
   .cat-tag {
-    background: #FFF0F3;
-    color: #FF8DA1;
+    background: var(--primary-light);
+    color: var(--primary);
     font-size: 20rpx;
     padding: 6rpx 16rpx;
     border-radius: 8rpx;
@@ -614,7 +635,7 @@ const touchEnd = (e, item) => {
   .price {
     font-size: 34rpx;
     font-weight: bold;
-    color: #FF8DA1;
+    color: var(--primary);
   }
 }
 
@@ -623,11 +644,11 @@ const touchEnd = (e, item) => {
   position: fixed;
   right: 40rpx;
   bottom: 160rpx;
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--primary-grad);
   color: #fff;
   border-radius: 100rpx;
   padding: 24rpx 40rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255, 125, 168, 0.35);
+  box-shadow: 0 8rpx 24rpx var(--primary-shadow);
   font-size: 32rpx;
   font-weight: bold;
   z-index: 50;
@@ -681,7 +702,7 @@ const touchEnd = (e, item) => {
     border: 2rpx solid transparent;
     transition: border 0.3s;
     &:focus {
-      border: 2rpx solid #FF8DA1;
+      border: 2rpx solid var(--primary);
     }
   }
   .picker-line {
@@ -704,7 +725,7 @@ const touchEnd = (e, item) => {
     font-size: 26rpx;
     transition: all 0.2s;
     &.active {
-      background: #FF8DA1;
+      background: var(--primary);
       color: #fff;
     }
   }
@@ -728,9 +749,9 @@ const touchEnd = (e, item) => {
     color: #666;
   }
   .btn-confirm {
-    background: #FF8DA1;
+    background: var(--primary-grad);
     color: #fff;
-    box-shadow: 0 4rpx 16rpx rgba(255, 141, 161, 0.3);
+    box-shadow: 0 4rpx 16rpx var(--primary-shadow);
   }
 }
 </style>

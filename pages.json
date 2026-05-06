@@ -111,6 +111,7 @@
 		]
 	},
 	"globalStyle": {
+		"navigationStyle": "custom",
 		"navigationBarBackgroundColor": "#FFF5F7",
 		"navigationBarTitleText": "家庭小厨房",
 		"navigationBarTextStyle": "black",

@@ -1,5 +1,6 @@
 <template>
-  <view class="page" @click="exitEditMode">
+  <view class="page" @click="exitEditMode" :style="themeStyle">
+    <custom-header title="菜谱" icon="🍳" />
     <view class="search-panel">
       <view class="search-box">
         <text class="search-icon">🔍</text>
@@ -78,6 +79,24 @@ const currentCategory = ref('全部')
 const page = ref(1)
 const pageSize = ref(6)
 const recipes = ref([])
+
+// 主题系统
+const themes = [
+  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
+  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
+  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
+  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
+]
+const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
+const themeStyle = computed(() => {
+  const t = themes[currentTheme.value]
+  return `
+    --primary: ${t.color};
+    --primary-grad: ${t.gradient};
+    --primary-light: ${t.light};
+    --primary-shadow: ${t.shadow};
+  `
+})
 
 const categories = ['全部', '家常菜', '快手菜', '素食', '肉类', '汤品']
 const defaultCover = 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png'
@@ -196,6 +215,7 @@ const confirmDelete = (recipe) => {
 }
 
 onShow(() => {
+  currentTheme.value = uni.getStorageSync('current_theme') || 0
   loadRecipes()
   exitEditMode()
 })
@@ -207,7 +227,8 @@ onReachBottom(() => {
 
 <style lang="less" scoped>
 .page {
-  background: #FFF5F7;
+  background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 100%);
+  background-color: var(--primary-light);
   min-height: ~"calc(100vh - 80rpx)";
   padding: 30rpx 24rpx 40rpx;
 }
@@ -215,9 +236,9 @@ onReachBottom(() => {
 /* 顶部搜索与操作区 */
 .search-panel {
   position: sticky;
-  top: 0;
+  top: 88rpx; /* account for custom header */
   z-index: 100;
-  background: #FFF5F7;
+  background: var(--primary-light);
   padding-bottom: 20rpx;
   display: flex;
   align-items: center;
@@ -237,59 +258,61 @@ onReachBottom(() => {
 .search-icon {
   margin-right: 16rpx;
   font-size: 32rpx;
-  color: #FF7DA8;
+  color: var(--primary);
   transition: transform 0.3s ease;
 }
 .search-input {
   flex: 1;
-  height: 48rpx;
+  height: 26rpx;
   font-size: 28rpx;
   color: #333;
   border: none;
   background: transparent;
 }
 .create-btn {
-  width: 160rpx;
-  height: 88rpx;
   border-radius: 100rpx;
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
-  color: #fff;
-  font-size: 28rpx;
-  font-weight: 800;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 10rpx 24rpx rgba(255, 125, 168, 0.25);
-  border: none;
+  padding: 0 36rpx;
+  height: 64rpx;
+  line-height: 60rpx;
+  font-size: 26rpx;
+  font-weight: bold;
   margin: 0;
-  padding: 0;
-  transition: opacity 0.2s;
-  &:active { opacity: 0.8; }
+  background: var(--primary-grad);
+  color: #fff;
+  border: none;
+  box-shadow: 0 6rpx 16rpx var(--primary-shadow);
+  transition: transform 0.2s;
+  &:active { transform: scale(0.95); }
 }
 
-/* 分类滚动条解决兼容横滚的方法：不使用 display flex，只用 white-space nowrap */
+/* 分类滞动条 */
 .category-bar {
   width: 100%;
   white-space: nowrap;
-  margin-bottom: 30rpx;
+  margin-bottom: 24rpx;
+  padding: 0 4rpx;
 }
 .category-chip {
-  display: inline-block;
-  padding: 16rpx 40rpx;
+  display: inline-flex;
+  align-items: center;
+  padding: 14rpx 36rpx;
   border-radius: 100rpx;
-  background: #ffffff;
-  color: #777;
-  font-size: 28rpx;
-  font-weight: bold;
-  box-shadow: 0 6rpx 16rpx rgba(0,0,0,0.02);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  margin-right: 20rpx;
+  background: rgba(0, 0, 0, 0.04);
+  color: #888;
+  font-size: 27rpx;
+  font-weight: 600;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  margin-right: 16rpx;
+  margin-left: 4rpx;
+  border: 2rpx solid transparent;
+  letter-spacing: 0.5rpx;
 }
 .category-chip.active {
-  background: #FF7DA8;
+  background: var(--primary-grad);
   color: #fff;
   transform: scale(1.05);
-  box-shadow: 0 12rpx 24rpx rgba(255, 125, 168, 0.3);
+  box-shadow: 0 8rpx 20rpx var(--primary-shadow);
+  border-color: transparent;
 }
 
 /* 编辑模式提示栏 */
@@ -297,24 +320,24 @@ onReachBottom(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 125, 168, 0.1);
+  background: var(--primary-light);
   border-radius: 20rpx;
   padding: 18rpx 30rpx;
   margin-bottom: 20rpx;
-  border: 2rpx solid rgba(255, 125, 168, 0.3);
+  border: 2rpx solid var(--primary);
 }
 .edit-bar-tip {
   font-size: 24rpx;
-  color: #FF7DA8;
+  color: var(--primary);
 }
 .edit-bar-done {
   font-size: 26rpx;
   font-weight: 800;
-  color: #FF7DA8;
+  color: var(--primary);
   padding: 8rpx 20rpx;
   background: #fff;
   border-radius: 100rpx;
-  box-shadow: 0 4rpx 12rpx rgba(255, 125, 168, 0.2);
+  box-shadow: 0 4rpx 12rpx var(--primary-shadow);
 }
 
 /* 卡片列表 */
@@ -381,7 +404,7 @@ onReachBottom(() => {
   width: 100%;
   height: 320rpx;
   display: block;
-  background-color: #FFF5F7;
+  background-color: var(--primary-light);
 }
 .card-body {
   padding: 30rpx;
@@ -408,8 +431,8 @@ onReachBottom(() => {
   font-size: 22rpx;
   font-weight: 800;
   margin-left: 20rpx;
-  color: #FF7DA8;
-  background-color: #FFF5F7;
+  color: var(--primary);
+  background-color: var(--primary-light);
 }
 .recipe-info {
   display: flex;
@@ -430,7 +453,7 @@ onReachBottom(() => {
   margin-left: auto;
   font-size: 36rpx;
   padding: 10rpx;
-  color: #FF7DA8;
+  color: var(--primary);
   transition: transform 0.2s;
   &:active {
     transform: scale(1.3);

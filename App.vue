@@ -7,6 +7,24 @@ export default {
 		if (!cats || cats.length === 0) {
 			uni.setStorageSync('ingredient_categories', ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他'])
 		}
+		this.setTabTheme()
+	},
+	onShow() {
+		this.setTabTheme()
+	},
+	methods: {
+		setTabTheme() {
+			const themes = [
+				{ name: '温柔粉', color: '#FF6B8B' },
+				{ name: '清新绿', color: '#4DB88F' },
+				{ name: '雾霾蓝', color: '#5B89E5' },
+				{ name: '暖杏黄', color: '#F2A13B' }
+			]
+			const currentTheme = uni.getStorageSync('current_theme') || 0
+			uni.setTabBarStyle({
+				selectedColor: themes[currentTheme].color
+			})
+		}
 	}
 }
 </script>

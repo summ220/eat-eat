@@ -1,5 +1,6 @@
 <template>
-  <view class="page">
+  <view class="page" :style="themeStyle">
+    <!-- <custom-header title="吃什么" icon="🍓" /> -->
     <view class="header">
       <view class="title-wrap">
         <text class="main-title">🍓 今天吃什么</text>
@@ -48,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
 import eatCo from '@/common/localDB.js'
@@ -58,8 +59,26 @@ const defaultMenu = [
   '红烧肉', '酸辣土豆丝', '水煮肉片', '香菇滑鸡', '蛋炒饭',
   '粉蒸排骨', '糖醋里脊', '麻婆豆腐', '手撕包菜', '清炒菜心'
 ]
-const menuList = ref([...defaultMenu])
+const menuList = ref([...defaultMenu])      // 来自菜谱的菜单（原始）
 const result = ref('点击开始抽菜～')
+
+// 主题系统
+const themes = [
+  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
+  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
+  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
+  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
+]
+const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
+const themeStyle = computed(() => {
+  const t = themes[currentTheme.value]
+  return `
+    --primary: ${t.color};
+    --primary-grad: ${t.gradient};
+    --primary-light: ${t.light};
+    --primary-shadow: ${t.shadow};
+  `
+})
 
 const loadMenu = async () => {
   const familyId = uni.getStorageSync('family_id') || 'default_family'
@@ -68,26 +87,43 @@ const loadMenu = async () => {
     if (data && data.length > 0) {
       menuList.value = data.map(item => item.name)
     } else {
-      menuList.value = [...defaultMenu]
+      menuList.value = []
     }
   } catch (e) {
     console.error('获取菜谱失败', e)
-    menuList.value = [...defaultMenu]
+    menuList.value = []
   }
 }
 
 onShow(() => {
+  currentTheme.value = uni.getStorageSync('current_theme') || 0
   loadMenu()
 })
 
 const getRandomDish = () => {
-  if (menuList.value.length === 0) return
+  let pool = []
+  if (menuList.value.length > 10) {
+    // 菜谱超过10个：纯从菜谱中抽
+    pool = [...menuList.value]
+  } else if (menuList.value.length > 0) {
+    // 菜谱不足10个：菜谱菜权重×3，混入默认菜
+    pool = [
+      ...menuList.value,
+      ...menuList.value,
+      ...menuList.value,
+      ...defaultMenu
+    ]
+  } else {
+    // 没有菜谱：纯从默认菜单抽
+    pool = [...defaultMenu]
+  }
+
   let times = 0
   let timer = setInterval(() => {
     times++
-    const i = Math.floor(Math.random() * menuList.value.length)
-    result.value = menuList.value[i]
-    if (times > 10) clearInterval(timer)
+    const i = Math.floor(Math.random() * pool.length)
+    result.value = pool[i]
+    if (times > 12) clearInterval(timer)
   }, 50)
 }
 const goToStock = () => uni.switchTab({ url: '/pages/stock/stock' })
@@ -101,11 +137,11 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
   padding: 40rpx;
   background: #FAFAFA;
   min-height: ~"calc(100vh - 80rpx)";
-  background-image: linear-gradient(180deg, #FFF5F7 0%, #FAFAFA 100%);
-  background-color: #FFF1F5;
+  background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 100%);
+  background-color: var(--primary-light);
 }
 .header {
-  margin: 10rpx 0 60rpx;
+  margin: 130rpx 0 60rpx;
   .title-wrap {
     display: flex;
     align-items: center;
@@ -118,7 +154,7 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
     letter-spacing: 2rpx;
   }
   .badge {
-    background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+    background: var(--primary-grad);
     color: #fff;
     font-size: 20rpx;
     padding: 6rpx 14rpx;
@@ -126,7 +162,7 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
     margin-left: 20rpx;
     font-weight: bold;
     transform: translateY(-8rpx);
-    box-shadow: 0 4rpx 10rpx rgba(255, 141, 161, 0.3);
+    box-shadow: 0 4rpx 10rpx var(--primary-shadow);
   }
   .sub-title {
     font-size: 26rpx;
@@ -136,11 +172,11 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
 
 .random-card {
   position: relative;
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--primary-grad);
   border-radius: 40rpx;
   padding: 80rpx 40rpx;
   text-align: center;
-  box-shadow: 0 16rpx 40rpx rgba(255, 141, 161, 0.25);
+  box-shadow: 0 16rpx 40rpx var(--primary-shadow);
   margin-bottom: 60rpx;
   overflow: hidden;
   
@@ -176,7 +212,7 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
   }
   .btn-round {
     background: #fff;
-    color: #FF7DA8;
+    color: var(--primary);
     border-radius: 100rpx;
     font-size: 30rpx;
     font-weight: bold;
@@ -207,6 +243,10 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
 }
 .quick-item {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   background: #fff;
   border-radius: 36rpx;
   padding: 40rpx 30rpx;
