@@ -6,13 +6,34 @@
         <view class="user-info">
           <image class="avatar" src="https://img-blog.csdnimg.cn/20240110133807328.png" mode="aspectFill" />
           <view class="name-box">
-            <input class="family-name" v-model="familyName" @blur="saveFamilyName" placeholder="输入家庭名称" />
+            <view class="family-name-wrap">
+              <text class="family-name">{{ familyName }}</text>
+              <view class="edit-icon-btn" @click="openEditFamilyName">
+                <text class="e-icon">✏️</text>
+              </view>
+            </view>
             <text class="greeting">{{ greeting }}</text>
           </view>
         </view>
-        <view class="weather-icon">
+        <!-- <view class="weather-icon">
           <text class="emoji">🌤️</text>
           <text class="tip">宜煲汤</text>
+        </view> -->
+      </view>
+
+      <!-- 日期与天气磨砂胶囊 (独立标签) -->
+      <view class="glass-capsule-row">
+        <view class="glass-capsule">
+          <text class="c-text">{{ dateInfo.gregorian }}</text>
+          <view class="c-divider"></view>
+          <text class="c-text">{{ dateInfo.lunar }}</text>
+        </view>
+        <view class="glass-capsule">
+          <text class="c-icon">{{ dateInfo.weatherIcon }}</text>
+          <text class="c-text">{{ dateInfo.weather }} {{ dateInfo.temp }}</text>
+        </view>
+        <view class="glass-capsule">
+          <text class="c-text">宜煲汤</text>
         </view>
       </view>
     </view>
@@ -46,6 +67,50 @@
         </scroll-view>
         <view class="family-ops" v-if="members.length > 1">
           <text class="exit-btn" @click="leaveFamily">退出当前家庭</text>
+        </view>
+      </view>
+
+      <!-- 7. 智能提醒 -->
+      <view class="section reminders-section">
+        <view class="section-title"><text class="title-text">智能管家提醒</text></view>
+        <view class="reminder-list">
+          <view class="reminder-item" v-for="(r, i) in reminders" :key="i" :class="r.type">
+            <view class="r-icon-box"><text class="r-icon">{{ r.icon }}</text></view>
+            <text class="r-text">{{ r.text }}</text>
+            <view class="r-btn">{{ r.action }}</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 3. 今日三餐计划 -->
+      <view class="section meals-section">
+        <view class="section-title"><text class="title-text">今日三餐</text></view>
+        <view class="meal-list">
+          <view class="meal-item" v-for="(m, i) in meals" :key="i">
+            <view class="m-left">
+              <view class="m-icon-box"><text>{{ m.icon }}</text></view>
+              <view class="m-info">
+                <text class="m-name">{{ m.name }}</text>
+                <text class="m-desc" :class="{ empty: !m.recipe }">{{ m.recipe || '尚未安排' }}</text>
+              </view>
+            </view>
+            <view class="m-right">
+              <view class="m-btn" :class="m.recipe ? 'primary' : 'add'">
+                <text v-if="m.recipe">去制作</text>
+                <text v-else class="btn-icon">+</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 8. 快捷功能宫格 -->
+      <view class="section quick-section">
+        <view class="quick-grid">
+          <view class="quick-item" v-for="(q, i) in quickFuncs" :key="i" @click="handleSetting(q.name)">
+            <view class="q-icon-wrap"><text class="q-icon">{{ q.icon }}</text></view>
+            <text class="q-text">{{ q.name }}</text>
+          </view>
         </view>
       </view>
 
@@ -118,6 +183,17 @@
         </view>
       </view>
 
+      <!-- 12. 家庭备忘录入口 -->
+      <view class="section memo-section" @click="goToMemo">
+        <view class="section-title">
+          <text class="title-text">家庭备忘录</text>
+          <text class="action-text">查看 ></text>
+        </view>
+        <view class="memo-preview">
+          <text class="memo-desc">记录家庭琐事、重要日子或购物心愿单...</text>
+        </view>
+      </view>
+
       <!-- 11. 底部设置模块 -->
       <view class="bottom-settings">
         <view class="set-list">
@@ -127,7 +203,7 @@
             <text class="set-arrow">></text>
           </view>
           <view class="set-item">
-            <text class="set-icon">🧹</text>
+            <text class="set-icon" @click="handleClearCache">🧹</text>
             <text class="set-text">清除缓存</text>
             <text class="set-arrow">></text>
           </view>
@@ -186,6 +262,20 @@
         </view>
       </view>
 
+      <!-- 修改家庭名称弹窗 -->
+      <view class="modal-mask" v-if="showFamilyNameModal" @click="showFamilyNameModal = false">
+        <view class="modal-content" @click.stop>
+          <text class="modal-title">修改家庭名称</text>
+          <view class="input-box">
+            <input class="join-input" v-model="tempFamilyName" placeholder="请输入新名称" maxlength="15" />
+          </view>
+          <view class="modal-btns">
+            <button class="m-btn-sub" @click="showFamilyNameModal = false">取消</button>
+            <button class="m-btn-main" @click="saveFamilyName">保存</button>
+          </view>
+        </view>
+      </view>
+
       <!-- 修改昵称弹窗 -->
       <view class="modal-mask" v-if="showNickModal" @click="showNickModal = false">
         <view class="modal-content" @click.stop>
@@ -231,10 +321,22 @@ import eatCo from '@/common/localDB.js'
 const familyName = ref(uni.getStorageSync('family_name') || '快乐干饭小家')
 const familyId = ref(uni.getStorageSync('family_id') || 'default_family')
 
-// 监听名称修改并保存
+// 家庭名称修改
+const showFamilyNameModal = ref(false)
+const tempFamilyName = ref('')
+
+const openEditFamilyName = () => {
+  tempFamilyName.value = familyName.value
+  showFamilyNameModal.value = true
+}
+
 const saveFamilyName = () => {
+  if (!tempFamilyName.value.trim()) {
+    return uni.showToast({ title: '名称不能为空', icon: 'none' })
+  }
+  familyName.value = tempFamilyName.value.trim()
   uni.setStorageSync('family_name', familyName.value)
-  // 此处应同步到云端
+  showFamilyNameModal.value = false
 }
 
 // 家庭成员功能
@@ -302,7 +404,7 @@ const leaveFamily = () => {
 const hour = new Date().getHours()
 let greetingStr = '晚上好，准备明天的食材吧'
 if (hour < 9) greetingStr = '早上好，记得吃一顿丰盛的早餐哦'
-else if (hour < 12) greetingStr = '上午好，今天也要好好吃饭'
+else if (hour < 12) greetingStr = '上午好，今天也要好好吃饭呀'
 else if (hour < 14) greetingStr = '中午好，午餐吃得开心吗'
 else if (hour < 19) greetingStr = '下午好，构思一下今晚的大餐吧'
 const greeting = ref(greetingStr)
@@ -379,9 +481,40 @@ const refreshStats = async () => {
   }
 }
 
+let lastUpdateDate = ''
 onShow(() => {
   refreshStats()
+  const today = new Date().toDateString()
+  if (lastUpdateDate !== today) {
+    initDateWeather()
+    lastUpdateDate = today
+  }
 })
+
+// 日期与天气数据
+const dateInfo = ref({
+  gregorian: '',
+  lunar: '',
+  weather: '晴',
+  temp: '26°C',
+  weatherIcon: '🌤️'
+})
+
+const initDateWeather = () => {
+  const d = new Date()
+  const m = d.getMonth() + 1
+  const day = d.getDate()
+  const w = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]
+  dateInfo.value.gregorian = `${m}月${day}日 周${w}`
+  
+  try {
+    const formatter = new Intl.DateTimeFormat('zh-u-ca-chinese', { month: 'short', day: 'numeric' })
+    let lStr = formatter.format(d)
+    dateInfo.value.lunar = lStr.replace(/20\d\d年/, '')
+  } catch(e) {
+    dateInfo.value.lunar = '农历今日'
+  }
+}
 
 // 智能提醒
 const reminders = ref([
@@ -466,21 +599,57 @@ const handleSetting = (name) => {
     uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
   }
 }
+
+const handleClearCache = () => {
+  // 第一次警告
+  uni.showModal({
+    title: '⚠️ 清除所有数据',
+    content: '清除缓存后将永久删除：食材、购物车、花费、菜谱、备忘录、主题设置，无法恢复！',
+    confirmText: '确认清除',
+    confirmColor: '#FF4444', // 红色警告
+    success: (res) => {
+      if (res.confirm) {
+        // 第二次二次确认
+        uni.showModal({
+          title: '最终确认',
+          content: '确定要清空所有数据吗？此操作不可恢复！',
+          confirmText: '确定清空',
+          confirmColor: '#FF0000',
+          success: (res2) => {
+            if (res2.confirm) {
+              // 执行清除
+              uni.clearStorageSync();
+              uni.showToast({
+                title: '已清空所有数据',
+                icon: 'success'
+              });
+            }
+          }
+        })
+      }
+    }
+  })
+}
+
+const goToMemo = () => {
+  uni.navigateTo({ url: '/pages/family/memo' })
+}
 </script>
 
 <style lang="less" scoped>
 .page-container {
   background-color: #F6F7F9;
-  min-height: 100vh;
+  min-height: ~"calc(100vh - 240rpx)";
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* 1. 顶部大卡片 */
 .top-card {
-  height: 320rpx;
+  min-height: 360rpx;
+  box-sizing: border-box;
   background: var(--primary-grad);
   border-radius: 0 0 60rpx 60rpx;
-  padding: 140rpx 40rpx 0;
+  padding: 140rpx 40rpx 60rpx;
   box-shadow: 0 16rpx 40rpx var(--primary-shadow);
   color: #fff;
   position: relative;
@@ -509,14 +678,37 @@ const handleSetting = (name) => {
     .name-box {
       display: flex;
       flex-direction: column;
-      gap: 8rpx;
       
-      .family-name {
-        font-size: 38rpx;
-        font-weight: 900;
-        color: #fff;
-        height: 50rpx;
-        text-shadow: 0 2rpx 10rpx rgba(0,0,0,0.1);
+      .family-name-wrap {
+        display: flex;
+        align-items: center;
+        gap: 16rpx;
+        margin-bottom: 8rpx;
+        
+        .family-name {
+          font-size: 38rpx;
+          font-weight: 900;
+          color: #fff;
+          text-shadow: 0 2rpx 10rpx rgba(0,0,0,0.1);
+        }
+        
+        .edit-icon-btn {
+          width: 44rpx;
+          height: 44rpx;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          backdrop-filter: blur(10px);
+          transition: transform 0.2s;
+          &:active { transform: scale(0.9); }
+          
+          .e-icon {
+            font-size: 22rpx;
+            color: #fff;
+          }
+        }
       }
       
       .greeting {
@@ -525,24 +717,61 @@ const handleSetting = (name) => {
       }
     }
   }
+}
+
+.weather-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.2);
+  padding: 16rpx 20rpx;
+  border-radius: 30rpx;
+  backdrop-filter: blur(10px);
   
-  .weather-icon {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: rgba(255,255,255,0.2);
-    padding: 16rpx 20rpx;
-    border-radius: 30rpx;
-    backdrop-filter: blur(10px);
-    
-    .emoji {
-      font-size: 40rpx;
-      margin-bottom: 4rpx;
-    }
-    .tip {
-      font-size: 18rpx;
-      font-weight: bold;
-    }
+  .emoji {
+    font-size: 40rpx;
+    margin-bottom: 4rpx;
+  }
+  .tip {
+    font-size: 18rpx;
+    font-weight: bold;
+  }
+}
+
+/* 日期与天气磨砂胶囊 */
+.glass-capsule-row {
+  display: flex;
+  gap: 20rpx;
+  margin:18rpx 0 40rpx;
+  flex-wrap: wrap;
+}
+.glass-capsule {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 12rpx 28rpx;
+  border-radius: 100rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.05);
+  gap: 12rpx;
+  
+  .c-text {
+    font-size: 24rpx;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 1rpx;
+    text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  }
+  .c-divider {
+    width: 2rpx;
+    height: 20rpx;
+    background: rgba(255, 255, 255, 0.5);
+    margin: 0 8rpx;
+  }
+  .c-icon {
+    font-size: 28rpx;
   }
 }
 
@@ -1261,6 +1490,20 @@ const handleSetting = (name) => {
         border-color: var(--primary);
       }
     }
+  }
+}
+
+/* 12. 家庭备忘录入口 */
+.memo-section {
+  cursor: pointer;
+  .memo-preview {
+    background: #F8F9FA;
+    padding: 24rpx;
+    border-radius: 20rpx;
+  }
+  .memo-desc {
+    font-size: 26rpx;
+    color: #95A5A6;
   }
 }
 

@@ -1,19 +1,20 @@
 <template>
-  <view class="page" v-if="recipe">
+  <custom-header title="菜谱详情" back />
+  <view class="page" v-if="recipe" :style="themeStyle">
     <image class="cover-img" :src="recipe.cover" mode="aspectFill" style="background-color: #FFF5F7;" />
     
     <view class="content">
       <view class="header-card">
         <view class="title-row">
           <text class="title">{{ recipe.name }}</text>
-          <text class="favorite-btn" @click="toggleFavorite" style="color: #FF7DA8;">
+          <text class="favorite-btn" @click="toggleFavorite" style="color: var(--primary);">
             {{ recipe.favorite ? '❤️ 喜欢' : '🤍 收藏' }}
           </text>
         </view>
         <view class="tags-row">
-          <view class="tag" style="color: #FF7DA8; background-color: #FFF5F7;">{{ recipe.category }}</view>
-          <view class="tag" style="color: #FF7DA8; background-color: #FFF5F7;">⏱ {{ recipe.duration }}</view>
-          <view class="tag" style="color: #FF7DA8; background-color: #FFF5F7;">🌶 {{ recipe.difficulty }}</view>
+          <view class="tag" style="color: var(--primary); background-color: var(--primary-light);">{{ recipe.category }}</view>
+          <view class="tag" style="color: var(--primary); background-color: var(--primary-light);">⏱ {{ recipe.duration }}</view>
+          <view class="tag" style="color: var(--primary); background-color: var(--primary-light);">🌶 {{ recipe.difficulty }}</view>
         </view>
       </view>
 
@@ -30,7 +31,7 @@
               <text class="ing-name">{{ ing.name }}</text>
               <view class="ing-right">
                 <text class="ing-amount">{{ ing.amount }}</text>
-                <text class="status-label" :class="{ 'has-stock': ing.hasInStock }" :style="ing.hasInStock ? { color: '#FF7DA8' } : {}">
+                <text class="status-label" :class="{ 'has-stock': ing.hasInStock }" :style="ing.hasInStock ? { color: 'var(--primary)' } : {}">
                   {{ ing.hasInStock ? '✅ 已有' : '🛒 需购买' }}
                 </text>
                 <view class="add-icon" @click.stop="addSingleToCart(ing)">+</view>
@@ -82,6 +83,24 @@ import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import eatCo from '@/common/localDB.js'
 
+// 主题系统
+const themes = [
+  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
+  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
+  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
+  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
+]
+const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
+const themeStyle = computed(() => {
+  const t = themes[currentTheme.value]
+  return `
+    --primary: ${t.color};
+    --primary-grad: ${t.gradient};
+    --primary-light: ${t.light};
+    --primary-shadow: ${t.shadow};
+  `
+})
+
 const recipeId = ref('')
 const recipe = ref(null)
 const stockList = ref([])
@@ -95,6 +114,7 @@ onLoad((options) => {
 })
 
 onShow(() => {
+  currentTheme.value = uni.getStorageSync('current_theme') || 0
   loadStock()
   loadRecipe()
 })
@@ -322,20 +342,20 @@ const deleteRecipe = () => {
     left: 0;
     width: 40rpx;
     height: 6rpx;
-    background: #FF7DA8;
+    background: var(--primary);
     border-radius: 10rpx;
   }
 }
 .add-cart-btn {
   font-size: 24rpx;
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--primary-grad);
   color: #fff;
   margin: 0;
   padding: 0 32rpx;
   height: 64rpx;
   line-height: 64rpx;
   border-radius: 100rpx;
-  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
+  box-shadow: 0 8rpx 20rpx var(--primary-shadow);
   font-weight: bold;
   transition: opacity 0.2s;
   &::after { border: none; }
@@ -394,7 +414,7 @@ const deleteRecipe = () => {
   border-radius: 100rpx;
   font-weight: 800;
   &.has-stock {
-    background: #FFF5F7;
+    background: var(--primary-light);
   }
   &.seasoning-label {
     background: #FFFAF0;
@@ -414,7 +434,7 @@ const deleteRecipe = () => {
   padding-bottom: 4rpx;
   transition: all 0.2s;
   &:active {
-    background: #FF7DA8;
+    background: var(--primary);
     color: #fff;
     transform: scale(0.9);
   }
@@ -465,8 +485,8 @@ const deleteRecipe = () => {
   width: 56rpx;
   height: 56rpx;
   border-radius: 50%;
-  background: #FF7DA8;
-  box-shadow: 0 4rpx 10rpx rgba(255,125,168,0.25);
+  background: var(--primary);
+  box-shadow: 0 4rpx 10rpx var(--primary-shadow);
   color: #fff;
   display: flex;
   justify-content: center;
@@ -517,8 +537,8 @@ const deleteRecipe = () => {
   color: #7f8c8d;
 }
 .edit-btn {
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--primary-grad);
   color: #fff;
-  box-shadow: 0 10rpx 24rpx rgba(255, 125, 168, 0.25);
+  box-shadow: 0 10rpx 24rpx var(--primary-shadow);
 }
 </style>

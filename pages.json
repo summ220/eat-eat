@@ -69,6 +69,13 @@
 				"navigationBarTitleText": "花费账本",
 				"navigationBarBackgroundColor": "#FFF5F7"
 			}
+		},
+		{
+			"path": "pages/family/memo",
+			"style": {
+				"navigationBarTitleText": "家庭备忘录",
+				"navigationBarBackgroundColor": "#FFF5F7"
+			}
 		}
 	],
 	"tabBar": {

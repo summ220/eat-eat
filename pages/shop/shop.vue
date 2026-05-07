@@ -409,17 +409,21 @@ const checkCost = () => {
 <style lang="less" scoped>
 .page {
   background: #FAFAFA;
-  min-height: ~"calc(100vh - 80rpx)";
+  min-height: ~"calc(100vh - 240rpx)";
   padding-bottom: 180rpx;
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }
 
 .top-actions-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   padding: 20rpx 40rpx;
   gap: 20rpx;
+  background: var(--primary-light);
 }
 
 .action-btn-top {
@@ -498,9 +502,13 @@ const checkCost = () => {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  max-height: calc(100vh - 280rpx);
+  max-height: 60vh;
   overflow-y: auto;
+  /* 隐藏滚动条 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.sidebar::-webkit-scrollbar { display: none; }
 
 .nav-item {
   height: 90rpx;

@@ -45,4 +45,10 @@ page {
 	color: #fff !important;
 	border: none !important;
 }
+/* 全局样式文件 */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
 </style>

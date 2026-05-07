@@ -102,11 +102,11 @@ onShow(() => {
 
 const getRandomDish = () => {
   let pool = []
-  if (menuList.value.length > 10) {
-    // 菜谱超过10个：纯从菜谱中抽
+  if (menuList.value.length > 20) {
+    // 菜谱超过20个：纯从菜谱中抽
     pool = [...menuList.value]
   } else if (menuList.value.length > 0) {
-    // 菜谱不足10个：菜谱菜权重×3，混入默认菜
+    // 菜谱不足20个：菜谱菜权重×3，混入默认菜
     pool = [
       ...menuList.value,
       ...menuList.value,
@@ -136,7 +136,7 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
 .page {
   padding: 40rpx;
   background: #FAFAFA;
-  min-height: ~"calc(100vh - 80rpx)";
+  min-height: ~"calc(100vh - 240rpx)";
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 100%);
   background-color: var(--primary-light);
 }

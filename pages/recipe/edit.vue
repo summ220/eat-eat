@@ -1,9 +1,10 @@
 <template>
-  <view class="page">
+  <custom-header :title="isEdit ? '编辑菜谱' : '添加菜谱'" icon="🍳" back />
+  <view class="page" :style="themeStyle">
     <view class="form-card">
       <view class="cover-uploader">
         <input class="input-line cover-input" v-model="form.cover" placeholder="请输入封面图片网络链接 (选填)" />
-        <image class="cover-preview" v-if="form.cover" :src="form.cover" mode="aspectFill" style="background-color: #FFF5F7;" />
+        <image class="cover-preview" v-if="form.cover" :src="form.cover" mode="aspectFill" style="background-color: var(--primary-light);" />
       </view>
 
       <view class="input-group">
@@ -45,7 +46,7 @@
     <view class="form-card">
       <view class="section-header">
         <text class="label">所需主食材</text>
-        <text class="add-text" @click="addMainIng" style="color: #FF7DA8;">+ 添加食材</text>
+        <text class="add-text" @click="addMainIng" style="color: var(--primary);">+ 添加食材</text>
       </view>
       <view class="array-list">
         <view class="array-item" v-for="(ing, i) in mainIngs" :key="i">
@@ -75,11 +76,11 @@
     <view class="form-card">
       <view class="section-header">
         <text class="label">烹饪步骤</text>
-        <text class="add-text" @click="addStep" style="color: #FF7DA8;">+ 添加一步</text>
+        <text class="add-text" @click="addStep" style="color: var(--primary);">+ 添加一步</text>
       </view>
       <view class="array-list">
         <view class="array-item step-item" v-for="(step, i) in form.steps" :key="i">
-          <view class="step-index" style="background-color: #FF7DA8; color: #fff;">{{ i + 1 }}</view>
+          <view class="step-index" style="background-color: var(--primary); color: #fff;">{{ i + 1 }}</view>
           <textarea class="textarea-line" v-model="form.steps[i]" placeholder="描述一下这一步的内容..." auto-height />
           <view class="remove-btn auto-remove" @click="removeStep(i)">-</view>
         </view>
@@ -119,8 +120,30 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import eatCo from '@/common/localDB.js'
+
+// 主题系统
+const themes = [
+  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
+  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
+  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
+  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
+]
+const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
+const themeStyle = computed(() => {
+  const t = themes[currentTheme.value]
+  return `
+    --primary: ${t.color};
+    --primary-grad: ${t.gradient};
+    --primary-light: ${t.light};
+    --primary-shadow: ${t.shadow};
+  `
+})
+
+onShow(() => {
+  currentTheme.value = uni.getStorageSync('current_theme') || 0
+})
 
 const isEdit = ref(false)
 const recipeId = ref('')
@@ -278,8 +301,9 @@ const save = async () => {
 
 <style lang="less" scoped>
 .page {
-  background: #FFF5F7;
-  min-height: 100vh;
+  background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
+  background-color: var(--primary-light);
+  min-height: ~"calc(100vh - 240rpx)";
   padding: 30rpx 24rpx 80rpx;
 }
 .form-card {
@@ -332,9 +356,9 @@ const save = async () => {
   font-weight: 500;
   flex: 1;
   &:focus {
-    border: 4rpx solid #FF7DA8;
+    border: 4rpx solid var(--primary);
     background: #ffffff;
-    box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.25);
+    box-shadow: 0 8rpx 20rpx var(--primary-shadow);
   }
 }
 
@@ -353,14 +377,14 @@ const save = async () => {
   position: absolute;
   top: -60rpx;
   right: 0;
-  background: #FF5C8D;
+  background: var(--primary);
   color: #fff;
   font-size: 20rpx;
   font-weight: bold;
   padding: 6rpx 16rpx;
   border-radius: 100rpx;
   white-space: nowrap;
-  box-shadow: 0 4rpx 10rpx rgba(255, 92, 141, 0.3);
+  box-shadow: 0 4rpx 10rpx var(--primary-shadow);
   animation: bounce 2s infinite;
   &::after {
     content: '';
@@ -369,7 +393,7 @@ const save = async () => {
     right: 40rpx;
     border-left: 10rpx solid transparent;
     border-right: 10rpx solid transparent;
-    border-top: 10rpx solid #FF5C8D;
+    border-top: 10rpx solid var(--primary);
   }
 }
 
@@ -382,20 +406,19 @@ const save = async () => {
 .template-btn {
   width: 140rpx;
   height: 96rpx;
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--primary-grad);
   border-radius: 48rpx;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 8rpx 20rpx rgba(255, 125, 168, 0.3);
+  box-shadow: 0 8rpx 20rpx var(--primary-shadow);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   flex-shrink: 0;
   
   &.pulse-ani {
     animation: pulse-border 1.5s infinite;
     transform: scale(1.05);
-    background: linear-gradient(135deg, #FF7DA8 0%, #FF5C8D 100%);
   }
 
   &:active {
@@ -416,9 +439,9 @@ const save = async () => {
 }
 
 @keyframes pulse-border {
-  0% { box-shadow: 0 0 0 0 rgba(255, 125, 168, 0.7); }
-  70% { box-shadow: 0 0 0 15rpx rgba(255, 125, 168, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 125, 168, 0); }
+  0% { box-shadow: 0 0 0 0 var(--primary-shadow); }
+  70% { box-shadow: 0 0 0 15rpx transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 /* 遮罩 */
@@ -493,8 +516,8 @@ const save = async () => {
   }
   .tpl-tag {
     font-size: 20rpx;
-    color: #FF7DA8;
-    background: #FFF5F7;
+    color: var(--primary);
+    background: var(--primary-light);
     padding: 4rpx 16rpx;
     border-radius: 100rpx;
     font-weight: 800;
@@ -502,13 +525,13 @@ const save = async () => {
 }
 
 .tpl-use-btn {
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--primary-grad);
   color: #fff;
   font-size: 24rpx;
   font-weight: 800;
   padding: 16rpx 36rpx;
   border-radius: 100rpx;
-  box-shadow: 0 6rpx 12rpx rgba(255, 125, 168, 0.2);
+  box-shadow: 0 6rpx 12rpx var(--primary-shadow);
   &:active { opacity: 0.8; }
 }
 
@@ -610,14 +633,14 @@ const save = async () => {
   margin-top: 6rpx;
 }
 .save-btn {
-  background: linear-gradient(135deg, #FF9BB1 0%, #FF7DA8 100%);
+  background: var(--primary-grad);
   color: #fff;
   border-radius: 100rpx;
   height: 108rpx;
   line-height: 108rpx;
   font-size: 36rpx;
   font-weight: 900;
-  box-shadow: 0 16rpx 40rpx rgba(255, 125, 168, 0.25);
+  box-shadow: 0 16rpx 40rpx var(--primary-shadow);
   border: none;
   margin-top: 50rpx;
   transition: opacity 0.2s, transform 0.2s;

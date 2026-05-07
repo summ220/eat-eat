@@ -94,7 +94,7 @@ const save = async () => {
 .page {
   background: #FAFAFA;
   padding: 40rpx;
-  min-height: ~"calc(100vh - 80rpx)";
+  min-height: ~"calc(100vh - 240rpx)";
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }
 .card {

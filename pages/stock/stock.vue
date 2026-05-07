@@ -2,12 +2,13 @@
   <custom-header title="家里食材" icon="🍅" />
   <view class="page" :style="themeStyle">
     <view class="top-actions-bar">
-      <button class="add-btn" @click="goAdd">+ 添加</button>
+      <button class="action-btn-top clear" @click="clearExpired">清除过期</button>
+      <button class="action-btn-top add" @click="goAdd">+ 添加</button>
     </view>
     
     <view class="main-layout">
       <!-- 左侧分类导航 -->
-      <view class="sidebar">
+      <view class="sidebar no-scrollbar">
         <view 
           class="nav-item" 
           :class="{ active: currentCategory === '全部' }" 
@@ -193,6 +194,34 @@ const getExpireStatus = (dateStr) => {
   return { type: 'safe', text: '新鲜' }
 }
 
+const clearExpired = async () => {
+  const today = new Date().toISOString().split('T')[0]
+  const expired = list.value.filter(item => item.expire_date && item.expire_date < today)
+  if (expired.length === 0) {
+    return uni.showToast({ title: '暂无过期食材', icon: 'none' })
+  }
+  uni.showModal({
+    title: '清除提示',
+    content: `确定要一次性删除 ${expired.length} 项已过期食材吗？`,
+    confirmColor: '#FF7DA8',
+    success: async res => {
+      if (!res.confirm) return
+      uni.showLoading({ title: '删除中...' })
+      try {
+        for (const item of expired) {
+          await eatCo.deleteStock(item._id)
+        }
+        list.value = list.value.filter(i => !(i.expire_date && i.expire_date < today))
+        uni.showToast({ title: '已删除过期食材', icon: 'success' })
+      } catch (e) {
+        uni.showToast({ title: '删除失败', icon: 'none' })
+      } finally {
+        uni.hideLoading()
+      }
+    }
+  })
+}
+
 const filteredList = computed(() => {
   if (currentCategory.value === '全部') {
     return list.value;
@@ -303,16 +332,47 @@ const deleteItem = (item) => {
 <style lang="less" scoped>
 .page {
   background: #FAFAFA;
-  min-height: ~"calc(100vh - 80rpx)";
+  min-height: ~"calc(100vh - 240rpx)";
   padding-bottom: 40rpx;
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }
 
 .top-actions-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   padding: 20rpx 40rpx;
+  gap: 20rpx;
+  background: var(--primary-light);
+}
+
+.action-btn-top {
+  border-radius: 100rpx;
+  padding: 0 36rpx;
+  height: 64rpx;
+  line-height: 60rpx;
+  font-size: 26rpx;
+  font-weight: bold;
+  margin: 0;
+  transition: transform 0.2s;
+  &:active { transform: scale(0.95); }
+  &.clear {
+    background: #FFF;
+    color: var(--primary);
+    border: 2rpx solid var(--primary);
+  }
+  &.add {
+    background: var(--primary-grad);
+    color: #fff;
+    border: none;
+    box-shadow: 0 6rpx 16rpx var(--primary-shadow);
+  }
+  &::after {
+    border: none;
+  }
 }
 
 .add-btn {
@@ -347,9 +407,13 @@ const deleteItem = (item) => {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  max-height: calc(100vh - 160rpx);
+  max-height: 60vh;
   overflow-y: auto;
+  /* 隐藏滚动条 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.sidebar::-webkit-scrollbar { display: none; }
 
 .nav-item {
   height: 90rpx;

@@ -403,7 +403,7 @@ const touchEnd = (e, item) => {
 .page {
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 100%);
   background-color: var(--primary-light);
-  min-height: ~"calc(100vh - 80rpx)";
+  min-height: ~"calc(100vh - 240rpx)";
   padding: 30rpx 24rpx 40rpx;
 }
 
