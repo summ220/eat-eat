@@ -81,7 +81,6 @@
 			"path": "pages/family/weather",
 			"style": {
 				"navigationBarTitleText": "天气详情",
-				"navigationStyle": "default",
 				"navigationBarBackgroundColor": "#F6F7F9"
 			}
 		}

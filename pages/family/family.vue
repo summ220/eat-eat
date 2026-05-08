@@ -23,7 +23,7 @@
 
       <!-- 日期与天气磨砂胶囊 (独立标签) -->
       <view class="glass-capsule-row">
-        <view class="glass-capsule">
+        <view class="glass-capsule" @click="showCalendarPopup = true">
           <text class="c-text">{{ dateInfo.gregorian }}</text>
           <view class="c-divider"></view>
           <text class="c-text">{{ dateInfo.lunar }}</text>
@@ -311,6 +311,16 @@
 
       <view class="footer-safe"></view>
     </view>
+    <!-- 天气详情弹窗 -->
+    <weather-popup 
+      :show="showWeatherPopup" 
+      :location="weatherLocation" 
+      @close="showWeatherPopup = false" 
+    />
+    <calendar-popup 
+      :show="showCalendarPopup" 
+      @close="showCalendarPopup = false"
+    />
   </view>
 </template>
 
@@ -318,13 +328,16 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/common/request.js'
-
 import eatCo from '@/common/localDB.js'
+import weatherPopup from '@/components/weather-popup/weather-popup.vue'
+import calendarPopup from '@/components/calendar-popup/calendar-popup.vue'
 const familyName = ref(uni.getStorageSync('family_name') || '快乐干饭小家')
 const familyId = ref(uni.getStorageSync('family_id') || 'default_family')
 
-// 天气位置控制
+// 天气/日历弹窗控制
 const weatherLocation = ref('')
+const showWeatherPopup = ref(false)
+const showCalendarPopup = ref(false)
 
 // 家庭名称修改
 const showFamilyNameModal = ref(false)
@@ -703,9 +716,7 @@ const openWeatherDetail = () => {
     getWeather()
     return
   }
-  uni.navigateTo({
-    url: `/pages/family/weather?location=${weatherLocation.value}`
-  })
+  showWeatherPopup.value = true
 }
 </script>
 
