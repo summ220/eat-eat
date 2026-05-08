@@ -29,7 +29,8 @@
           <text class="c-text">{{ dateInfo.lunar }}</text>
         </view>
         <view class="glass-capsule" @click="openWeatherDetail">
-          <text :class="'qi-' + dateInfo.weatherIcon"></text>
+          <!-- <text :class="'qi-' + dateInfo.weatherIcon"></text> -->
+          <text>{{ getWeatherEmoji(dateInfo.weatherIcon) }}</text>
           <text class="c-text">{{ dateInfo.weather }} {{ dateInfo.temp }}</text>
         </view>
         <!-- <view class="glass-capsule">
@@ -535,15 +536,31 @@ const getWeather = async () => {
   }
 }
 
-const initDateWeather = () => {
-  // 加载天气图标库
-  uni.loadFontFace({
-    family: 'qweather-icons',
-    source: 'url("/static/fonts/qweather-icons.woff2")',
-    success: () => console.log('天气图标加载成功'),
-    fail: (err) => console.error('天气图标加载失败', err)
-  })
+const getWeatherEmoji = (iconCode) => {
+  const emojiMap = {
+    // 晴天
+    '100': '☀️', '150': '🌙', '152': '☁️🌙',
+    // 多云阴天
+    '101': '⛅', '102': '🌤️', '103': '⛅', '104': '☁️',
+    '151': '☁️🌙', '153': '🌙',
+    // 雨
+    '300': '🌦️', '301': '🌧️', '302': '⛈️', '303': '⛈️',
+    '304': '🌩️', '305': '🌧️', '306': '🌧️', '307': '🌧️',
+    '308': '🌊🌧️', '309': '🌧️', '310': '🌧️', '311': '🌧️',
+    '312': '🌧️', '313': '🧊🌧️', '399': '🌧️',
+    // 雪
+    '400': '❄️', '401': '❄️', '402': '❄️', '403': '❄️',
+    '404': '🌨️', '405': '🌨️', '406': '❄️', '499': '❄️',
+    // 雾霾沙尘
+    '500': '🌫️', '501': '🌫️', '502': '😷', '503': '🏜️',
+    '504': '🏜️', '505': '🏜️', '506': '🌪️', '507': '🌫️',
+    '508': '🌫️', '509': '😷', '510': '😷', '511': '😷',
+    '512': '😷', '513': '🌫️', '514': '🌫️', '515': '🌧️🌫️'
+  }
+  return emojiMap[String(iconCode)] || '🌤️'
+}
 
+const initDateWeather = () => {
   const d = new Date()
   const m = d.getMonth() + 1
   const day = d.getDate()
@@ -693,7 +710,6 @@ const openWeatherDetail = () => {
 </script>
 
 <style lang="less" scoped>
-@import "@/static/fonts/qweather-icons.wxss";
 .page-container {
   background-color: #F6F7F9;
   min-height: ~"calc(100vh - 240rpx)";

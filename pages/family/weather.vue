@@ -8,8 +8,7 @@
         <view class="top-info-section">
           <view class="city-row">
             <text class="city-name">{{ weather.city }}</text>
-            <text :class="'qi-' + weather.now.icon"></text>
-            <!-- <text class="c-icon">{{ getWeatherIcon(weather.now.icon) }}</text> -->
+            <text>{{ getWeatherEmoji(weather.now.icon) }}</text>
           </view>
           <view class="temp-row">
             <text class="temp-num">{{ weather.now.temp || '--' }}</text>
@@ -74,7 +73,8 @@
               >
                 <text class="f-date">{{ getDayLabel(idx, f.fxDate) }}</text>
                 <!-- <text class="f-icon">{{ getWeatherIcon(f.iconDay) }}</text> -->
-                <text :class="'qi-' + f.iconDay"></text>
+                <!-- <text :class="'qi-' + f.iconDay"></text> -->
+                <text>{{ getWeatherEmoji(f.iconDay) }}</text>
                 <view class="f-temp-box">
                   <text class="f-temp-max">{{ f.tempMax }}°</text>
                   <text class="f-temp-min">{{ f.tempMin }}°</text>
@@ -209,14 +209,6 @@ const fetchData = async () => {
   loading.value = true
   uni.showLoading({ title: '加载中...' })
   
-  // 确保字体已加载
-  uni.loadFontFace({
-    family: 'qweather-icons',
-    source: 'url("/static/fonts/qweather-icons.woff2")',
-    success: () => console.log('天气详情页字体加载成功'),
-    fail: (err) => console.error('天气详情页字体加载失败', err)
-  })
-  
   try {
     const loc = location.value
     
@@ -241,6 +233,30 @@ const fetchData = async () => {
     loading.value = false
     uni.hideLoading()
   }
+}
+
+const getWeatherEmoji = (iconCode) => {
+  const emojiMap = {
+    // 晴天
+    '100': '☀️', '150': '🌙', '152': '☁️🌙',
+    // 多云阴天
+    '101': '⛅', '102': '🌤️', '103': '⛅', '104': '☁️',
+    '151': '☁️🌙', '153': '🌙',
+    // 雨
+    '300': '🌦️', '301': '🌧️', '302': '⛈️', '303': '⛈️',
+    '304': '🌩️', '305': '🌧️', '306': '🌧️', '307': '🌧️',
+    '308': '🌊🌧️', '309': '🌧️', '310': '🌧️', '311': '🌧️',
+    '312': '🌧️', '313': '🧊🌧️', '399': '🌧️',
+    // 雪
+    '400': '❄️', '401': '❄️', '402': '❄️', '403': '❄️',
+    '404': '🌨️', '405': '🌨️', '406': '❄️', '499': '❄️',
+    // 雾霾沙尘
+    '500': '🌫️', '501': '🌫️', '502': '😷', '503': '🏜️',
+    '504': '🏜️', '505': '🏜️', '506': '🌪️', '507': '🌫️',
+    '508': '🌫️', '509': '😷', '510': '😷', '511': '😷',
+    '512': '😷', '513': '🌫️', '514': '🌫️', '515': '🌧️🌫️'
+  }
+  return emojiMap[String(iconCode)] || '🌤️'
 }
 
 // 详细数据宫格项
