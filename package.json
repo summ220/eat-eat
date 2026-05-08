@@ -105,6 +105,7 @@
     }
   },
   "dependencies": {
+    "@dcloudio/uni-ui": "^1.5.12",
     "qrcodejs2": "^0.0.2"
   },
   "devDependencies": {

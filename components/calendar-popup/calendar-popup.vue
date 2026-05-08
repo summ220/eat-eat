@@ -10,7 +10,7 @@
         <view class="popup-body">
         <!-- 1. 顶部日期信息 -->
         <view class="date-header-card">
-          <!-- 日期切换操作 -->
+                    <!-- 日期切换操作 -->
           <view class="date-nav-ops">
             <view class="nav-btn left" @click="changeDate(-1)">
               <text class="i">◀</text>
@@ -21,12 +21,21 @@
             </view>
           </view>
 
-          <view class="solar-row">
+          <view class="solar-row" @click="goToCalendar">
             <text class="day-num">{{ solarDate.day }}</text>
             <view class="date-right">
               <text class="month-year">{{ solarDate.year }}年{{ solarDate.month }}月</text>
-              <text class="week-name">{{ solarDate.week }}</text>
+              <view class="week-row">
+                <text class="week-name">{{ solarDate.week }}</text>
+                <text class="holiday-tag" v-if="holidayName">{{ holidayName }}</text>
+              </view>
             </view>
+          </view>
+          
+          <!-- 新增：右上角抽签入口 -->
+          <view class="draw-lottery-trigger" @click.stop="drawLottery">
+            <text class="draw-icon">🎋</text>
+            <text class="draw-text">摇一签</text>
           </view>
           
           <view class="lunar-info-box">
@@ -60,9 +69,9 @@
         <view class="luck-section">
           <view class="luck-main">
             <view class="section-title">
-              <text class="title-text">今日干饭运势</text>
-              <view class="luck-stars">
-                <text class="star" v-for="s in 5" :key="s" :class="{ active: s <= luckLevel }">★</text>
+                <text class="title-text">今日干饭运势</text>
+                <view class="luck-stars">
+                  <text class="star" v-for="s in 5" :key="s" :class="{ active: s <= luckLevel }">★</text>
               </view>
             </view>
             <view class="luck-content">
@@ -146,14 +155,62 @@
         <view class="footer-safe"></view>
         </view>
       </scroll-view>
+
+      <!-- 月份选择弹窗 -->
+      <month-calendar-popup 
+        :show="monthCalendarVisible" 
+        :initial-date="currentDate"
+        @close="monthCalendarVisible = false"
+        @select="handleMonthSelect"
+      />
+
+      <!-- 抽签动画遮罩层 -->
+      <view class="lottery-overlay" v-if="lotteryVisible" @touchmove.stop.prevent>
+        <view class="lottery-container" v-if="!fortuneResult">
+          <view class="lottery-box" :class="{ 'shake': isShaking }">
+            <view class="lottery-tube">
+              <view class="stick" v-for="i in 6" :key="i"></view>
+            </view>
+          </view>
+          <text class="lottery-hint">{{ isShaking ? '诚心祈求今日美食...' : '点击下方按钮开始摇签' }}</text>
+          <button class="shake-trigger" v-if="!isShaking" @click="startShake">诚心摇签</button>
+          <view class="lottery-close" v-if="!isShaking" @click="lotteryVisible = false">✕</view>
+        </view>
+
+        <!-- 签文结果卷轴 -->
+        <view class="fortune-scroll-wrap" v-else>
+          <view class="fortune-scroll" :class="{ 'fade-in': fortuneResult }">
+            <view class="f-header">
+              <text class="f-no">第 {{ fortuneResult.no }} 签</text>
+              <text class="f-level" :class="fortuneResult.levelClass">{{ fortuneResult.level }}</text>
+            </view>
+            <view class="f-body">
+              <text class="f-title">{{ fortuneResult.title }}</text>
+              <view class="f-v-divider"></view>
+              <text class="f-text">{{ fortuneResult.content }}</text>
+            </view>
+            <view class="f-footer">
+              <text class="f-inte-label">【解曰】</text>
+              <text class="f-inte-text">{{ fortuneResult.interpretation }}</text>
+            </view>
+          </view>
+          
+          <view class="f-actions">
+            <view class="f-act-btn secondary" @click="resetLottery">再摇一次</view>
+            <view class="f-act-btn primary" @click="goToRecipes">去菜谱看看</view>
+            <view class="f-close" @click="lotteryVisible = false">✕</view>
+          </view>
+        </view>
+      </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import calendar from '@/uni_modules/uni-calendar/components/uni-calendar/calendar.js'
 import request from '@/common/request.js'
+import MonthCalendarPopup from './month-calendar-popup.vue'
 
 const props = defineProps({
   show: { type: Boolean, default: false }
@@ -205,6 +262,12 @@ const foodLuck = ref({ yi: ['火锅', '时令水果'], ji: ['冰镇饮品'] })
 const loadingAPI = ref(false)
 const isLocalAlmanac = ref(true)
 const currentDate = ref(new Date())
+
+const lotteryVisible = ref(false)
+const isShaking = ref(false)
+const fortuneResult = ref(null)
+const holidayName = ref('')
+const monthCalendarVisible = ref(false)
 
 const isToday = computed(() => {
   const today = new Date()
@@ -271,18 +334,31 @@ const applyTheme = () => {
   themeStyle.value = `--primary: ${t.color}; --primary-light: ${t.light}; --primary-grad: ${t.gradient}; --primary-shadow: ${t.shadow};`
 }
 
+onMounted(() => {
+  uni.$on('calendar-select-date', (data) => {
+    const d = new Date(data.year, data.month - 1, data.day)
+    currentDate.value = d
+    initDate(d)
+  })
+})
+
+onUnmounted(() => {
+  uni.$off('calendar-select-date')
+  lotteryVisible.value = false
+})
+
 watch(() => props.show, (newVal) => {
   if (newVal) {
     visible.value = true
     applyTheme()
     currentDate.value = new Date()
     initDate(currentDate.value)
-    // 使用 nextTick 确保 DOM 已渲染再触发动画
     setTimeout(() => {
       showAnimate.value = true
     }, 60)
   } else {
     showAnimate.value = false
+    lotteryVisible.value = false
     setTimeout(() => {
       visible.value = false
     }, 300)
@@ -304,7 +380,6 @@ const initDate = (dateObj) => {
     zodiac: getZodiacSign(m, d)
   }
   
-  // 使用 calendar.js 获取农历数据
   const res = calendar.solar2lunar(y, m, d)
   lunarData.value = res
   
@@ -312,10 +387,91 @@ const initDate = (dateObj) => {
   initTermInfo(y, m, d, res.Term)
   initExtraInfo(y, m, d)
   initLocalAlmanac(y, m, d)
-  isLocalAlmanac.value = true // 重置为本地加载态
+  initHoliday(y, m, d, res.IMonthCn, res.IDayCn)
+  isLocalAlmanac.value = true
   updateFoodAdvice(res.Term, d)
 
   fetchLunarAPI(`${y}-${m}-${d}`)
+}
+
+const goToCalendar = () => {
+  monthCalendarVisible.value = true
+}
+
+const handleMonthSelect = (data) => {
+  const d = new Date(data.year, data.month - 1, data.day)
+  currentDate.value = d
+  initDate(d)
+  monthCalendarVisible.value = false
+}
+
+const initHoliday = (y, m, d, lm, ld) => {
+  const solarHolidays = { '1-1': '元旦', '5-1': '劳动节', '10-1': '国庆节', '12-25': '圣诞节' }
+  const lunarHolidays = { '正月-初一': '春节', '正月-十五': '元宵节', '五月-初五': '端午节', '七月-初七': '七夕节', '八月-十五': '中秋节', '九月-初九': '重阳节', '腊月-三十': '除夕' }
+  holidayName.value = solarHolidays[`${m}-${d}`] || lunarHolidays[`${lm}-${ld}`] || ''
+}
+
+const drawLottery = () => {
+  lotteryVisible.value = true
+  fortuneResult.value = null
+  isShaking.value = false
+}
+
+const startShake = () => {
+  isShaking.value = true
+  setTimeout(() => {
+    isShaking.value = false
+    const levels = [
+      { name: '上上签', class: 'level-ss', weight: 10 },
+      { name: '上吉签', class: 'level-sj', weight: 30 },
+      { name: '中平签', class: 'level-zp', weight: 40 },
+      { name: '提醒签', class: 'level-tx', weight: 20 }
+    ]
+    if (alamanac.value.yi.includes('烹饪')) {
+      levels[0].weight += 15
+      levels[1].weight += 15
+    }
+    const totalWeight = levels.reduce((s, l) => s + l.weight, 0)
+    let rand = Math.random() * totalWeight
+    let levelObj = levels[0]
+    for (const l of levels) {
+      if (rand < l.weight) { levelObj = l; break }
+      rand -= l.weight
+    }
+    const fortunePool = {
+      '上上签': [
+        { title: '厨神入世', content: '今日下厨，火候自成，盐量精算，每一口都是巅峰。', interpretation: '宜大张旗鼓，宴请四方，必得满堂彩。' },
+        { title: '饕餮附体', content: '胃口大开，千杯不醉，今日所食皆为珍馐。', interpretation: '身体倍儿棒，吃嘛嘛香，适合尝试硬菜。' }
+      ],
+      '上吉签': [
+        { title: '五味调和', content: '生活有滋有味，今日即便简单小食，亦有惊喜发现。', interpretation: '平常心待三餐，必有回甘。' },
+        { title: '邻里飘香', content: '厨房烟火气升腾，幸福感随香气弥漫全屋。', interpretation: '宜与家人共享，气氛极佳。' }
+      ],
+      '中平签': [
+        { title: '食之淡泊', content: '三餐准时，营养均衡，平凡之中见真章。', interpretation: '宜清淡饮食，给胃放个小假。' },
+        { title: '火候尚可', content: '厨艺发挥稳定，虽无惊艳，但胜在温馨踏实。', interpretation: '按部就班，不疾不徐。' }
+      ],
+      '提醒签': [
+        { title: '过犹不及', content: '贪多嚼不烂，今日饮食宜节制，莫要暴饮暴食。', interpretation: '注意肠胃负担，少油少盐为妙。' },
+        { title: '外卖克星', content: '今日外卖运势一般，不如亲自下厨，更显诚意。', interpretation: '谨防重口味，多喝白开水。' }
+      ]
+    }
+    const pool = fortunePool[levelObj.name]
+    const item = pool[Math.floor(Math.random() * pool.length)]
+    fortuneResult.value = {
+      no: Math.floor(Math.random() * 99) + 1,
+      level: levelObj.name,
+      levelClass: levelObj.class,
+      title: item.title,
+      content: item.content,
+      interpretation: item.interpretation
+    }
+  }, 1200)
+}
+
+const resetLottery = () => {
+  fortuneResult.value = null
+  startShake()
 }
 
 const fetchLunarAPI = async (dateStr) => {
@@ -362,10 +518,7 @@ const initLocalAlmanac = (y, m, d) => {
   const dateStr = `${y}-${m}-${d}`
   const getHashSeed = (str) => {
     let hash = 0
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i)
-      hash |= 0
-    }
+    for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0 }
     return Math.abs(hash)
   }
   const seed = getHashSeed(dateStr)
@@ -506,12 +659,18 @@ const updateFoodAdvice = (term, day) => {
     { text: '气候宜人，宜煲一锅暖汤，推荐排骨莲藕汤。', quote: '胃暖了，心也就踏实了。' },
     { text: '今日宜进补，推荐尝试红烧羊肉，温补御寒。', quote: '每一个努力生活的人，都值得被美食温柔对待。' }
   ]
-  const idx = day % advises.length
-  foodAdvice.value = advises[idx]
-  
-  if (term) {
-    foodAdvice.value.text = `今日正值「${term}」，${foodAdvice.value.text}`
+  const idx = day % advises.length; let finalAdvice = { ...advises[idx] }
+  if (holidayName.value) {
+    const holidayFood = { '春节': '饺子', '元宵节': '汤圆', '端午节': '粽子', '中秋节': '月饼', '腊月-三十': '年夜饭' }
+    const food = holidayFood[holidayName.value] || '特色菜'
+    finalAdvice.text = `今日逢「${holidayName.value}」，宜全家共享${food}，其乐融融。`
+  } else if (term) {
+    const termFood = { '立春': '春饼', '夏至': '凉面', '立秋': '西瓜', '冬至': '饺子', '大暑': '绿豆汤' }
+    const food = termFood[term]
+    if (food) finalAdvice.text = `今日正值「${term}」，俗话说“${term}吃${food}”，今天安排上吧！`
+    else finalAdvice.text = `今日正值「${term}」，${finalAdvice.text}`
   }
+  foodAdvice.value = finalAdvice
 }
 </script>
 
@@ -572,6 +731,17 @@ const updateFoodAdvice = (term, day) => {
   box-shadow: 0 20rpx 48rpx var(--primary-shadow);
   color: #fff;
   position: relative;
+  overflow: hidden;
+  
+  .date-side-nav {
+    position: absolute; top: 0; bottom: 0; width: 100rpx;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10;
+    &.prev { left: 0; }
+    &.next { right: 0; }
+    .nav-arrow { font-size: 40rpx; opacity: 0.3; font-weight: bold; }
+    &:active .nav-arrow { opacity: 0.8; }
+  }
   
   .date-nav-ops {
     position: absolute;
@@ -600,6 +770,23 @@ const updateFoodAdvice = (term, day) => {
       .month-year { font-size: 28rpx; font-weight: 600; opacity: 0.8; }
       .week-name { font-size: 36rpx; font-weight: 900; }
     }
+  }
+
+  .draw-lottery-trigger {
+    position: absolute;
+    top: 32%; right: 80rpx;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.2);
+    border: 1rpx solid rgba(255,255,255,0.3);
+    padding: 12rpx 18rpx; border-radius: 24rpx;
+    display: flex; flex-direction: column; align-items: center; gap: 4rpx;
+    backdrop-filter: blur(12px);
+    z-index: 15;
+    
+    .draw-icon { font-size: 36rpx; line-height: 1; }
+    .draw-text { font-size: 16rpx; font-weight: 900; color: #fff; opacity: 0.9; }
+    
+    &:active { transform: translateY(-50%) scale(0.9); background: rgba(255,255,255,0.3); }
   }
   
   .lunar-info-box {
@@ -769,4 +956,116 @@ const updateFoodAdvice = (term, day) => {
 }
 
 .footer-safe { height: env(safe-area-inset-bottom); padding-bottom: 40rpx; }
+
+/* 抽签动画样式 */
+.lottery-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6); z-index: 2000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  backdrop-filter: blur(10px); border-radius: 64rpx 64rpx 0 0;
+}
+
+.lottery-container {
+  display: flex; flex-direction: column; align-items: center; gap: 40rpx;
+  position: relative;
+}
+
+.lottery-hint { font-size: 24rpx; color: rgba(255,255,255,0.6); font-weight: 600; }
+
+.shake-trigger {
+  background: #C0392B; color: #fff; padding: 20rpx 80rpx; border-radius: 100rpx;
+  font-size: 28rpx; font-weight: 900; border: none; box-shadow: 0 10rpx 40rpx rgba(192,57,43,0.4);
+  &:active { transform: scale(0.95); }
+}
+
+.lottery-close {
+  position: absolute; bottom: -120rpx; width: 80rpx; height: 80rpx;
+  border-radius: 50%; background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 32rpx;
+}
+
+.lottery-box {
+  &.shake { animation: shakeLottery 0.15s infinite; }
+}
+
+@keyframes shakeLottery {
+  0% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-10rpx) rotate(5deg); }
+  100% { transform: translateY(0) rotate(-5deg); }
+}
+
+.lottery-tube {
+  width: 160rpx; height: 260rpx; background: #C0392B;
+  border-radius: 20rpx 20rpx 40rpx 40rpx; position: relative;
+  border: 10rpx solid #A93226; box-shadow: 0 20rpx 50rpx rgba(0,0,0,0.3);
+  .stick {
+    position: absolute; top: -80rpx; width: 14rpx; height: 200rpx;
+    background: #F1C40F; border-radius: 6rpx; box-shadow: 2rpx 0 5rpx rgba(0,0,0,0.1);
+    &:nth-child(1) { left: 15%; transform: rotate(-12deg); }
+    &:nth-child(2) { left: 35%; transform: rotate(-4deg); }
+    &:nth-child(3) { left: 55%; transform: rotate(4deg); }
+    &:nth-child(4) { left: 75%; transform: rotate(12deg); }
+    &:nth-child(5) { left: 25%; transform: rotate(-8deg); top: -90rpx; }
+    &:nth-child(6) { left: 65%; transform: rotate(8deg); top: -85rpx; }
+  }
+}
+
+.fortune-scroll-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 50rpx; width: 100%;
+}
+
+.fortune-scroll {
+  background: #FFFBF2; width: 480rpx; min-height: 600rpx; padding: 60rpx 40rpx;
+  border-radius: 20rpx; box-shadow: 0 30rpx 80rpx rgba(0,0,0,0.4);
+  position: relative; border: 2rpx solid #F3E5AB;
+  display: flex; flex-direction: column;
+  
+  &.fade-in { animation: scrollUnfold 0.8s cubic-bezier(0.2, 1, 0.3, 1); }
+  
+  .f-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 40rpx;
+    .f-no { font-size: 22rpx; color: #8B4513; font-weight: 900; opacity: 0.6; }
+    .f-level { 
+      font-size: 24rpx; font-weight: 900; padding: 4rpx 16rpx; border-radius: 8rpx;
+      &.level-ss { background: #C0392B; color: #fff; }
+      &.level-sj { background: #E67E22; color: #fff; }
+      &.level-zp { background: #7F8C8D; color: #fff; }
+      &.level-tx { background: #2C3E50; color: #fff; }
+    }
+  }
+  
+  .f-body {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 30rpx;
+    .f-title { font-size: 48rpx; font-weight: 900; color: #333; writing-mode: vertical-rl; letter-spacing: 10rpx; }
+    .f-v-divider { width: 4rpx; height: 60rpx; background: #C0392B; margin: 10rpx 0; }
+    .f-text { font-size: 32rpx; color: #444; font-weight: 800; line-height: 1.8; text-align: center; }
+  }
+  
+  .f-footer {
+    margin-top: 50rpx; padding-top: 30rpx; border-top: 1rpx dashed #D4AF37;
+    .f-inte-label { font-size: 22rpx; color: #C0392B; font-weight: 900; display: block; margin-bottom: 8rpx; }
+    .f-inte-text { font-size: 24rpx; color: #7F8C8D; font-weight: 600; line-height: 1.6; }
+  }
+}
+
+@keyframes scrollUnfold {
+  from { transform: scaleY(0.1) scaleX(0.8); opacity: 0; }
+  to { transform: scaleY(1) scaleX(1); opacity: 1; }
+}
+
+.f-actions {
+  display: flex; gap: 24rpx; align-items: center;
+  .f-act-btn {
+    padding: 24rpx 48rpx; border-radius: 100rpx; font-size: 26rpx; font-weight: 900;
+    &.primary { background: #C0392B; color: #fff; box-shadow: 0 10rpx 30rpx rgba(192,57,43,0.3); }
+    &.secondary { background: #fff; color: #C0392B; border: 2rpx solid #C0392B; }
+    &:active { transform: scale(0.95); opacity: 0.9; }
+  }
+  .f-close {
+    width: 80rpx; height: 80rpx; background: rgba(255,255,255,0.2);
+    border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 32rpx; margin-left: 10rpx;
+  }
+}
 </style>

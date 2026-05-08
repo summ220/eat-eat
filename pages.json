@@ -1,4 +1,10 @@
 {
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+		}
+	},
 	"pages": [
 		{
 			"path": "pages/index/index",
@@ -82,6 +88,13 @@
 			"style": {
 				"navigationBarTitleText": "天气详情",
 				"navigationBarBackgroundColor": "#F6F7F9"
+			}
+		},
+		{
+			"path": "pages/family/calendar",
+			"style": {
+				"navigationBarTitleText": "万年历",
+				"navigationBarBackgroundColor": "#FFF5F7"
 			}
 		}
 	],
