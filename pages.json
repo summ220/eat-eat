@@ -76,6 +76,14 @@
 				"navigationBarTitleText": "家庭备忘录",
 				"navigationBarBackgroundColor": "#FFF5F7"
 			}
+		},
+		{
+			"path": "pages/family/weather",
+			"style": {
+				"navigationBarTitleText": "天气详情",
+				"navigationStyle": "default",
+				"navigationBarBackgroundColor": "#F6F7F9"
+			}
 		}
 	],
 	"tabBar": {

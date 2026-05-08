@@ -28,13 +28,13 @@
           <view class="c-divider"></view>
           <text class="c-text">{{ dateInfo.lunar }}</text>
         </view>
-        <view class="glass-capsule">
-          <text class="c-icon">{{ dateInfo.weatherIcon }}</text>
+        <view class="glass-capsule" @click="openWeatherDetail">
+          <text :class="'qi-' + dateInfo.weatherIcon"></text>
           <text class="c-text">{{ dateInfo.weather }} {{ dateInfo.temp }}</text>
         </view>
-        <view class="glass-capsule">
+        <!-- <view class="glass-capsule">
           <text class="c-text">宜煲汤</text>
-        </view>
+        </view> -->
       </view>
     </view>
 
@@ -316,10 +316,14 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import request from '@/common/request.js'
 
 import eatCo from '@/common/localDB.js'
 const familyName = ref(uni.getStorageSync('family_name') || '快乐干饭小家')
 const familyId = ref(uni.getStorageSync('family_id') || 'default_family')
+
+// 天气位置控制
+const weatherLocation = ref('')
 
 // 家庭名称修改
 const showFamilyNameModal = ref(false)
@@ -495,12 +499,51 @@ onShow(() => {
 const dateInfo = ref({
   gregorian: '',
   lunar: '',
-  weather: '晴',
-  temp: '26°C',
-  weatherIcon: '🌤️'
+  weather: '加载中...',
+  temp: '--',
+  weatherIcon: ''
 })
 
+const getLocation = () => {
+  return new Promise((resolve) => {
+    uni.getLocation({
+      type: 'wgs84',
+      success: (res) => {
+        resolve(`${res.longitude.toFixed(2)},${res.latitude.toFixed(2)}`)
+      },
+      fail: (err) => {
+        console.warn('定位失败，使用默认城市', err)
+        resolve('116.40,39.90') // 默认北京
+      }
+    })
+  })
+}
+
+const getWeather = async () => {
+  try {
+    const location = await getLocation()
+    weatherLocation.value = location
+    const res = await request('/weather/now', 'GET', { location })
+    if (res && res.now) {
+      dateInfo.value.weather = res.now.text
+      dateInfo.value.temp = res.now.temp + '°C'
+      dateInfo.value.weatherIcon = res.now.icon || '100'
+    }
+  } catch (e) {
+    console.error('获取天气失败', e)
+    dateInfo.value.weather = '获取失败'
+  }
+}
+
 const initDateWeather = () => {
+  // 加载天气图标库
+  uni.loadFontFace({
+    family: 'qweather-icons',
+    source: 'url("/static/fonts/qweather-icons.woff2")',
+    success: () => console.log('天气图标加载成功'),
+    fail: (err) => console.error('天气图标加载失败', err)
+  })
+
   const d = new Date()
   const m = d.getMonth() + 1
   const day = d.getDate()
@@ -514,6 +557,8 @@ const initDateWeather = () => {
   } catch(e) {
     dateInfo.value.lunar = '农历今日'
   }
+  
+  getWeather()
 }
 
 // 智能提醒
@@ -634,9 +679,21 @@ const handleClearCache = () => {
 const goToMemo = () => {
   uni.navigateTo({ url: '/pages/family/memo' })
 }
+
+const openWeatherDetail = () => {
+  if (!weatherLocation.value) {
+    uni.showToast({ title: '正在获取定位...', icon: 'none' })
+    getWeather()
+    return
+  }
+  uni.navigateTo({
+    url: `/pages/family/weather?location=${weatherLocation.value}`
+  })
+}
 </script>
 
 <style lang="less" scoped>
+@import "@/static/fonts/qweather-icons.wxss";
 .page-container {
   background-color: #F6F7F9;
   min-height: ~"calc(100vh - 240rpx)";
@@ -653,6 +710,7 @@ const goToMemo = () => {
   box-shadow: 0 16rpx 40rpx var(--primary-shadow);
   color: #fff;
   position: relative;
+  // z-index: 20;
   transition: background 0.5s ease;
   
   .top-header {
@@ -756,14 +814,27 @@ const goToMemo = () => {
   border: 2rpx solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.05);
   gap: 12rpx;
+  // pointer-events: auto;
+  // position: relative;
+  // z-index: 30;
+  
+  // &:active {
+  //   transform: scale(0.96);
+  //   opacity: 0.8;
+  // }
   
   .c-text {
     font-size: 24rpx;
     color: #fff;
-    font-weight: 600;
-    letter-spacing: 1rpx;
-    text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+    font-weight: 500;
   }
+  
+  [class^="qi-"] {
+    font-size: 32rpx;
+    color: #fff;
+    margin-right: 4rpx;
+  }
+  
   .c-divider {
     width: 2rpx;
     height: 20rpx;
