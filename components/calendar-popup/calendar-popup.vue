@@ -197,7 +197,7 @@
           
           <view class="f-actions">
             <view class="f-act-btn secondary" @click="resetLottery">再摇一次</view>
-            <view class="f-act-btn primary" @click="goToRecipes">去菜谱看看</view>
+            <!-- <view class="f-act-btn primary" @click="goToRecipes">去菜谱看看</view> -->
             <view class="f-close" @click="lotteryVisible = false">✕</view>
           </view>
         </view>
@@ -391,7 +391,7 @@ const initDate = (dateObj) => {
   isLocalAlmanac.value = true
   updateFoodAdvice(res.Term, d)
 
-  fetchLunarAPI(`${y}-${m}-${d}`)
+  // fetchLunarAPI(`${y}-${m}-${d}`)
 }
 
 const goToCalendar = () => {
@@ -474,45 +474,45 @@ const resetLottery = () => {
   startShake()
 }
 
-const fetchLunarAPI = async (dateStr) => {
-  if (loadingAPI.value) return
-  loadingAPI.value = true
-  try {
-    const res = await request('/lunar/day', 'GET', {
-      location: '101010100',
-      date: dateStr.replace(/-/g, '')
-    })
+// const fetchLunarAPI = async (dateStr) => {
+//   if (loadingAPI.value) return
+//   loadingAPI.value = true
+//   try {
+//     const res = await request('/lunar/day', 'GET', {
+//       location: '101010100',
+//       date: dateStr.replace(/-/g, '')
+//     })
 
-    if (res && res.lunar) {
-      isLocalAlmanac.value = false
-      const l = res.lunar
-      lunarData.value = {
-        ...lunarData.value,
-        IMonthCn: l.lunarMonthCn,
-        IDayCn: l.lunarDayCn,
-        gzYear: l.ganzhiYear,
-        gzMonth: l.ganzhiMonth,
-        gzDay: l.ganzhiDay,
-        Animal: l.animal,
-        Term: l.solarTerm
-      }
+//     if (res && res.lunar) {
+//       isLocalAlmanac.value = false
+//       const l = res.lunar
+//       lunarData.value = {
+//         ...lunarData.value,
+//         IMonthCn: l.lunarMonthCn,
+//         IDayCn: l.lunarDayCn,
+//         gzYear: l.ganzhiYear,
+//         gzMonth: l.ganzhiMonth,
+//         gzDay: l.ganzhiDay,
+//         Animal: l.animal,
+//         Term: l.solarTerm
+//       }
       
-      if (l.yi) {
-        let yiArr = l.yi.split('.').slice(0, 5)
-        if (!yiArr.includes('烹饪')) yiArr[0] = '烹饪'
-        alamanac.value.yi = yiArr
-      }
-      if (l.ji) {
-        alamanac.value.ji = l.ji.split('.').slice(0, 3)
-      }
-    }
-  } catch (e) {
-    console.error('API Fetch Failed:', e)
-    isLocalAlmanac.value = true
-  } finally {
-    loadingAPI.value = false
-  }
-}
+//       if (l.yi) {
+//         let yiArr = l.yi.split('.').slice(0, 5)
+//         if (!yiArr.includes('烹饪')) yiArr[0] = '烹饪'
+//         alamanac.value.yi = yiArr
+//       }
+//       if (l.ji) {
+//         alamanac.value.ji = l.ji.split('.').slice(0, 3)
+//       }
+//     }
+//   } catch (e) {
+//     console.error('API Fetch Failed:', e)
+//     isLocalAlmanac.value = true
+//   } finally {
+//     loadingAPI.value = false
+//   }
+// }
 
 const initLocalAlmanac = (y, m, d) => {
   const dateStr = `${y}-${m}-${d}`

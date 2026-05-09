@@ -29,14 +29,16 @@
             <text class="greeting">{{ greeting }}</text>
           </view>
         </view>
-        <!-- <view class="weather-icon">
-          <text class="emoji">🌤️</text>
-          <text class="tip">宜煲汤</text>
-        </view> -->
+        <view class="refresh-weather-btn" :class="{ 'is-refreshing': isRefreshingWeather }" @click="refreshWeatherAndLocation">
+          <text class="r-icon">🔄</text>
+        </view>
       </view>
 
       <!-- 日期与天气磨砂胶囊 (独立标签) -->
       <view class="glass-capsule-row">
+        <view class="glass-capsule" @click="showCompassPopup = true">
+          <image class="compass-icon" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%2024%2024%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%2210%22%3E%3C%2Fcircle%3E%3Cpolygon%20points%3D%2216.24%207.76%2014.12%2014.12%207.76%2016.24%209.88%209.88%2016.24%207.76%22%3E%3C%2Fpolygon%3E%3C%2Fsvg%3E" />
+        </view>
         <view class="glass-capsule" @click="showCalendarPopup = true">
           <text class="c-text">{{ dateInfo.gregorian }}</text>
           <view class="c-divider"></view>
@@ -389,6 +391,11 @@
       :show="showCalendarPopup" 
       @close="showCalendarPopup = false"
     />
+    <compass-popup 
+      :show="showCompassPopup" 
+      @close="showCompassPopup = false"
+    />
+
 
     <!-- 智能管家提醒详情弹窗 -->
     <view class="modal-mask" v-if="showReminderModal" @click="showReminderModal = false">
@@ -424,6 +431,9 @@ import request from '@/common/request.js'
 import eatCo from '@/common/localDB.js'
 import weatherPopup from '@/components/weather-popup/weather-popup.vue'
 import calendarPopup from '@/components/calendar-popup/calendar-popup.vue'
+import compassPopup from '@/components/compass-popup/compass-popup.vue'
+
+const showCompassPopup = ref(false)
 const familyName = ref(uni.getStorageSync('family_name') || '快乐干饭小家')
 const familyId = ref(uni.getStorageSync('family_id') || 'default_family')
 
@@ -640,6 +650,29 @@ const getWeather = async () => {
   } catch (e) {
     console.error('获取天气失败', e)
     dateInfo.value.weather = '获取失败'
+  }
+}
+
+const isRefreshingWeather = ref(false)
+const refreshWeatherAndLocation = async () => {
+  if (isRefreshingWeather.value) return
+  isRefreshingWeather.value = true
+  try {
+    // 强制清理关于天气和定位的缓存
+    const info = uni.getStorageInfoSync()
+    info.keys.forEach(key => {
+      if (key.startsWith('weather_cache_') || key.startsWith('tencent_city_')) {
+        uni.removeStorageSync(key)
+      }
+    })
+    dateInfo.value.weather = '刷新中...'
+    dateInfo.value.temp = '--'
+    await getWeather()
+    uni.showToast({ title: '天气已更新', icon: 'success' })
+  } catch (e) {
+    uni.showToast({ title: '刷新失败', icon: 'none' })
+  } finally {
+    isRefreshingWeather.value = false
   }
 }
 
@@ -983,6 +1016,39 @@ const handleReminderAction = (r) => {
       }
     }
   }
+
+  .refresh-weather-btn {
+    width: 70rpx;
+    height: 70rpx;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    margin-right: 60rpx;
+    
+    &:active {
+      transform: scale(0.9);
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .r-icon {
+      font-size: 32rpx;
+      color: #fff;
+      display: inline-block;
+    }
+    
+    &.is-refreshing .r-icon {
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .weather-icon {
@@ -1024,7 +1090,6 @@ const handleReminderAction = (r) => {
   gap: 12rpx;
   pointer-events: auto;
   position: relative;
-  z-index: 30;
   
   &:active {
     transform: scale(0.96);
@@ -1051,6 +1116,11 @@ const handleReminderAction = (r) => {
   }
   .c-icon {
     font-size: 28rpx;
+  }
+  .compass-icon {
+    width: 32rpx;
+    height: 32rpx;
+    display: block;
   }
 }
 
