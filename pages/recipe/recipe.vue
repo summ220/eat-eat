@@ -1,6 +1,6 @@
 <template>
-  <custom-header title="菜谱" icon="🍳" />
   <view class="page" @click="exitEditMode" :style="themeStyle">
+    <custom-header title="菜谱" icon="🍳" />
     <view class="search-panel">
       <view class="search-box">
         <text class="search-icon">🔍</text>
@@ -232,21 +232,21 @@ onReachBottom(() => {
 .page {
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 100%);
   background-color: var(--primary-light);
-  min-height: ~"calc(100vh - 240rpx)";
+  // min-height: ~"calc(100vh - 240rpx)";
   padding: 30rpx 24rpx 40rpx;
 }
 
 /* 顶部搜索与操作区 */
 .search-panel {
   position: sticky;
-  top: 88rpx; /* account for custom header */
+  top: 80rpx; /* account for custom header */
   z-index: 100;
   background: var(--primary-light);
   padding-bottom: 20rpx;
   display: flex;
   align-items: center;
   gap: 20rpx;
-  margin-bottom: 30rpx;
+  margin-bottom: 10rpx;
 }
 .search-box {
   flex: 1;
@@ -348,7 +348,14 @@ onReachBottom(() => {
   display: flex;
   flex-direction: column;
   gap: 32rpx;
+  height: 69vh;
+  overflow: auto;
+  /* 隐藏滚动条 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.card-list::-webkit-scrollbar { display: none; }
+
 .recipe-card {
   position: relative;
   background: #ffffff;

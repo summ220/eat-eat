@@ -1,6 +1,6 @@
 <template>
-  <custom-header title="家里食材" icon="🍅" />
   <view class="page" :style="themeStyle">
+    <custom-header title="家里食材" icon="🍅" />
     <view class="top-actions-bar">
       <button class="action-btn-top clear" @click="clearExpired">清除过期</button>
       <button class="action-btn-top add" @click="goAdd">+ 添加</button>
@@ -332,8 +332,8 @@ const deleteItem = (item) => {
 <style lang="less" scoped>
 .page {
   background: #FAFAFA;
-  min-height: ~"calc(100vh - 240rpx)";
-  padding-bottom: 40rpx;
+  // height: ~"calc(100vh - 70rpx)";
+  // padding-bottom: 40rpx;
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }
 
@@ -346,7 +346,7 @@ const deleteItem = (item) => {
   align-items: center;
   padding: 20rpx 40rpx;
   gap: 20rpx;
-  background: var(--primary-light);
+  // background: var(--primary-light);
 }
 
 .action-btn-top {
@@ -394,20 +394,16 @@ const deleteItem = (item) => {
   display: flex;
   align-items: flex-start;
   padding: 0 20rpx;
+  height: 80vh;
 }
 
 .sidebar {
-  position: sticky;
-  top: 130rpx;
   width: 170rpx;
   background: #fff;
   border-radius: 36rpx;
   padding: 20rpx 0;
   box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.03);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  max-height: 60vh;
+  max-height: 58vh;
   overflow-y: auto;
   /* 隐藏滚动条 */
   scrollbar-width: none;
@@ -453,7 +449,13 @@ const deleteItem = (item) => {
   padding-left: 20rpx;
   display: flex;
   flex-direction: column;
+  height: 80vh;
+  overflow: auto;
+  /* 隐藏滚动条 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.list-container::-webkit-scrollbar { display: none; }
 
 .item-card {
   background: #fff;
