@@ -1,6 +1,6 @@
 <template>
+  <custom-header title="购物清单" icon="🛒" />
   <view class="page" :style="themeStyle">
-    <custom-header title="购物清单" icon="🛒" />
     <view class="top-actions-bar">
       <button class="action-btn-top clear" @click="clearDone">清空已购</button>
       <button class="action-btn-top add" @click="goAdd">+ 新增</button>
@@ -9,11 +9,13 @@
     <view class="main-layout">
       <!-- 左侧分类侧边栏 -->
       <view class="sidebar">
-        <view class="nav-item" :class="{ active: currentCategory === '全部' }" @click="switchCategory('全部')">
-          <text class="nav-text">全部</text>
-        </view>
-        <view class="nav-item" v-for="cat in categories" :key="cat" :class="{ active: currentCategory === cat }" @click="switchCategory(cat)">
-          <text class="nav-text">{{ cat }}</text>
+        <view class="sidebar-list">
+          <view class="nav-item" :class="{ active: currentCategory === '全部' }" @click="switchCategory('全部')">
+            <text class="nav-text">全部</text>
+          </view>
+          <view class="nav-item" v-for="cat in categories" :key="cat" :class="{ active: currentCategory === cat }" @click="switchCategory(cat)">
+            <text class="nav-text">{{ cat }}</text>
+          </view>
         </view>
         <view class="nav-item add-cat-btn-side" @click="showCatModal = true">
           <text class="nav-text" style="color: var(--primary)">+ 添加分类</text>
@@ -52,6 +54,9 @@
             <text class="action-btn delete" @click="deleteItem(item)">🗑️ 删除</text>
           </view>
         </view>
+        
+        <!-- 底部防遮挡安全区 -->
+        <view class="list-bottom-safe"></view>
       </view>
     </view>
 
@@ -99,10 +104,24 @@
       </view>
     </view>
 
-    <!-- 底部统计栏 -->
-    <view class="stat-card">
-      <text class="stat-text">已购买 {{ doneCount }}/{{ list.length }} 件</text>
-      <text class="stat-money">本次花费：¥ <text class="stat-money-num" @click="checkCost">{{ totalCost }}</text></text>
+    <!-- 底部悬浮统计区域 -->
+    <view class="stat-wrapper" :class="{ 'is-expanded': isStatExpanded }">
+      <view class="stat-card-anim" @click="!isStatExpanded ? (isStatExpanded = true) : (isStatExpanded = false)">
+        <!-- 收起时的内容 -->
+        <view class="stat-collapsed" :class="{ 'hide': isStatExpanded }">
+          <text class="circle-icon">预估</text>
+          <text class="circle-text">花费</text>
+        </view>
+        
+        <!-- 展开时的内容 (复刻原版) -->
+        <view class="stat-expanded-content" :class="{ 'show': isStatExpanded }">
+          <view class="start-row">
+            <text class="shouqi">《</text>
+            <text class="stat-text">已购买 {{ doneCount }}/{{ list.length }} 件</text>
+          </view>
+          <text class="stat-money">本次花费：¥ <text class="stat-money-num" @click.stop="checkCost">{{ totalCost }}</text></text>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -114,6 +133,7 @@ import { onShow } from '@dcloudio/uni-app'
 const list = ref([])
 const categories = ref([])
 const currentCategory = ref('全部')
+const isStatExpanded = ref(false)
 
 // 分类管理
 const showCatModal = ref(false)
@@ -452,23 +472,101 @@ const checkCost = () => {
   }
 }
 
-.stat-card {
+/* 底部悬浮统计区域动画样式 */
+.stat-wrapper {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 30rpx;
+  left: 40rpx;
   z-index: 200;
-  margin: 0 40rpx 30rpx;
-  border-radius: 24rpx;
-  padding: 30rpx;
-  background: #fff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+}
+
+.stat-card-anim {
+  background: var(--primary-grad);
+  border-radius: 100rpx;
+  box-shadow: 0 8rpx 30rpx var(--primary-shadow);
+  height: 90rpx;
+  width: 90rpx; /* 圆形状态 */
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.stat-wrapper.is-expanded .stat-card-anim {
+  width: calc(100vw - 80rpx); /* 展开状态宽度，保持原版 40rpx 边距 */
+  background: #fff; /* 展开后变成白色卡片 */
+  border-radius: 24rpx; /* 恢复原版圆角 */
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05); /* 恢复原版阴影 */
+}
+
+/* 收起时的状态 */
+.stat-collapsed {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: opacity 0.3s;
+  opacity: 1;
+}
+.stat-collapsed.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+.circle-icon {
+  font-size: 20rpx;
+  font-weight: 900;
+}
+.circle-text {
+  font-size: 20rpx;
+  font-weight: bold;
+  margin-top: 4rpx;
+}
+
+/* 展开时的状态 */
+.stat-expanded-content {
+  position: absolute;
+  left: 0; top: 0;
+  width: calc(100vw - 80rpx);
+  height: 100%;
+  padding: 0 30rpx 0 10rpx;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  opacity: 0;
+  transition: opacity 0.3s 0.1s; /* 延迟出现 */
+  pointer-events: none;
+}
+.stat-expanded-content.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.start-row{
+  display: flex;
+}
+
+.shouqi {
+  font-size: 30rpx;
+  color: var(--primary);
+  font-weight: bold;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 30rpx;
 }
 
 .stat-text {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
   font-size: 26rpx;
   color: var(--primary);
 }
@@ -493,24 +591,34 @@ const checkCost = () => {
 }
 
 .sidebar {
-  // position: sticky;
-  // top: 130rpx;
   width: 170rpx;
   background: #fff;
   border-radius: 36rpx;
-  padding: 20rpx 0;
+  padding-top: 20rpx;
   box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.03);
-  max-height: 58vh;
-  // display: flex;
-  // flex-direction: column;
-  // flex-shrink: 0;
-  // max-height: 60vh;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-list {
+  flex: 1;
   overflow-y: auto;
-  /* 隐藏滚动条 */
   scrollbar-width: none;
   -ms-overflow-style: none;
+  min-height: 0;
 }
-.sidebar::-webkit-scrollbar { display: none; }
+.sidebar-list::-webkit-scrollbar { display: none; }
+
+.add-cat-btn-side {
+  flex-shrink: 0;
+  border-top: 1rpx solid #F0F2F5;
+}
+
+.list-bottom-safe {
+  height: 120rpx;
+  flex-shrink: 0;
+}
 
 .nav-item {
   height: 90rpx;

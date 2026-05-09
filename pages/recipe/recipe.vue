@@ -1,6 +1,6 @@
 <template>
+  <custom-header title="菜谱" icon="🍳" />
   <view class="page" @click="exitEditMode" :style="themeStyle">
-    <custom-header title="菜谱" icon="🍳" />
     <view class="search-panel">
       <view class="search-box">
         <text class="search-icon">🔍</text>

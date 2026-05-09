@@ -1,6 +1,6 @@
 <template>
+  <custom-header title="家里食材" icon="🍅" />
   <view class="page" :style="themeStyle">
-    <custom-header title="家里食材" icon="🍅" />
     <view class="top-actions-bar">
       <button class="action-btn-top clear" @click="clearExpired">清除过期</button>
       <button class="action-btn-top add" @click="goAdd">+ 添加</button>
@@ -8,22 +8,24 @@
     
     <view class="main-layout">
       <!-- 左侧分类导航 -->
-      <view class="sidebar no-scrollbar">
-        <view 
-          class="nav-item" 
-          :class="{ active: currentCategory === '全部' }" 
-          @click="switchCategory('全部')"
-        >
-          <text class="nav-text">全部</text>
-        </view>
-        <view 
-          class="nav-item" 
-          v-for="cat in categories" 
-          :key="cat" 
-          :class="{ active: currentCategory === cat }" 
-          @click="switchCategory(cat)"
-        >
-          <text class="nav-text">{{ cat }}</text>
+      <view class="sidebar">
+        <view class="sidebar-list">
+          <view 
+            class="nav-item" 
+            :class="{ active: currentCategory === '全部' }" 
+            @click="switchCategory('全部')"
+          >
+            <text class="nav-text">全部</text>
+          </view>
+          <view 
+            class="nav-item" 
+            v-for="cat in categories" 
+            :key="cat" 
+            :class="{ active: currentCategory === cat }" 
+            @click="switchCategory(cat)"
+          >
+            <text class="nav-text">{{ cat }}</text>
+          </view>
         </view>
         <view class="nav-item add-cat-btn-side" @click="showCatModal = true">
           <text class="nav-text" style="color: var(--primary)">+ 添加分类</text>
@@ -60,6 +62,9 @@
             <text class="action-btn delete" @click="deleteItem(item)">🗑️ 删除</text>
           </view>
         </view>
+        
+        <!-- 底部防遮挡安全区 -->
+        <view class="list-bottom-safe"></view>
       </view>
     </view>
     
@@ -401,15 +406,31 @@ const deleteItem = (item) => {
   width: 170rpx;
   background: #fff;
   border-radius: 36rpx;
-  padding: 20rpx 0;
+  padding-top: 20rpx;
   box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.03);
-  max-height: 58vh;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-list {
+  flex: 1;
   overflow-y: auto;
-  /* 隐藏滚动条 */
   scrollbar-width: none;
   -ms-overflow-style: none;
+  min-height: 0;
 }
-.sidebar::-webkit-scrollbar { display: none; }
+.sidebar-list::-webkit-scrollbar { display: none; }
+
+.add-cat-btn-side {
+  flex-shrink: 0;
+  border-top: 1rpx solid #F0F2F5;
+}
+
+.list-bottom-safe {
+  height: 120rpx;
+  flex-shrink: 0;
+}
 
 .nav-item {
   height: 90rpx;

@@ -15,6 +15,7 @@
               <text class="city-name">{{ weather.city }}</text>
               <text class="top-weather-icon">{{ getWeatherEmoji(weather.now.icon) }}</text>
             </view>
+            <view class="city-name-district">({{ weather.district }})</view>
             <view class="temp-row">
               <text class="temp-num">{{ weather.now.temp || '--' }}</text>
               <text class="temp-unit">°C</text>
@@ -136,6 +137,7 @@ const weather = ref({
   indices: [],
   pop: 0,
   city: '获取中...',
+  district: '获取中...'
 })
 
 const TENCENT_MAP_KEY = 'PUXBZ-SGFLZ-DFUXY-TJJYY-GF7ZS-VQBV3'
@@ -189,8 +191,9 @@ const getCityNameByTencent = (loc) => {
       success: (res) => {
         if (res.data && res.data.status === 0 && res.data.result) {
           let city = res.data.result.address_component.city || res.data.result.address_component.district
-          if (city) {
-            resolve(city.replace('市', ''))
+          let district = res.data.result.address_component.district
+          if (city && district) {
+            resolve({ city, district })
             return
           }
         }
@@ -204,7 +207,7 @@ const getCityNameByTencent = (loc) => {
 const fetchData = async () => {
   try {
     const loc = props.location
-    const [cityName, nowRes, dailyRes, indicesRes, hourlyRes] = await Promise.all([
+    const [{ city, district }, nowRes, dailyRes, indicesRes, hourlyRes] = await Promise.all([
       getCityNameByTencent(loc),
       request('/weather/now', 'GET', { location: loc }).catch(() => null),
       request('/weather/7d', 'GET', { location: loc }).catch(() => null),
@@ -212,7 +215,8 @@ const fetchData = async () => {
       request('/weather/24h', 'GET', { location: loc }).catch(() => null)
     ])
 
-    weather.value.city = cityName || '未知位置'
+    weather.value.city = city || '未知🏙️'
+    weather.value.district = district || '未知🧭'
     if (nowRes && nowRes.now) weather.value.now = nowRes.now
     if (dailyRes && dailyRes.daily) weather.value.daily = dailyRes.daily
     if (indicesRes && indicesRes.daily) weather.value.indices = indicesRes.daily
@@ -384,7 +388,11 @@ const getDayLabel = (idx, date) => {
     display: flex; align-items: center; justify-content: center; gap: 16rpx;
     margin-bottom: 10rpx;
     .city-name { font-size: 40rpx; font-weight: 800; color: #fff; }
-    .top-weather-icon { font-size: 56rpx; }
+    .top-weather-icon { font-size: 40rpx; }
+  }
+  .city-name-district {
+    font-size: 30rpx;
+    color: rgba(255,255,255,0.8);
   }
   .temp-row {
     display: flex; align-items: baseline; justify-content: center; margin-bottom: 10rpx;
