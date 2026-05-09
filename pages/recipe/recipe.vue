@@ -52,7 +52,8 @@
           </view>
           <view class="recipe-info">
             <text class="info-text">⏱ {{ recipe.duration }}</text>
-            <text class="info-text">🌶 {{ recipe.difficulty }}</text>
+            <text class="info-text">🔥 {{ recipe.kcal }}kcal</text>
+            <text class="info-text health-tag">{{ recipe.healthTag }}</text>
             <text class="favorite" @click.stop="toggleFavorite(recipe)">{{ recipe.favorite ? '❤️' : '🤍' }}</text>
           </view>
         </view>
@@ -98,7 +99,7 @@ const themeStyle = computed(() => {
   `
 })
 
-const categories = ['全部', '家常菜', '快手菜', '素食', '肉类', '汤品']
+const categories = ['全部', '家常菜', '减脂', '增肌', '健康', '儿童', '汤品']
 const defaultCover = 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png'
 
 const makeRecipe = (item, index) => ({
@@ -111,7 +112,9 @@ const makeRecipe = (item, index) => ({
   ingredients: item.ingredients || [],
   steps: item.steps || [],
   favorite: !!item.favorite,
-  own: item.own !== undefined ? item.own : true
+  own: item.own !== undefined ? item.own : true,
+  kcal: item.kcal || Math.floor(Math.random() * 400 + 100), // 模拟热量数据
+  healthTag: item.healthTag || (['低脂', '高蛋白', '均衡', '营养'][index % 4])
 })
 
 import eatCo from '@/common/localDB.js'
@@ -447,7 +450,13 @@ onReachBottom(() => {
   border-radius: 12rpx;
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: 12rpx;
+  
+  &.health-tag {
+    background: #F0F9F4;
+    color: #4DB88F;
+    border: 1rpx solid #E8F5E9;
+  }
 }
 .favorite {
   margin-left: auto;

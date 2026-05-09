@@ -1,7 +1,21 @@
 <template>
-  <view class="page-container" :style="themeStyle">
+  <view class="page-container" :style="themeStyle" @click="isEditingPrefs = isEditingTaste = false">
     <!-- 1. 顶部大卡片 -->
     <view class="top-card">
+      <!-- 智能提醒跑马灯 (移至最顶部) -->
+      <view class="marquee-reminder-row" v-if="reminders.length > 0" @click="showReminderModal = true">
+        <view class="marquee-capsule">
+          <text class="m-icon">📢</text>
+          <view class="m-content-wrap">
+            <view class="m-scroll-box">
+              <text class="m-scroll-text">智能管家提醒：</text>
+              <text class="m-scroll-text">{{ concatenatedReminders }}</text>
+              <text class="m-scroll-text">{{ concatenatedReminders }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
       <view class="top-header">
         <view class="user-info">
           <image class="avatar" src="https://img-blog.csdnimg.cn/20240110133807328.png" mode="aspectFill" />
@@ -29,13 +43,9 @@
           <text class="c-text">{{ dateInfo.lunar }}</text>
         </view>
         <view class="glass-capsule" @click="openWeatherDetail">
-          <!-- <text :class="'qi-' + dateInfo.weatherIcon"></text> -->
           <text>{{ getWeatherEmoji(dateInfo.weatherIcon) }}</text>
           <text class="c-text">{{ dateInfo.weather }} {{ dateInfo.temp }}</text>
         </view>
-        <!-- <view class="glass-capsule">
-          <text class="c-text">宜煲汤</text>
-        </view> -->
       </view>
     </view>
 
@@ -71,17 +81,36 @@
         </view>
       </view>
 
-      <!-- 7. 智能提醒 -->
-      <view class="section reminders-section">
-        <view class="section-title"><text class="title-text">智能管家提醒</text></view>
-        <view class="reminder-list">
-          <view class="reminder-item" v-for="(r, i) in reminders" :key="i" :class="r.type">
-            <view class="r-icon-box"><text class="r-icon">{{ r.icon }}</text></view>
-            <text class="r-text">{{ r.text }}</text>
-            <view class="r-btn">{{ r.action }}</view>
+      <!-- 13. 家庭健康管理入口 -->
+      <view class="section health-section" @click="goToHealth">
+        <view class="section-title">
+          <text class="title-text">家庭健康管理</text>
+          <text class="action-text">查看 ></text>
+        </view>
+        <view class="health-card-body">
+          <view class="health-info-row">
+            <view class="h-stat">
+              <text class="h-val">22.4</text>
+              <text class="h-label">平均BMI</text>
+            </view>
+            <view class="h-sep"></view>
+            <view class="h-stat">
+              <text class="h-val">健康</text>
+              <text class="h-label">状态</text>
+            </view>
+            <view class="h-sep"></view>
+            <view class="h-stat">
+              <text class="h-val">85%</text>
+              <text class="h-label">目标达成</text>
+            </view>
+          </view>
+          <view class="health-tip-box">
+            <text class="h-tip-icon">🍏</text>
+            <text class="h-tip-text">全家近一周饮食结构均衡，建议继续保持。</text>
           </view>
         </view>
       </view>
+
 
       <!-- 3. 今日三餐计划 -->
       <view class="section meals-section">
@@ -105,12 +134,112 @@
         </view>
       </view>
 
+      <!-- 12. 家庭备忘录入口 -->
+      <view class="section memo-section" @click="goToMemo">
+        <view class="section-title">
+          <text class="title-text">家庭备忘录</text>
+          <text class="action-text">查看 ></text>
+        </view>
+        <view class="memo-preview">
+          <text class="memo-desc">记录家庭琐事、重要日子或购物心愿单...</text>
+        </view>
+      </view>
+
       <!-- 8. 快捷功能宫格 -->
       <view class="section quick-section">
         <view class="quick-grid">
           <view class="quick-item" v-for="(q, i) in quickFuncs" :key="i" @click="handleSetting(q.name)">
             <view class="q-icon-wrap"><text class="q-icon">{{ q.icon }}</text></view>
             <text class="q-text">{{ q.name }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 5. 饮食偏好设置 -->
+      <view class="section prefs-section">
+        <view class="section-title"><text class="title-text">饮食偏好</text></view>
+        <view class="pref-group">
+          <text class="p-label">全家口味 (长按管理)</text>
+          <view class="p-options">
+            <view 
+              class="p-tag" 
+              :class="{ active: prefs.taste === t, editing: isEditingTaste }" 
+              v-for="t in tasteOptions" 
+              :key="t" 
+              @click.stop="selectTaste(t)"
+              @longpress.stop="isEditingTaste = !isEditingTaste"
+            >
+              <text>{{ t }}</text>
+              <view class="p-del" v-if="isEditingTaste" @click.stop="removeTaste(t)">×</view>
+            </view>
+            <view class="p-tag add-btn" @click.stop="openAddTasteModal">
+              <text class="plus">+</text>
+            </view>
+          </view>
+        </view>
+        <view class="pref-group">
+          <text class="p-label">忌口不吃 (长按管理)</text>
+          <view class="p-options">
+            <view 
+              class="p-tag" 
+              :class="{ active: prefs.avoid.includes(a), editing: isEditingPrefs }" 
+              v-for="a in prefs.avoid" 
+              :key="a" 
+              @click.stop="toggleAvoid(a)"
+              @longpress.stop="isEditingPrefs = !isEditingPrefs"
+            >
+              <text>{{ a }}</text>
+              <view class="p-del" v-if="isEditingPrefs" @click.stop="removeAvoid(a)">×</view>
+            </view>
+            <!-- 添加按钮 -->
+            <view class="p-tag add-btn" @click.stop="openAddAvoidModal">
+              <text class="plus">+</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 添加口味弹窗 -->
+      <view class="modal-mask" v-if="showAddTasteModal" @click="showAddTasteModal = false">
+        <view class="modal-content" @click.stop>
+          <text class="modal-title">添加口味偏好</text>
+          <view class="input-box">
+            <input class="join-input" v-model="newTaste" placeholder="输入口味名称，如：麻辣" focus />
+          </view>
+          <view class="modal-btns">
+            <button class="m-btn-sub" @click="showAddTasteModal = false">取消</button>
+            <button class="m-btn-main" @click="confirmAddTaste">添加</button>
+          </view>
+        </view>
+      </view>
+
+      <!-- 添加忌口弹窗 -->
+      <view class="modal-mask" v-if="showAddAvoidModal" @click="showAddAvoidModal = false">
+        <view class="modal-content" @click.stop>
+          <text class="modal-title">添加忌口食材</text>
+          <view class="input-box">
+            <input class="join-input" v-model="newAvoid" placeholder="输入食材名称，如：生姜" focus />
+          </view>
+          <view class="modal-btns">
+            <button class="m-btn-sub" @click="showAddAvoidModal = false">取消</button>
+            <button class="m-btn-main" @click="confirmAddAvoid">添加</button>
+          </view>
+        </view>
+      </view>
+
+      <!-- 9. 消费趋势卡片 -->
+      <view class="section trend-section">
+        <view class="section-title"><text class="title-text">近7日开销</text></view>
+        <view class="chart-box">
+          <view class="chart-bars">
+            <view class="bar-col" v-for="(val, day) in trends" :key="day">
+              <view class="bar-track">
+                <view class="bar-fill" :style="{ height: (val / 200 * 100) + '%' }">
+                  <text class="bar-val" v-if="val > 0">{{ val }}</text>
+                </view>
+              </view>
+              <text class="bar-label">{{ day }}</text>
+            </view>
           </view>
         </view>
       </view>
@@ -134,75 +263,14 @@
         </view>
       </view>
 
-      <!-- 9. 消费趋势卡片 -->
-      <view class="section trend-section">
-        <view class="section-title"><text class="title-text">近7日开销</text></view>
-        <view class="chart-box">
-          <view class="chart-bars">
-            <view class="bar-col" v-for="(val, day) in trends" :key="day">
-              <view class="bar-track">
-                <view class="bar-fill" :style="{ height: (val / 200 * 100) + '%' }">
-                  <text class="bar-val" v-if="val > 0">{{ val }}</text>
-                </view>
-              </view>
-              <text class="bar-label">{{ day }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 5. 饮食偏好设置 -->
-      <view class="section prefs-section">
-        <view class="section-title"><text class="title-text">饮食偏好</text></view>
-        <view class="pref-group">
-          <text class="p-label">全家口味</text>
-          <view class="p-options">
-            <view 
-              class="p-tag" 
-              :class="{ active: prefs.taste === t }" 
-              v-for="t in ['清淡', '适中', '重口']" 
-              :key="t" 
-              @click="prefs.taste = t"
-            >
-              <text>{{ t }}</text>
-            </view>
-          </view>
-        </view>
-        <view class="pref-group">
-          <text class="p-label">忌口不吃 (多选)</text>
-          <view class="p-options">
-            <view 
-              class="p-tag" 
-              :class="{ active: prefs.avoid.includes(a) }" 
-              v-for="a in ['海鲜', '羊肉', '香菜', '葱', '蒜', '辣']" 
-              :key="a" 
-              @click="toggleAvoid(a)"
-            >
-              <text>{{ a }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 12. 家庭备忘录入口 -->
-      <view class="section memo-section" @click="goToMemo">
-        <view class="section-title">
-          <text class="title-text">家庭备忘录</text>
-          <text class="action-text">查看 ></text>
-        </view>
-        <view class="memo-preview">
-          <text class="memo-desc">记录家庭琐事、重要日子或购物心愿单...</text>
-        </view>
-      </view>
-
       <!-- 11. 底部设置模块 -->
       <view class="bottom-settings">
         <view class="set-list">
-          <view class="set-item" @click="handleSetting('分类设置')">
+          <!-- <view class="set-item" @click="handleSetting('分类设置')">
             <text class="set-icon">🏷️</text>
             <text class="set-text">分类设置</text>
             <text class="set-arrow">></text>
-          </view>
+          </view> -->
           <view class="set-item">
             <text class="set-icon" @click="handleClearCache">🧹</text>
             <text class="set-text">清除缓存</text>
@@ -321,6 +389,31 @@
       :show="showCalendarPopup" 
       @close="showCalendarPopup = false"
     />
+
+    <!-- 智能管家提醒详情弹窗 -->
+    <view class="modal-mask" v-if="showReminderModal" @click="showReminderModal = false">
+      <view class="modal-content reminder-modal" @click.stop>
+        <view class="modal-header">
+          <text class="modal-title">🤖 智能管家提醒</text>
+          <text class="modal-subtitle">为您整理了 {{ reminders.length }} 条待办事项</text>
+        </view>
+        
+        <scroll-view scroll-y class="reminder-detail-list">
+          <view class="detail-item" v-for="(r, i) in reminders" :key="i" :class="r.type">
+            <view class="d-left">
+              <view class="d-icon">{{ r.icon }}</view>
+              <view class="d-info">
+                <text class="d-text">{{ r.text }}</text>
+                <text class="d-type-name">{{ r.type === 'warning' ? '库存预警' : (r.type === 'danger' ? '过期提醒' : '健康建议') }}</text>
+              </view>
+            </view>
+            <view class="d-action-btn" @click="handleReminderAction(r)">{{ r.action }}</view>
+          </view>
+        </scroll-view>
+        
+        <button class="close-reminder-btn" @click="showReminderModal = false">我知道了</button>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -338,6 +431,7 @@ const familyId = ref(uni.getStorageSync('family_id') || 'default_family')
 const weatherLocation = ref('')
 const showWeatherPopup = ref(false)
 const showCalendarPopup = ref(false)
+const showReminderModal = ref(false)
 
 // 家庭名称修改
 const showFamilyNameModal = ref(false)
@@ -632,14 +726,69 @@ const trends = ref({
 // 偏好
 const prefs = ref({
   taste: '适中',
-  avoid: ['香菜', '辣']
+  avoid: ['海鲜', '羊肉', '香菜', '葱', '蒜', '辣']
 })
+const tasteOptions = ref(['清淡', '适中', '重口'])
+const isEditingPrefs = ref(false)
+const isEditingTaste = ref(false)
+const showAddAvoidModal = ref(false)
+const showAddTasteModal = ref(false)
+const newAvoid = ref('')
+const newTaste = ref('')
+
+const selectTaste = (t) => {
+  if (isEditingTaste.value) return
+  prefs.value.taste = t
+}
+
+const openAddTasteModal = () => {
+  newTaste.value = ''
+  showAddTasteModal.value = true
+}
+
+const confirmAddTaste = () => {
+  const val = newTaste.value.trim()
+  if (!val) return
+  if (tasteOptions.value.includes(val)) {
+    return uni.showToast({ title: '已在列表中', icon: 'none' })
+  }
+  tasteOptions.value.push(val)
+  showAddTasteModal.value = false
+}
+
+const removeTaste = (t) => {
+  tasteOptions.value = tasteOptions.value.filter(x => x !== t)
+  if (prefs.value.taste === t) prefs.value.taste = tasteOptions.value[0] || ''
+  if (tasteOptions.value.length === 0) isEditingTaste.value = false
+}
+
 const toggleAvoid = (a) => {
+  if (isEditingPrefs.value) return // 编辑模式下不触发切换
   if (prefs.value.avoid.includes(a)) {
     prefs.value.avoid = prefs.value.avoid.filter(x => x !== a)
   } else {
     prefs.value.avoid.push(a)
   }
+}
+
+const openAddAvoidModal = () => {
+  newAvoid.value = ''
+  showAddAvoidModal.value = true
+}
+
+const confirmAddAvoid = () => {
+  const val = newAvoid.value.trim()
+  if (!val) return
+  if (prefs.value.avoid.includes(val)) {
+    return uni.showToast({ title: '已在列表中', icon: 'none' })
+  }
+  prefs.value.avoid.push(val)
+  showAddAvoidModal.value = false
+}
+
+const removeAvoid = (a) => {
+  prefs.value.avoid = prefs.value.avoid.filter(x => x !== a)
+  if (prefs.value.avoid.length === 0) isEditingPrefs.value = false
 }
 
 // 分类管理
@@ -667,12 +816,13 @@ const removeCategory = (idx) => {
 }
 
 const handleSetting = (name) => {
-  if (name === '分类设置') {
-    loadCategories()
-    showCatModal.value = true
-  } else {
-    uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
-  }
+  // if (name === '分类设置') {
+  //   loadCategories()
+  //   showCatModal.value = true
+  // } else {
+  //   uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
+  // }
+  uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
 }
 
 const handleClearCache = () => {
@@ -710,6 +860,18 @@ const goToMemo = () => {
   uni.navigateTo({ url: '/pages/family/memo' })
 }
 
+const goToHealth = () => {
+  console.log('Attempting to navigate to health page...')
+  uni.navigateTo({ 
+    url: '/pages/family/health',
+    success: () => console.log('Navigation success'),
+    fail: (err) => {
+      console.error('Navigation to health page failed:', err)
+      uni.showToast({ title: '页面跳转失败: ' + (err.errMsg || ''), icon: 'none' })
+    }
+  })
+}
+
 const openWeatherDetail = () => {
   if (!weatherLocation.value) {
     uni.showToast({ title: '正在获取定位...', icon: 'none' })
@@ -717,6 +879,25 @@ const openWeatherDetail = () => {
     return
   }
   showWeatherPopup.value = true
+}
+const concatenatedReminders = computed(() => {
+  // return reminders.value.map(r => `${r.icon} ${r.text} [${r.action}]`).join(' 　　 ')
+  return reminders.value.map(r => `${r.icon} ${r.text}`).join(' 　　 ')
+})
+
+const handleReminderClick = () => {
+  showReminderModal.value = true
+}
+
+const handleReminderAction = (r) => {
+  showReminderModal.value = false
+  if (r.text.includes('鸡蛋') || r.text.includes('牛奶')) {
+    uni.navigateTo({ url: '/pages/index/index' })
+  } else if (r.text.includes('冬瓜')) {
+    uni.switchTab({ url: '/pages/recipe/recipe' })
+  } else {
+    uni.showToast({ title: `正在处理：${r.text}`, icon: 'none' })
+  }
 }
 </script>
 
@@ -733,7 +914,7 @@ const openWeatherDetail = () => {
   box-sizing: border-box;
   background: var(--primary-grad);
   border-radius: 0 0 60rpx 60rpx;
-  padding: 140rpx 40rpx 60rpx;
+  padding: 100rpx 40rpx 60rpx;
   box-shadow: 0 16rpx 40rpx var(--primary-shadow);
   color: #fff;
   position: relative;
@@ -841,14 +1022,14 @@ const openWeatherDetail = () => {
   border: 2rpx solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.05);
   gap: 12rpx;
-  // pointer-events: auto;
-  // position: relative;
-  // z-index: 30;
+  pointer-events: auto;
+  position: relative;
+  z-index: 30;
   
-  // &:active {
-  //   transform: scale(0.96);
-  //   opacity: 0.8;
-  // }
+  &:active {
+    transform: scale(0.96);
+    opacity: 0.8;
+  }
   
   .c-text {
     font-size: 24rpx;
@@ -873,7 +1054,64 @@ const openWeatherDetail = () => {
   }
 }
 
-/* 主体内边距调整 */
+  /* 跑马灯提醒胶囊 (全新冰川蓝风格) */
+  .marquee-reminder-row {
+    width: 80%;
+    margin-bottom: 50rpx;
+    animation: fade-in 1s ease;
+  }
+
+  .marquee-capsule {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    padding: 14rpx 28rpx;
+    background: rgba(255, 255, 255, 0.15); // 冰川蓝磨砂感
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-radius: 100rpx;
+    border: 1rpx solid rgba(255, 255, 255, 0.2);
+    // height: 52rpx;
+    overflow: hidden;
+
+    .m-icon {
+      font-size: 26rpx;
+      z-index: 2;
+    }
+
+    .m-content-wrap {
+      flex: 1;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .m-scroll-box {
+      display: flex;
+      white-space: nowrap;
+      width: fit-content;
+      animation: marquee-anim 40s linear infinite;
+    }
+
+    .m-scroll-text {
+      font-size: 22rpx;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.95);
+      padding-right: 40rpx;
+      letter-spacing: 1rpx;
+    }
+  }
+
+
+@keyframes marquee-anim {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
 .main-content {
   margin-top: -60rpx;
   position: relative;
@@ -915,6 +1153,67 @@ const openWeatherDetail = () => {
     font-weight: 800;
     color: #2C3E50;
     margin-bottom: 40rpx;
+  }
+}
+
+/* 提醒详情弹窗样式 */
+.reminder-modal {
+  width: 650rpx !important;
+  padding: 40rpx !important;
+  
+  .modal-header {
+    text-align: center;
+    margin-bottom: 40rpx;
+    .modal-title { font-size: 36rpx; margin-bottom: 8rpx; display: block; margin-top: 20rpx; }
+    .modal-subtitle { font-size: 24rpx; color: #9E9E9E; }
+  }
+  
+  .reminder-detail-list {
+    max-height: 600rpx;
+    margin-bottom: 40rpx;
+    
+    .detail-item {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 30rpx; border-radius: 36rpx; margin-bottom: 20rpx;
+      transition: all 0.2s;
+      gap: 20rpx;
+      
+      &.warning { background: #FFF9F0; .d-action-btn { background: #F2A13B; } }
+      &.danger { background: #FFF5F5; .d-action-btn { background: #FF6B8B; } }
+      &.info { background: #F0F9F4; .d-action-btn { background: #4DB88F; } }
+      
+      .d-left {
+        flex: 1;
+        display: flex; align-items: flex-start; gap: 24rpx;
+        
+        .d-icon { font-size: 44rpx; flex-shrink: 0; margin-top: 4rpx; }
+        .d-info {
+          flex: 1;
+          display: flex; flex-direction: column; gap: 8rpx;
+          
+          .d-text { 
+            font-size: 28rpx; font-weight: 800; color: #2C3E50; 
+            line-height: 1.4;
+            word-break: break-all;
+          }
+          .d-type-name { font-size: 20rpx; color: #9E9E9E; }
+        }
+      }
+      
+      .d-action-btn {
+        flex-shrink: 0;
+        padding: 10rpx 28rpx; border-radius: 100rpx; color: #fff; font-size: 22rpx; font-weight: 900;
+        box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
+      }
+    }
+  }
+  
+  .close-reminder-btn {
+    width: 100%; height: 90rpx; line-height: 90rpx;
+    background: #F8F9FA; color: #9E9E9E; border-radius: 100rpx;
+    font-size: 28rpx; font-weight: 800; border: none;
+    margin-top: 10rpx;
+    &::after { border: none; }
   }
 }
 
@@ -1581,17 +1880,88 @@ const openWeatherDetail = () => {
       font-weight: 500;
       border: 2rpx solid transparent;
       transition: all 0.3s;
+      position: relative;
       
       &.active {
         background: var(--primary-light);
         color: var(--primary);
         border-color: var(--primary);
       }
+
+      &.editing {
+        animation: shake 0.5s infinite;
+      }
+
+      &.add-btn {
+        border: 2rpx dashed #BDC3C7;
+        background: transparent;
+        color: #BDC3C7;
+        padding: 12rpx 32rpx;
+        .plus { font-size: 24rpx; font-weight: bold; }
+      }
+
+      .p-del {
+        position: absolute;
+        top: -12rpx;
+        right: -12rpx;
+        width: 32rpx;
+        height: 32rpx;
+        background: #FF4757;
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20rpx;
+        font-weight: 900;
+        z-index: 10;
+        box-shadow: 0 4rpx 8rpx rgba(255, 71, 87, 0.3);
+      }
     }
   }
 }
 
+@keyframes shake {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(1.5deg); }
+  75% { transform: rotate(-1.5deg); }
+  100% { transform: rotate(0deg); }
+}
+
 /* 12. 家庭备忘录入口 */
+.health-section {
+  // background: #F0F9F4; // 浅绿色背景
+  background: #fff;
+  border-radius: 48rpx;
+  padding: 30rpx;
+  
+  .section-title {
+    margin-bottom: 24rpx;
+    // .title-text { color: #2E7D32; }
+    // .action-text { color: #4CAF50; }
+  }
+  
+  .health-card-body {
+    .health-info-row {
+      display: flex; align-items: center; justify-content: space-around;
+      background: #fff; border-radius: 32rpx; padding: 30rpx; margin-bottom: 20rpx;
+      
+      .h-stat {
+        display: flex; flex-direction: column; align-items: center; gap: 8rpx;
+        .h-val { font-size: 36rpx; font-weight: 900; color: #2E7D32; }
+        .h-label { font-size: 20rpx; color: #9E9E9E; }
+      }
+      .h-sep { width: 1rpx; height: 40rpx; background: #E0E0E0; }
+    }
+    
+    .health-tip-box {
+      display: flex; align-items: center; gap: 16rpx; padding: 0 10rpx;
+      .h-tip-icon { font-size: 32rpx; }
+      .h-tip-text { font-size: 22rpx; color: #9E9E9E; font-weight: 500; }
+    }
+  }
+}
+
 .memo-section {
   cursor: pointer;
   .memo-preview {
