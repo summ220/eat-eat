@@ -178,13 +178,48 @@ const close = () => {
   emit('close')
 }
 
+// 用于腾讯地图API防并发和节流
+const pendingCityReqs = new Map()
+let lastCityReqTime = 0
+
 const getCityNameByTencent = (loc) => {
-  return new Promise((resolve) => {
-    const [lng, lat] = loc.split(',')
+  if (!loc) return Promise.resolve({})
+  
+  const [lngStr, latStr] = loc.split(',')
+  if (!lngStr || !latStr) return Promise.resolve({})
+
+  // 将坐标保留 2 位小数（精度约 1.1 公里），作为缓存 key 的标识
+  // 这样在 1 公里范围内移动时，依然会命中同一个缓存
+  const lng = parseFloat(lngStr).toFixed(2)
+  const lat = parseFloat(latStr).toFixed(2)
+  const cacheKey = `tencent_city_${lat}_${lng}`
+
+  // 1. 本地缓存（6 小时有效）
+  try {
+    const cached = uni.getStorageSync(cacheKey)
+    if (cached && cached.expireTime > Date.now()) {
+      return Promise.resolve(cached.data)
+    }
+  } catch (e) {}
+
+  // 2. 防并发控制：同一范围正在请求则复用 Promise
+  if (pendingCityReqs.has(cacheKey)) {
+    return pendingCityReqs.get(cacheKey)
+  }
+
+  // 3. 节流机制：3 秒内只允许发起一次 API 网络请求
+  const now = Date.now()
+  if (now - lastCityReqTime < 3000) {
+    return Promise.resolve({})
+  }
+  lastCityReqTime = now
+
+  // 发起真实的 API 请求
+  const reqPromise = new Promise((resolve) => {
     uni.request({
       url: 'https://apis.map.qq.com/ws/geocoder/v1/',
       data: {
-        location: `${lat},${lng}`,
+        location: `${latStr},${lngStr}`, // 请求必须使用精确坐标
         key: TENCENT_MAP_KEY,
         output: 'json'
       },
@@ -193,15 +228,31 @@ const getCityNameByTencent = (loc) => {
           let city = res.data.result.address_component.city || res.data.result.address_component.district
           let district = res.data.result.address_component.district
           if (city && district) {
-            resolve({ city, district })
+            const data = { city, district }
+            // 写入本地缓存
+            try {
+              uni.setStorageSync(cacheKey, {
+                data,
+                expireTime: Date.now() + 6 * 60 * 60 * 1000 // 6 小时
+              })
+            } catch (e) {}
+            resolve(data)
             return
           }
         }
-        resolve(null)
+        resolve({})
       },
-      fail: () => resolve(null)
+      fail: () => resolve({}),
+      complete: () => {
+        // 请求完成，移除并发记录
+        pendingCityReqs.delete(cacheKey)
+      }
     })
   })
+
+  // 记录进行中的请求
+  pendingCityReqs.set(cacheKey, reqPromise)
+  return reqPromise
 }
 
 const fetchData = async () => {

@@ -178,15 +178,47 @@ const initLocation = () => {
   })
 }
 
+// 用于腾讯地图API防并发和节流
+const pendingCityReqs = new Map()
+let lastCityReqTime = 0
+
 // 使用腾讯地图逆地址解析获取城市名
 const getCityNameByTencent = (loc) => {
-  return new Promise((resolve) => {
-    // loc 格式为 "lng,lat"
-    const [lng, lat] = loc.split(',')
+  if (!loc) return Promise.resolve(null)
+  
+  const [lngStr, latStr] = loc.split(',')
+  if (!lngStr || !latStr) return Promise.resolve(null)
+
+  // 坐标保留2位小数(约1.1km)，做缓存Key，同一范围内移动共用缓存
+  const lng = parseFloat(lngStr).toFixed(2)
+  const lat = parseFloat(latStr).toFixed(2)
+  const cacheKey = `tencent_city_str_${lat}_${lng}`
+
+  // 1. 本地缓存（6小时）
+  try {
+    const cached = uni.getStorageSync(cacheKey)
+    if (cached && cached.expireTime > Date.now()) {
+      return Promise.resolve(cached.data)
+    }
+  } catch (e) {}
+
+  // 2. 防并发控制
+  if (pendingCityReqs.has(cacheKey)) {
+    return pendingCityReqs.get(cacheKey)
+  }
+
+  // 3. 节流：3秒内限1次API真实调用
+  const now = Date.now()
+  if (now - lastCityReqTime < 3000) {
+    return Promise.resolve(null)
+  }
+  lastCityReqTime = now
+
+  const reqPromise = new Promise((resolve) => {
     uni.request({
       url: 'https://apis.map.qq.com/ws/geocoder/v1/',
       data: {
-        location: `${lat},${lng}`,
+        location: `${latStr},${lngStr}`, // API真实请求使用精确坐标
         key: TENCENT_MAP_KEY,
         output: 'json'
       },
@@ -195,15 +227,29 @@ const getCityNameByTencent = (loc) => {
         if (res.data && res.data.status === 0 && res.data.result) {
           let city = res.data.result.address_component.city || res.data.result.address_component.district
           if (city) {
-            resolve(city.replace('市', ''))
+            const cityName = city.replace('市', '')
+            // 写入本地缓存 6小时
+            try {
+              uni.setStorageSync(cacheKey, {
+                data: cityName,
+                expireTime: Date.now() + 6 * 60 * 60 * 1000
+              })
+            } catch (e) {}
+            resolve(cityName)
             return
           }
         }
         resolve(null)
       },
-      fail: () => resolve(null)
+      fail: () => resolve(null),
+      complete: () => {
+        pendingCityReqs.delete(cacheKey)
+      }
     })
   })
+
+  pendingCityReqs.set(cacheKey, reqPromise)
+  return reqPromise
 }
 
 const fetchData = async () => {
