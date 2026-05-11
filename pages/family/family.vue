@@ -1818,7 +1818,7 @@ const handleReminderAction = (r) => {
   }
 }
 
-.section-title.with-bar {
+.section-title .with-bar {
   position: relative;
   padding-left: 28rpx !important;
   
