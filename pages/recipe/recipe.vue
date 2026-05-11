@@ -14,15 +14,35 @@
       <button class="create-btn" @click="openEditor">+ 新建</button>
     </view>
 
-    <scroll-view class="category-bar" scroll-x="true" show-scrollbar="false">
-      <view
-        class="category-chip"
-        :class="{ active: currentCategory === category }"
-        v-for="category in categories"
-        :key="category"
-        @click="changeCategory(category)"
-      >{{ category }}</view>
-    </scroll-view>
+    <view class="category-wrapper">
+      <scroll-view class="category-bar" scroll-x="true" show-scrollbar="false">
+        <view
+          class="category-chip"
+          :class="{ active: currentCategory === category }"
+          v-for="category in categories"
+          :key="category"
+          @click="changeCategory(category)"
+        >{{ category }}</view>
+      </scroll-view>
+      <view class="category-chip add-chip" @click="openCategoryModal">+</view>
+    </view>
+
+    <!-- 分类管理弹窗 -->
+    <view class="modal-mask" v-if="showCategoryModal" @click="closeCategoryModal">
+      <view class="modal-content" @click.stop>
+        <text class="modal-title">管理分类</text>
+        <view class="cat-manage-list">
+          <view class="cat-manage-item" v-for="cat in categoryList" :key="cat._id">
+            <text>{{ cat.name }}</text>
+            <text class="del-cat" @click="deleteCategory(cat)">删除</text>
+          </view>
+        </view>
+        <view class="add-cat-box">
+          <input class="add-cat-input" v-model="newCategoryName" placeholder="新分类名称" />
+          <view class="add-cat-btn-modal" @click="addCategory">添加</view>
+        </view>
+      </view>
+    </view>
 
     <!-- 编辑模式提示栏 -->
     <view class="edit-bar" v-if="editMode" @click.stop>
@@ -99,7 +119,78 @@ const themeStyle = computed(() => {
   `
 })
 
-const categories = ['全部', '家常菜', '减脂', '增肌', '健康', '儿童', '汤品']
+const categoryList = ref([])
+const categories = computed(() => {
+  return ['全部', ...categoryList.value.map(c => c.name)]
+})
+
+const showCategoryModal = ref(false)
+const newCategoryName = ref('')
+
+const openCategoryModal = () => {
+  showCategoryModal.value = true
+}
+const closeCategoryModal = () => {
+  showCategoryModal.value = false
+  newCategoryName.value = ''
+}
+
+const loadCategories = async () => {
+  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  try {
+    const data = await eatCo.getRecipeCategoryList(familyId)
+    categoryList.value = data
+  } catch (e) {
+    console.error('加载分类失败', e)
+  }
+}
+
+const addCategory = async () => {
+  const name = newCategoryName.value.trim()
+  if (!name) return
+  if (categories.value.includes(name)) {
+    uni.showToast({ title: '分类已存在', icon: 'none' })
+    return
+  }
+  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  try {
+    await eatCo.addRecipeCategory({ name, family_id: familyId })
+    newCategoryName.value = ''
+    await loadCategories()
+  } catch (e) {
+    uni.showToast({ title: '添加失败', icon: 'none' })
+  }
+}
+
+const deleteCategory = async (cat) => {
+  const hasRecipe = recipes.value.some(r => r.category === cat.name)
+  if (hasRecipe) {
+    uni.showToast({ title: '该分类下有菜谱，不能删除', icon: 'none' })
+    return
+  }
+  
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${cat.name}」分类吗？`,
+    confirmColor: '#FF7DA8',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await eatCo.deleteRecipeCategory(cat._id)
+          await loadCategories()
+          if (currentCategory.value === cat.name) {
+            currentCategory.value = '全部'
+            page.value = 1
+          }
+          uni.showToast({ title: '已删除', icon: 'success' })
+        } catch (e) {
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        }
+      }
+    }
+  })
+}
+
 const defaultCover = 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png'
 
 const makeRecipe = (item, index) => ({
@@ -219,6 +310,7 @@ const confirmDelete = (recipe) => {
 
 onShow(() => {
   currentTheme.value = uni.getStorageSync('current_theme') || 0
+  loadCategories()
   loadRecipes()
   exitEditMode()
 })
@@ -289,11 +381,17 @@ onReachBottom(() => {
 }
 
 /* 分类滞动条 */
-.category-bar {
-  width: 100%;
-  white-space: nowrap;
+.category-wrapper {
+  display: flex;
+  align-items: center;
   margin-bottom: 24rpx;
+  width: 100%;
+}
+.category-bar {
+  flex: 1;
+  white-space: nowrap;
   padding: 0 4rpx;
+  min-width: 0;
 }
 .category-chip {
   display: inline-flex;
@@ -316,6 +414,104 @@ onReachBottom(() => {
   transform: scale(1.05);
   box-shadow: 0 8rpx 20rpx var(--primary-shadow);
   border-color: transparent;
+}
+
+.add-chip {
+  font-size: 32rpx;
+  color: var(--primary);
+  background: var(--primary-light);
+  flex-shrink: 0;
+  margin-right: 0;
+  margin-left: 16rpx;
+  border-radius: 50%;
+  border: 1px solid var(--primary);
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+/* 编辑弹窗样式 */
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  width: 620rpx;
+  background: #fff;
+  border-radius: 40rpx;
+  padding: 50rpx 40rpx;
+  box-sizing: border-box;
+  box-shadow: 0 20rpx 50rpx rgba(0, 0, 0, 0.1);
+}
+
+.modal-title {
+  display: block;
+  text-align: center;
+  font-size: 36rpx;
+  color: #333;
+  font-weight: 800;
+  margin-bottom: 40rpx;
+}
+
+.cat-manage-list {
+  max-height: 400rpx;
+  overflow-y: auto;
+  margin-bottom: 30rpx;
+}
+.cat-manage-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 2rpx solid #F8F9FA;
+  font-size: 28rpx;
+  color: #2C3E50;
+}
+.del-cat {
+  color: #FF4757;
+  font-size: 24rpx;
+  font-weight: bold;
+}
+.add-cat-box {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 40rpx;
+}
+.add-cat-input {
+  flex: 1;
+  background: #F8F9FA;
+  height: 80rpx;
+  border-radius: 20rpx;
+  padding: 0 30rpx;
+  font-size: 26rpx;
+}
+.add-cat-btn-modal {
+  background: var(--primary);
+  color: #fff;
+  height: 80rpx;
+  line-height: 80rpx;
+  padding: 0 30rpx;
+  border-radius: 20rpx;
+  font-size: 26rpx;
+  font-weight: bold;
 }
 
 /* 编辑模式提示栏 */

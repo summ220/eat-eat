@@ -103,6 +103,40 @@ const localDB = {
     return { deleted: 1 };
   },
 
+  // ============ 菜谱分类 (eat-recipe-category) ============
+  async getRecipeCategoryList(familyId = 'default_family') {
+    const list = getCollection('eat-recipe-category');
+    if (list.length === 0) {
+       const defaultCategories = ['家常菜', '减脂', '增肌', '健康', '儿童', '汤品'].map(name => ({
+         _id: generateId(),
+         name,
+         family_id: 'default_family',
+         create_time: Date.now()
+       }));
+       setCollection('eat-recipe-category', defaultCategories);
+       return defaultCategories.filter(item => item.family_id === familyId);
+    }
+    return list.filter(item => item.family_id === familyId).sort((a, b) => a.create_time - b.create_time);
+  },
+  async addRecipeCategory(data) {
+    const list = getCollection('eat-recipe-category');
+    const newItem = {
+      ...data,
+      _id: generateId(),
+      create_time: Date.now(),
+      family_id: data.family_id || 'default_family'
+    };
+    list.push(newItem);
+    setCollection('eat-recipe-category', list);
+    return { id: newItem._id };
+  },
+  async deleteRecipeCategory(id) {
+    let list = getCollection('eat-recipe-category');
+    list = list.filter(item => item._id !== id);
+    setCollection('eat-recipe-category', list);
+    return { deleted: 1 };
+  },
+
   // ============ 花费账本 (eat-cost) ============
   async getCostList(familyId = 'default_family') {
     const list = getCollection('eat-cost');

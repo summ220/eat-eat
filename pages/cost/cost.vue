@@ -1,5 +1,5 @@
 <template>
-  <custom-header title="花费账本" icon="💰" />
+  <custom-header title="花费账本" icon="💰" back />
   <view class="page" :style="themeStyle">
     <!-- 月份切换栏 -->
     <view class="month-selector">

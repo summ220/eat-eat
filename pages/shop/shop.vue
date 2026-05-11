@@ -50,7 +50,8 @@
           </view>
 
           <view class="item-footer">
-            <text class="action-btn edit" @click="openEditModal(item)">✏️ 编辑</text>
+            <text class="action-btn edit" @click="openEditModal(item)" v-if="!item.done">✏️ 编辑</text>
+            <text class="action-btn edit" @click="reAdd(item)" v-if="item.done">+ 重新加购</text>
             <text class="action-btn delete" @click="deleteItem(item)">🗑️ 删除</text>
           </view>
         </view>
@@ -153,8 +154,18 @@ const addCategory = () => {
   showCatModal.value = false
 }
 const removeCategory = (idx) => {
-  categories.value.splice(idx, 1)
-  uni.setStorageSync('ingredient_categories', categories.value)
+  const catName = categories.value[idx]
+  uni.showModal({
+    title: '提示',
+    content: `确定要删除分类「${catName}」吗？`,
+    confirmColor: '#FF7DA8',
+    success: (res) => {
+      if (res.confirm) {
+        categories.value.splice(idx, 1)
+        uni.setStorageSync('ingredient_categories', categories.value)
+      }
+    }
+  })
 }
 
 // 主题系统
@@ -268,28 +279,57 @@ const switchCategory = (cat) => {
 // const save = () => { ... }
 
 const toggle = async (item) => {
-  const newDone = !item.done
+  if (item.done) return; // 勾选之后不能取消勾选
+
+  const newDone = true
   item.done = newDone // 乐观更新
-  try {
-    await eatCo.updateShop(item._id, { done: newDone })
-    if (newDone && item.price && parseFloat(item.price) > 0) {
-      // 购买后自动记账
-      const costItem = {
-        name: item.name,
-        price: item.price,
-        date: new Date().toISOString().split('T')[0],
-        category: '餐饮',
-        type: 'out',
-        remark: '购物自动记账',
-        family_id: uni.getStorageSync('family_id') || 'default_family'
-      };
-      await eatCo.addCost(costItem);
-      uni.showToast({ title: '已自动记账', icon: 'success' })
+  
+  const proceedUpdate = async (shouldSyncToStock) => {
+    try {
+      await eatCo.updateShop(item._id, { done: newDone })
+      
+      if (shouldSyncToStock) {
+        await eatCo.addStock({
+          name: item.name,
+          num: item.num,
+          category: item.category || '其他',
+          has: true,
+          family_id: uni.getStorageSync('family_id') || 'default_family'
+        })
+      }
+
+      if (newDone && item.price && parseFloat(item.price) > 0) {
+        // 购买后自动记账
+        const costItem = {
+          name: item.name,
+          price: item.price,
+          date: new Date().toISOString().split('T')[0],
+          category: '餐饮',
+          type: 'out',
+          remark: '购物自动记账',
+          family_id: uni.getStorageSync('family_id') || 'default_family'
+        };
+        await eatCo.addCost(costItem);
+        uni.showToast({ title: shouldSyncToStock ? '已同步并记账' : '已自动记账', icon: 'success' })
+      } else if (shouldSyncToStock) {
+        uni.showToast({ title: '已同步到食材', icon: 'success' })
+      }
+    } catch (e) {
+      item.done = false // 回滚
+      uni.showToast({ title: '更新失败', icon: 'none' })
     }
-  } catch (e) {
-    item.done = !newDone // 回滚
-    uni.showToast({ title: '更新失败', icon: 'none' })
   }
+
+  uni.showModal({
+    title: '同步提示',
+    content: '是否需要同步该物品到「家里食材」？',
+    confirmText: '是',
+    cancelText: '否',
+    confirmColor: '#FF7DA8',
+    success: (res) => {
+      proceedUpdate(res.confirm)
+    }
+  })
 }
 
 const clearDone = () => {
@@ -386,12 +426,24 @@ const openEditModal = (item) => {
   showModal.value = true;
 }
 
+const reAdd = (item) => {
+  modalMode.value = 'add';
+  editData.value = {
+    id: '',
+    name: item.name,
+    num: item.num || '',
+    price: item.price || '',
+    category: item.category || '其他'
+  };
+  showModal.value = true;
+}
+
 const saveModal = async () => {
   if (!editData.value.name) {
     return uni.showToast({ title: '必须要填写物品名称哦', icon: 'none' });
   }
   
-  uni.showLoading({ title: '保存中...' })
+  // uni.showLoading({ title: '保存中...' })
   try {
     if (modalMode.value === 'add') {
       const newItem = {

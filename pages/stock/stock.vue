@@ -44,7 +44,7 @@
               <text class="name">{{ item.name }}</text>
               <text class="cat-tag" v-if="currentCategory === '全部'">{{ item.category || '其他' }}</text>
             </view>
-            <switch :checked="item.has" @change="toggle(item)" color="#FF93B6" style="transform: scale(0.8); margin-right: -10rpx;" />
+            <!-- <switch :checked="item.has" @change="toggle(item)" color="#FF93B6" style="transform: scale(0.8); margin-right: -10rpx;" /> -->
           </view>
           
           <view class="item-body">
@@ -146,8 +146,18 @@ const addCategory = () => {
   showCatModal.value = false
 }
 const removeCategory = (idx) => {
-  categories.value.splice(idx, 1)
-  uni.setStorageSync('ingredient_categories', categories.value)
+  const catName = categories.value[idx]
+  uni.showModal({
+    title: '提示',
+    content: `确定要删除分类「${catName}」吗？`,
+    confirmColor: '#FF7DA8',
+    success: (res) => {
+      if (res.confirm) {
+        categories.value.splice(idx, 1)
+        uni.setStorageSync('ingredient_categories', categories.value)
+      }
+    }
+  })
 }
 
 // 主题系统
