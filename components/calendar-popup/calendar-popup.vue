@@ -386,6 +386,7 @@ const initDate = (dateObj) => {
   initLuck(now)
   initTermInfo(y, m, d, res.Term)
   initExtraInfo(y, m, d)
+  fetchAstronomyData(y, m, d)
   initLocalAlmanac(y, m, d)
   initHoliday(y, m, d, res.IMonthCn, res.IDayCn)
   isLocalAlmanac.value = true
@@ -574,6 +575,53 @@ const initExtraInfo = (y, m, d) => {
   foodLuck.value = {
     yi: [yiPool[seed % yiPool.length], yiPool[(seed + 2) % yiPool.length]],
     ji: [jiPool[seed % jiPool.length]]
+  }
+}
+
+const fetchAstronomyData = async (y, m, d) => {
+  try {
+    const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    // 本地缓存锁：当天仅请求一次，不浪费用户带宽与配额
+    const cacheKey = `astro_cache_${dateStr}`
+    const cached = uni.getStorageSync(cacheKey)
+    if (cached && cached.sunrise) {
+      astronomy.value = cached
+      return
+    }
+
+    // 否则，执行坐标探测，并发起真实和风气象拉取
+    uni.getLocation({
+      type: 'wgs84',
+      success: async (locRes) => {
+        try {
+          const loc = `${locRes.longitude.toFixed(2)},${locRes.latitude.toFixed(2)}`
+          // 和风3天预报接口，携带fxDate、sunrise、sunset
+          const res = await request('/weather/3d', 'GET', { location: loc })
+          if (res && res.daily && Array.isArray(res.daily)) {
+            // 匹配出当前选中的那天（支持未来3天的精准数据）
+            const matchDay = res.daily.find(item => item.fxDate === dateStr)
+            const target = matchDay || res.daily[0]
+            
+            if (target && target.sunrise && target.sunset) {
+              const newData = {
+                sunrise: target.sunrise,
+                sunset: target.sunset
+              }
+              astronomy.value = newData
+              // 存入冷备缓存，次日起效
+              uni.setStorageSync(cacheKey, newData)
+            }
+          }
+        } catch (err) {
+          console.warn('[AstronomyAPI] Net fail', err)
+        }
+      },
+      fail: () => {
+        console.warn('[AstronomyAPI] No Location Permission, rely on math')
+      }
+    })
+  } catch (e) {
+    // 静默降级保护
   }
 }
 

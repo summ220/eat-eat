@@ -13,10 +13,12 @@
           <view class="top-info-section">
             <view class="city-row">
               <text class="city-name">{{ weather.city }}</text>
-              <text class="top-weather-icon">{{ getWeatherEmoji(weather.now.icon) }}</text>
+              <view class="city-name-district">({{ weather.district }})</view>
+              <!-- <text class="top-weather-icon">{{ getWeatherEmoji(weather.now.icon) }}</text> -->
             </view>
-            <view class="city-name-district">({{ weather.district }})</view>
+            
             <view class="temp-row">
+              <image class="weather-icon" :src="`http://110.42.36.7:3000/weather-icons/${weather.now.icon}.svg`" />
               <text class="temp-num">{{ weather.now.temp || '--' }}</text>
               <text class="temp-unit">°C</text>
             </view>
@@ -57,9 +59,7 @@
               <text class="card-val">{{ weather.pop }}%</text>
             </view>
             <view class="progress-box">
-              <view class="progress-bg">
-                <view class="progress-fill" :style="{ width: weather.pop + '%' }"></view>
-              </view>
+              <view class="progress-fill" :style="{ width: weather.pop + '%' }"></view>
             </view>
             <text class="precip-desc">{{ precipTip }}</text>
           </view>
@@ -78,7 +78,8 @@
                   :class="{ 'is-today': idx === 0 }"
                 >
                   <text class="f-date">{{ getDayLabel(idx, f.fxDate) }}</text>
-                  <text class="f-icon">{{ getWeatherEmoji(f.iconDay) }}</text>
+                  <!-- <text class="f-icon">{{ getWeatherEmoji(f.iconDay) }}</text> -->
+                  <image class="f-icon" :src="`http://110.42.36.7:3000/weather-icons/${f.iconDay}.svg`" />
                   <view class="f-temp-box">
                     <text class="f-temp-max">{{ f.tempMax }}°</text>
                     <text class="f-temp-min">{{ f.tempMin }}°</text>
@@ -271,6 +272,7 @@ const fetchData = async () => {
     if (nowRes && nowRes.now) weather.value.now = nowRes.now
     if (dailyRes && dailyRes.daily) weather.value.daily = dailyRes.daily
     if (indicesRes && indicesRes.daily) weather.value.indices = indicesRes.daily
+    console.log('weather', hourlyRes)
     if (hourlyRes && hourlyRes.hourly?.[0]) weather.value.pop = hourlyRes.hourly[0].pop || 0
     
   } catch (e) {
@@ -439,7 +441,11 @@ const getDayLabel = (idx, date) => {
     display: flex; align-items: center; justify-content: center; gap: 16rpx;
     margin-bottom: 10rpx;
     .city-name { font-size: 40rpx; font-weight: 800; color: #fff; }
-    .top-weather-icon { font-size: 40rpx; }
+    .top-weather-icon { 
+      width: 48rpx;
+      height: 48rpx;
+      filter: brightness(0) invert(1);
+    }
   }
   .city-name-district {
     font-size: 30rpx;
@@ -447,6 +453,7 @@ const getDayLabel = (idx, date) => {
   }
   .temp-row {
     display: flex; align-items: baseline; justify-content: center; margin-bottom: 10rpx;
+    .weather-icon { width: 80rpx; height: 80rpx; filter: brightness(0) invert(1); margin-right: 30rpx; }
     .temp-num { font-size: 140rpx; font-weight: bold; color: #fff; line-height: 1; }
     .temp-unit { font-size: 36rpx; margin-left: 8rpx; color: rgba(255,255,255,0.6); }
   }
@@ -558,7 +565,10 @@ const getDayLabel = (idx, date) => {
     background: var(--primary-light);
   }
   .f-date { font-size: 22rpx; color: #7F8C8D; font-weight: 600; }
-  .f-icon { font-size: 48rpx; }
+  .f-icon { 
+    width: 48rpx;
+    height: 48rpx;
+   }
   .f-temp-box {
     display: flex; flex-direction: column; align-items: center;
     .f-temp-max { font-size: 28rpx; font-weight: 800; color: #2C3E50; }

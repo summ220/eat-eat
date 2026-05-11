@@ -45,7 +45,7 @@
           <text class="c-text">{{ dateInfo.lunar }}</text>
         </view>
         <view class="glass-capsule" @click="openWeatherDetail">
-          <text>{{ getWeatherEmoji(dateInfo.weatherIcon) }}</text>
+          <image class="weather-icon" :src="`http://110.42.36.7:3000/weather-icons/${dateInfo.weatherIcon}.svg`" />
           <text class="c-text">{{ dateInfo.weather }} {{ dateInfo.temp }}</text>
         </view>
       </view>
@@ -903,6 +903,10 @@ const copyMealsToTomorrow = () => {
 // 已应要求移除 calcIngredientStatus 逻辑
 
 const openMealSelector = async (m) => {
+  if (m.done) {
+    uni.showToast({ title: '本餐已完成', icon: 'none' })
+    return
+  }
   currentMeal.value = m
   tempSelectedRecipes.value = [...(m.recipes || [])]
   customMealName.value = ''
@@ -1103,13 +1107,20 @@ const goRecipe = (recipeName) => {
 }
 
 const handleMakeMeal = (m) => {
+  if (m.done) {
+    uni.showToast({ title: '本餐已完成', icon: 'none' })
+    return
+  }
   uni.showActionSheet({
     itemList: ['去查看菜谱', '完成打卡'],
     success: (res) => {
       if (res.tapIndex === 0) {
         // 多选情况默认去搜第一个菜
-        const target = m.recipes && m.recipes.length > 0 ? m.recipes[0] : ''
-        if(target) goRecipe(target)
+        // const target = m.recipes && m.recipes.length > 0 ? m.recipes[0] : ''
+        // if(target) goRecipe(target)
+        uni.switchTab({
+          url: `/pages/recipe/recipe`
+        })
       } else if (res.tapIndex === 1) {
         markMealDone(m)
       }
@@ -1437,22 +1448,25 @@ const handleReminderAction = (r) => {
 }
 
 .weather-icon {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(255,255,255,0.2);
-  padding: 16rpx 20rpx;
-  border-radius: 30rpx;
-  backdrop-filter: blur(10px);
+  // display: flex;
+  // flex-direction: column;
+  // align-items: center;
+  // background: rgba(255,255,255,0.2);
+  // padding: 16rpx 20rpx;
+  // border-radius: 30rpx;
+  // backdrop-filter: blur(10px);
   
-  .emoji {
-    font-size: 40rpx;
-    margin-bottom: 4rpx;
-  }
-  .tip {
-    font-size: 18rpx;
-    font-weight: bold;
-  }
+  // .emoji {
+  //   font-size: 40rpx;
+  //   margin-bottom: 4rpx;
+  // }
+  // .tip {
+  //   font-size: 18rpx;
+  //   font-weight: bold;
+  // }
+  width: 32rpx;
+  height: 32rpx;
+  filter: brightness(0) invert(1);
 }
 
 /* 日期与天气磨砂胶囊 */
