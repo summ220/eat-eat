@@ -137,15 +137,6 @@ const onCompassChange = (res) => {
   majorDirection.value = getMajorDirection(res.direction)
 }
 
-const handleNoAltitude = () => {
-  uni.showModal({
-    title: '提示',
-    content: '当前设备不支持海拔测量，无法获取高度信息。',
-    showCancel: false
-  })
-  altitude.value = '设备不支持'
-}
-
 const startSensors = () => {
   uni.startCompass({
     success: () => {
@@ -163,7 +154,7 @@ const startSensors = () => {
       if (res.altitude && res.altitude !== 0) {
         altitude.value = Math.round(res.altitude) + ' 米'
       } else {
-        handleNoAltitude()
+         altitude.value = '正在获取海拔信息...'
       }
       
       if (res.latitude && res.longitude) {
@@ -172,7 +163,7 @@ const startSensors = () => {
       }
     },
     fail: () => {
-      handleNoAltitude()
+      altitude.value = '正在获取海拔信息...'
     }
   })
 }

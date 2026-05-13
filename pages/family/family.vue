@@ -525,6 +525,7 @@ import eatCo from '@/common/localDB.js'
 import weatherPopup from '@/components/weather-popup/weather-popup.vue'
 import calendarPopup from '@/components/calendar-popup/calendar-popup.vue'
 import compassPopup from '@/components/compass-popup/compass-popup.vue'
+import { generateInviteCode, generateRandomId } from '@/common/codeGenerator.js'
 
 const showCompassPopup = ref(false)
 const familyName = ref(uni.getStorageSync('family_name') || '快乐干饭小家')
@@ -540,7 +541,16 @@ const showReminderModal = ref(false)
 const showFamilyNameModal = ref(false)
 const tempFamilyName = ref('')
 
-const openEditFamilyName = () => {
+// 同步调用示例
+async function createFamily() {
+    const inviteCode = await generateInviteCode()
+    const familyId = await generateRandomId()
+    console.log('邀请码:', inviteCode)
+    console.log('家庭ID:', familyId)
+}
+
+const openEditFamilyName = async () => {
+  createFamily();
   tempFamilyName.value = familyName.value
   showFamilyNameModal.value = true
 }
@@ -2776,6 +2786,7 @@ const handleReminderAction = (r) => {
 
 .mp-group {
   margin-bottom: 50rpx;
+  width: calc(100% - 80rpx);
 }
 .mp-group-title {
   font-size: 28rpx; font-weight: 800; color: #34495E; margin-bottom: 24rpx;
