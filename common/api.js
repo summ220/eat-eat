@@ -1,0 +1,66 @@
+import config from './config.js'
+import eatCo from './localDB.js'
+
+/**
+ * 统一的业务后台接口请求封装
+ * @param {string} url 请求路径后缀
+ * @param {string} method HTTP 请求方法
+ * @param {object} data 请求数据
+ * @returns {Promise<any>}
+ */
+const request = (url, method = 'POST', data = {}) => {
+  return new Promise((resolve) => {
+    const fullUrl = url.startsWith('http') ? url : (config.apiBaseUrl || 'http://lw.feiyuf.top/api') + url
+    const deviceId = uni.getStorageSync('deviceId') || ''
+    const deviceSecret = uni.getStorageSync('deviceSecret') || ''
+
+    uni.request({
+      url: fullUrl,
+      method: method,
+      header: {
+        'Content-Type': 'application/json',
+        'X-Device-Id': deviceId,
+        'X-Device-Secret': deviceSecret
+      },
+      data: data,
+      success: (res) => {
+        resolve(res.data)
+      },
+      fail: (err) => {
+        console.error(`[API Error] ${url} :`, err)
+        resolve(null)
+      }
+    })
+  })
+}
+
+export default {
+  /**
+   * 注册设备
+   */
+  registerDevice() {
+    return request('/registerDevice', 'POST', {})
+  },
+  /**
+   * 创建家庭
+   * @param {string} familyName 
+   * @param {string} familyCode 
+   */
+  createFamily(familyName) {
+    return request('/createFamily', 'POST', {
+      familyName
+    })
+  },
+
+  /**
+   * 获取家庭邀请验证码
+   * @param {string} familyCode 家庭码/ID
+   * @param {number} ttlMinutes 有效期时长
+   */
+  createFamilyInvite(familyCode, ttlMinutes = 60) {
+    return request('/createFamilyInvite', 'POST', {
+      familyCode,
+      ttlMinutes
+    })
+  }
+}

@@ -57,8 +57,8 @@
         <view class="section-title">
           <text class="title-text">家庭成员</text>
           <view class="title-actions">
-            <text class="action-text secondary" @click="showJoinModal = true">加入</text>
-            <text class="action-text" @click="openInvite">邀请</text>
+            <text class="action-text secondary" @click="showJoinModal = true" v-if="familyId === 'default_family' || familyRole !== 'owner'">加入</text>
+            <text class="action-text" @click="openInvite" v-if="familyId === 'default_family' || familyRole === 'owner'">邀请</text>
           </view>
         </view>
         <scroll-view scroll-x class="member-scroll" :show-scrollbar="false">
@@ -362,10 +362,36 @@
           <view class="input-box">
             <input class="join-input" v-model="tempNick" placeholder="请输入新昵称" />
           </view>
+          <view class="input-box">
+            <input class="join-input" v-model="tempRole" placeholder="请输入新角色" />
+          </view>
           <view class="modal-btns">
             <button class="m-btn-sub" @click="showNickModal = false">取消</button>
             <button class="m-btn-main" @click="confirmNick">保存</button>
           </view>
+        </view>
+      </view>
+
+      <!-- 随机推荐管理弹窗 -->
+      <view class="modal-mask" v-if="showRandomMenuModal" @click="showRandomMenuModal = false">
+        <view class="modal-content" @click.stop>
+          <text class="modal-title">随机抽菜池管理</text>
+          <scroll-view scroll-y style="max-height: 500rpx; margin-top: 20rpx; margin-bottom: 20rpx;">
+            <view class="cat-manage-list">
+              <view class="cat-manage-item" v-for="(dish, idx) in randomMenu" :key="idx">
+                <text>{{ dish }}</text>
+                <text class="del-cat" @click="removeRandomDish(idx)">删除</text>
+              </view>
+              <view class="cat-manage-item empty-tip" v-if="randomMenu.length === 0" style="justify-content: center; color: #999; font-size: 24rpx; border-bottom: none;">
+                <text>空空如也，快去添加菜品吧~</text>
+              </view>
+            </view>
+          </scroll-view>
+          <view class="add-cat-box">
+            <input class="add-cat-input" v-model="newRandomDish" placeholder="新推荐菜名称" />
+            <view class="add-cat-btn" @click="addRandomDish">添加</view>
+          </view>
+          <button class="close-modal-btn" @click="showRandomMenuModal = false">完成</button>
         </view>
       </view>
 
@@ -522,6 +548,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/common/request.js'
 import eatCo from '@/common/localDB.js'
+import api from '@/common/api.js'
 import weatherPopup from '@/components/weather-popup/weather-popup.vue'
 import calendarPopup from '@/components/calendar-popup/calendar-popup.vue'
 import compassPopup from '@/components/compass-popup/compass-popup.vue'
@@ -530,6 +557,7 @@ import { generateInviteCode, generateRandomId } from '@/common/codeGenerator.js'
 const showCompassPopup = ref(false)
 const familyName = ref(uni.getStorageSync('family_name') || '快乐干饭小家')
 const familyId = ref(uni.getStorageSync('family_id') || 'default_family')
+const familyRole = ref(uni.getStorageSync('family_role') || 'personal')
 
 // 天气/日历弹窗控制
 const weatherLocation = ref('')
@@ -542,15 +570,14 @@ const showFamilyNameModal = ref(false)
 const tempFamilyName = ref('')
 
 // 同步调用示例
-async function createFamily() {
-    const inviteCode = await generateInviteCode()
-    const familyId = await generateRandomId()
-    console.log('邀请码:', inviteCode)
-    console.log('家庭ID:', familyId)
-}
+// async function createFamily() {
+//   const inviteCode = await generateInviteCode()
+//   const familyId = await generateRandomId()
+//   console.log('邀请码:', inviteCode)
+//   console.log('家庭ID:', familyId)
+// }
 
 const openEditFamilyName = async () => {
-  createFamily();
   tempFamilyName.value = familyName.value
   showFamilyNameModal.value = true
 }
@@ -568,14 +595,66 @@ const saveFamilyName = () => {
 const showInviteModal = ref(false)
 const showJoinModal = ref(false)
 const showNickModal = ref(false)
-const inviteCode = ref('EAT' + Math.random().toString(36).substr(2, 6).toUpperCase())
+const inviteCode = ref('')
 const joinCode = ref('')
 const tempNick = ref('')
+const tempRole = ref('')
 
-const openInvite = () => {
-  // 重新生成一个随机码模拟
-  inviteCode.value = 'EAT' + Math.random().toString(36).substr(2, 6).toUpperCase()
-  showInviteModal.value = true
+const openInvite = async () => {
+  console.log(familyId.value, familyRole.value, members.value,'--------------')
+  if (familyId.value !== 'default_family' && familyRole.value !== 'owner' && members.value.length > 1) {
+    return uni.showToast({ title: '当前已加入家庭并且不是创建者，不能邀请家人', icon: 'none' })
+  }
+
+  // 1、如果还没有创建家庭，先创建家庭，传familyCode、familyName，确定familyId
+  if (familyId.value === 'default_family') {
+    const ok = await createFamily()
+    if (!ok) return // 创建失败中止
+  }
+
+  // 2、无论是新建好的，还是现有的，统一去后端拉取邀请码
+  const ok = await getInviteCode()
+  if (ok) {
+    showInviteModal.value = true
+  }
+}
+
+const createFamily = async () => {
+  // 此操作会创建家庭，是否继续？
+  const ok = await new Promise((resolve) => {
+    uni.showModal({
+      title: '创建家庭',
+      content: '此操作会创建家庭，是否继续？',
+      success: (res) => {
+        resolve(res.confirm)
+      }
+    })
+  })
+  if (!ok) return false
+  
+  const familyCode = await generateRandomId()
+  const res = await api.createFamily(familyName.value)
+  
+  if (res && res.data) {
+    familyId.value = res.data.family.familyCode
+    familyRole.value = res.data.member.role // 更新当前响应式状态
+    uni.setStorageSync('family_id', familyId.value)
+    uni.setStorageSync('family_role', familyRole.value)
+    return true
+  }
+  
+  uni.showToast({ title: '创建家庭失败', icon: 'none' })
+  return false
+} 
+
+const getInviteCode = async () => {
+  const res = await api.createFamilyInvite(familyId.value, 60)
+  if (res && res.data) {
+    inviteCode.value = res.data.inviteCode
+    return true
+  }
+  uni.showToast({ title: '获取验证码失败', icon: 'none' })
+  return false
 }
 
 const copyCode = () => {
@@ -596,6 +675,7 @@ const confirmJoin = () => {
 const handleMemberClick = (m) => {
   if (m.isSelf) {
     tempNick.value = m.nick
+    tempRole.value = m.role
     showNickModal.value = true
   }
 }
@@ -604,6 +684,7 @@ const confirmNick = () => {
   const self = members.value.find(m => m.isSelf)
   if (self) {
     self.nick = tempNick.value
+    self.role = tempRole.value
     uni.showToast({ title: '昵称已更新' })
   }
   showNickModal.value = false
@@ -1140,21 +1221,21 @@ const handleMakeMeal = (m) => {
 
 // 快捷功能
 const quickFuncs = ref([
-  { icon: '🎲', name: '随机推荐' },
-  { icon: '🧺', name: '补齐食材' },
-  { icon: '🗑️', name: '清空购物车' },
+  { icon: '🎲', name: '抽菜配置' },
+  { icon: '🧺', name: '随手记' },
+  { icon: '🗑️', name: '每日计划' },
   { icon: '💵', name: '清空花费' },
   { icon: '🧹', name: '清理数据' },
-  { icon: '📤', name: '导出清单' },
-  { icon: '📥', name: '导入食材' },
-  { icon: '📊', name: '月度账单' }
+  { icon: '📤', name: '个性主题' },
+  { icon: '📥', name: '饮食偏好' },
+  { icon: '📊', name: '开销统计' }
 ])
 
 // 家庭成员
 const members = ref([
-  { nick: '爸爸', role: '大主厨', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: true },
-  { nick: '妈妈', role: '采购总监', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: false },
-  { nick: '宝宝', role: '干饭人', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: false }
+  { nick: '乌啦啦鲁', role: '大主厨', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: true },
+  // { nick: '妈妈', role: '采购总监', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: false },
+  // { nick: '宝宝', role: '干饭人', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: false }
 ])
 
 // 消费趋势
@@ -1230,6 +1311,38 @@ const removeAvoid = (a) => {
   if (prefs.value.avoid.length === 0) isEditingPrefs.value = false
 }
 
+// 随机抽菜菜单配置
+const showRandomMenuModal = ref(false)
+const randomMenu = ref([])
+const newRandomDish = ref('')
+
+const loadRandomMenu = () => {
+  const defaultList = [
+    '番茄炒蛋', '可乐鸡翅', '青椒肉丝', '蒜蓉西兰花',
+    '红烧肉', '酸辣土豆丝', '水煮肉片', '香菇滑鸡', '蛋炒饭',
+    '粉蒸排骨', '糖醋里脊', '麻婆豆腐', '手撕包菜', '清炒菜心'
+  ]
+  randomMenu.value = uni.getStorageSync('custom_random_menu') || defaultList
+}
+
+const addRandomDish = () => {
+  const val = newRandomDish.value.trim()
+  if (!val) return
+  if (randomMenu.value.includes(val)) {
+    return uni.showToast({ title: '该菜已在池中', icon: 'none' })
+  }
+  randomMenu.value.push(val)
+  newRandomDish.value = ''
+  uni.setStorageSync('custom_random_menu', randomMenu.value)
+  uni.showToast({ title: '添加成功', icon: 'none' })
+}
+
+const removeRandomDish = (idx) => {
+  randomMenu.value.splice(idx, 1)
+  uni.setStorageSync('custom_random_menu', randomMenu.value)
+  uni.showToast({ title: '已删除', icon: 'none' })
+}
+
 // 分类管理
 const showCatModal = ref(false)
 const categories = ref([])
@@ -1255,13 +1368,16 @@ const removeCategory = (idx) => {
 }
 
 const handleSetting = (name) => {
-  // if (name === '分类设置') {
-  //   loadCategories()
-  //   showCatModal.value = true
-  // } else {
-  //   uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
-  // }
-  uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
+  if (name === '抽菜配置') {
+    loadRandomMenu()
+    showRandomMenuModal.value = true
+  } else {
+    uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
+  }
+}
+
+const handleRandomRecommend = () => {
+  
 }
 
 const handleClearCache = () => {

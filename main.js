@@ -1,9 +1,6 @@
+import App from './App'
 import { createSSRApp } from 'vue'
 export function createApp() {
-	const app = createSSRApp({
-		onLaunch: function () {},
-		onShow: function () {},
-		onHide: function () {}
-	})
+	const app = createSSRApp(App)
 	return { app }
 }

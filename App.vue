@@ -1,8 +1,30 @@
 <script>
+import api from '@/common/api.js'
+
 export default {
 	onLaunch() {
 		console.log("家庭小厨房启动啦")
-		// 初始化分类配置
+
+		// 1. 设备注册逻辑
+		const deviceId = uni.getStorageSync('deviceId')
+		console.log('设备ID:', deviceId)
+		if (!deviceId) {
+			api.registerDevice().then(res => {
+				console.log('设备注册响应:', res)
+				// 假设返回格式为 { code: 200, data: { deviceId, deviceSecret } } 或直接是对象
+				const data = res?.data || res
+				console.log('设备注册响应:', data)
+				if (data && data.device.deviceId && data.deviceSecret) {
+					uni.setStorageSync('deviceId', data.device.deviceId)
+					uni.setStorageSync('deviceSecret', data.deviceSecret)
+					console.log('设备注册成功，已缓存标识')
+				}
+			}).catch(err => {
+				console.error('设备注册失败:', err)
+			})
+		}
+
+		// 2. 初始化分类配置
 		const cats = uni.getStorageSync('ingredient_categories')
 		if (!cats || cats.length === 0) {
 			uni.setStorageSync('ingredient_categories', ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他'])

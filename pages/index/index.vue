@@ -59,8 +59,13 @@ const defaultMenu = [
   '红烧肉', '酸辣土豆丝', '水煮肉片', '香菇滑鸡', '蛋炒饭',
   '粉蒸排骨', '糖醋里脊', '麻婆豆腐', '手撕包菜', '清炒菜心'
 ]
-const menuList = ref([...defaultMenu])      // 来自菜谱的菜单（原始）
 const result = ref('点击开始抽菜～')
+
+// 随机推荐池动态配置
+const randomMenuPool = ref([])
+const loadRandomMenuPool = () => {
+  randomMenuPool.value = uni.getStorageSync('custom_random_menu') || defaultMenu
+}
 
 // 主题系统
 const themes = [
@@ -80,42 +85,16 @@ const themeStyle = computed(() => {
   `
 })
 
-const loadMenu = async () => {
-  const familyId = uni.getStorageSync('family_id') || 'default_family'
-  try {
-    const data = await eatCo.getRecipeList(familyId)
-    if (data && data.length > 0) {
-      menuList.value = data.map(item => item.name)
-    } else {
-      menuList.value = []
-    }
-  } catch (e) {
-    console.error('获取菜谱失败', e)
-    menuList.value = []
-  }
-}
-
 onShow(() => {
   currentTheme.value = uni.getStorageSync('current_theme') || 0
-  loadMenu()
+  loadRandomMenuPool() // 进入页面拉取最新的自定义随机推荐池数据
 })
 
 const getRandomDish = () => {
-  let pool = []
-  if (menuList.value.length > 20) {
-    // 菜谱超过20个：纯从菜谱中抽
-    pool = [...menuList.value]
-  } else if (menuList.value.length > 0) {
-    // 菜谱不足20个：菜谱菜权重×3，混入默认菜
-    pool = [
-      ...menuList.value,
-      ...menuList.value,
-      ...menuList.value,
-      ...defaultMenu
-    ]
-  } else {
-    // 没有菜谱：纯从默认菜单抽
-    pool = [...defaultMenu]
+  let pool = [...randomMenuPool.value]
+
+  if (pool.length === 0) {
+    return uni.showToast({ title: '抽菜池为空，请去设置添加', icon: 'none' })
   }
 
   let times = 0
