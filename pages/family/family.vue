@@ -579,35 +579,45 @@ const tempFamilyName = ref('')
 //   console.log('家庭ID:', familyId)
 // }
 
-const openEditFamilyName = async () => {
-  console.log(familyId.value, 'familyId.value')
-  // 如果不属于家庭，直接修改缓存数据即可
-  if (familyId.value === 'default_family') {
-    tempFamilyName.value = familyName.value
-    showFamilyNameModal.value = true
-  }else {
-    // 走接口
-    const res = await api.updateFamily(familyId.value, tempFamilyName.value)
-    if (res.data) {
-      familyName.value = res.data.familyName
-      uni.setStorageSync('family_name', familyName.value)
-      showFamilyNameModal.value = false
-    }else {
-      uni.showToast({
-        title: res.message,
-        icon: 'none'
-      })
-    }
-  }
+const openEditFamilyName = () => {
+  tempFamilyName.value = familyName.value
+  showFamilyNameModal.value = true
 }
 
-const saveFamilyName = () => {
-  if (!tempFamilyName.value.trim()) {
+const saveFamilyName = async () => {
+  const newName = tempFamilyName.value.trim()
+  if (!newName) {
     return uni.showToast({ title: '名称不能为空', icon: 'none' })
   }
-  familyName.value = tempFamilyName.value.trim()
-  uni.setStorageSync('family_name', familyName.value)
-  showFamilyNameModal.value = false
+
+  // 如果不属于家庭（个人模式），直接修改本地缓存
+  if (familyId.value === 'default_family') {
+    familyName.value = newName
+    uni.setStorageSync('family_name', familyName.value)
+    showFamilyNameModal.value = false
+    uni.showToast({ title: '修改成功' })
+  } else {
+    // 走接口同步云端
+    uni.showLoading({ title: '保存中...' })
+    try {
+      const res = await api.updateFamily(familyId.value, newName)
+      if (res && res.data) {
+        familyName.value = res.data.familyName
+        uni.setStorageSync('family_name', familyName.value)
+        showFamilyNameModal.value = false
+        uni.showToast({ title: '修改成功' })
+      } else {
+        uni.showToast({
+          title: res.message || '修改失败',
+          icon: 'none'
+        })
+      }
+    } catch (err) {
+      uni.showToast({ title: '网络错误', icon: 'none' })
+    } finally {
+      uni.hideLoading()
+    }
+  }
 }
 
 // 家庭成员功能
