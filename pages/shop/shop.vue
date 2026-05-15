@@ -639,7 +639,7 @@ const checkCost = () => {
   align-items: flex-start;
   padding: 0 20rpx;
   flex: 1;
-  height: 80vh;
+  height: 81.6vh;
 }
 
 .sidebar {

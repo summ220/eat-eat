@@ -409,7 +409,7 @@ const deleteItem = (item) => {
   display: flex;
   align-items: flex-start;
   padding: 0 20rpx;
-  height: 80vh;
+  height: 81.6vh;
 }
 
 .sidebar {

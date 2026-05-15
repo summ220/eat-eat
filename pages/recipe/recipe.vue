@@ -544,7 +544,7 @@ onReachBottom(() => {
   display: flex;
   flex-direction: column;
   gap: 32rpx;
-  height: 69vh;
+  height: 70.6vh;
   overflow: auto;
   /* 隐藏滚动条 */
   scrollbar-width: none;

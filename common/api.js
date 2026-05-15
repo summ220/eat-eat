@@ -62,5 +62,43 @@ export default {
       familyCode,
       ttlMinutes
     })
+  },
+  /**
+   * 加入家庭
+   * @param {string} inviteCode 邀请码
+   */
+  joinFamily(inviteCode) {
+    return request('/joinFamily', 'POST', {
+      inviteCode
+    })
+  },
+  /**
+   * 获取家庭成员
+   * @param {string} familyCode 家庭码/ID
+   */
+  getFamilyMembers(familyCode) {
+    return request('/getFamilyMembers', 'POST', {
+      familyCode
+    })
+  },
+  /**
+   * 获取家庭信息
+   * @param {string} familyCode 家庭码/ID
+   */
+  getFamily(familyCode) {
+    return request('/getFamily', 'POST', {
+      familyCode
+    })
+  },
+  /**
+   * 更新家庭名称
+   * @param {string} familyCode 家庭码/ID
+   * @param {string} familyName 家庭名称
+   */
+  updateFamily(familyCode, familyName) {
+    return request('/updateFamily', 'POST', {
+      familyCode,
+      familyName
+    })
   }
 }

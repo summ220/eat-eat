@@ -22,7 +22,7 @@
           <view class="name-box">
             <view class="family-name-wrap">
               <text class="family-name">{{ familyName }}</text>
-              <view class="edit-icon-btn" @click="openEditFamilyName">
+              <view class="edit-icon-btn" @click="openEditFamilyName" v-if="familyId === 'default_family' || familyRole === 'owner'">
                 <text class="e-icon">✏️</text>
               </view>
             </view>
@@ -59,6 +59,8 @@
           <view class="title-actions">
             <text class="action-text secondary" @click="showJoinModal = true" v-if="familyId === 'default_family' || familyRole !== 'owner'">加入</text>
             <text class="action-text" @click="openInvite" v-if="familyId === 'default_family' || familyRole === 'owner'">邀请</text>
+            <!-- 如果不是创建者，也不是空家庭，显示同步家庭 -->
+            <text class="action-text" @click="refreshStats" v-if="familyId !== 'default_family'">同步</text>
           </view>
         </view>
         <scroll-view scroll-x class="member-scroll" :show-scrollbar="false">
@@ -578,8 +580,25 @@ const tempFamilyName = ref('')
 // }
 
 const openEditFamilyName = async () => {
-  tempFamilyName.value = familyName.value
-  showFamilyNameModal.value = true
+  console.log(familyId.value, 'familyId.value')
+  // 如果不属于家庭，直接修改缓存数据即可
+  if (familyId.value === 'default_family') {
+    tempFamilyName.value = familyName.value
+    showFamilyNameModal.value = true
+  }else {
+    // 走接口
+    const res = await api.updateFamily(familyId.value, tempFamilyName.value)
+    if (res.data) {
+      familyName.value = res.data.familyName
+      uni.setStorageSync('family_name', familyName.value)
+      showFamilyNameModal.value = false
+    }else {
+      uni.showToast({
+        title: res.message,
+        icon: 'none'
+      })
+    }
+  }
 }
 
 const saveFamilyName = () => {
@@ -664,12 +683,31 @@ const copyCode = () => {
   })
 }
 
-const confirmJoin = () => {
+const confirmJoin = async () => {
   if (!joinCode.value) return uni.showToast({ title: '请输入邀请码', icon: 'none' })
-  uni.showToast({ title: '成功加入家庭' })
-  showJoinModal.value = false
-  // 模拟数据同步逻辑
-  refreshStats()
+  const res = await api.joinFamily(joinCode.value)
+  if (res && res.data) {
+    familyId.value = res.data.familyCode
+    familyRole.value = res.data.role // 更新当前响应式状态
+    uni.setStorageSync('family_id', familyId.value)
+    uni.setStorageSync('family_role', familyRole.value)
+    uni.showToast({ title: '成功加入家庭' })
+    showJoinModal.value = false
+    // 查询家庭成员
+    const memberList = await api.getFamilyMembers(familyId.value)
+    if (memberList && memberList.data) {
+      members.value = memberList.data
+    }
+    // 查询家庭信息
+    const family = await api.getFamily(familyId.value)
+    if (family && family.data) {
+      familyName.value = family.data.familyName
+      uni.setStorageSync('family_name', familyName.value)
+    }
+    refreshStats()
+  } else {
+    uni.showToast({ title: res.message || '加入家庭失败', icon: 'none' })
+  }
 }
 
 const handleMemberClick = (m) => {
