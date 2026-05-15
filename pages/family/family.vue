@@ -175,7 +175,7 @@
           <view class="p-options">
             <view 
               class="p-tag" 
-              :class="{ active: prefs.taste === t, editing: isEditingTaste }" 
+              :class="{ active: prefs.taste.includes(t), editing: isEditingTaste }" 
               v-for="t in tasteOptions" 
               :key="t" 
               @click.stop="selectTaste(t)"
@@ -195,7 +195,7 @@
             <view 
               class="p-tag" 
               :class="{ active: prefs.avoid.includes(a), editing: isEditingPrefs }" 
-              v-for="a in prefs.avoid" 
+              v-for="a in avoidOptions" 
               :key="a" 
               @click.stop="toggleAvoid(a)"
               @longpress.stop="isEditingPrefs = !isEditingPrefs"
@@ -1293,10 +1293,11 @@ const trends = ref({
 
 // 偏好
 const prefs = ref({
-  taste: '适中',
-  avoid: ['海鲜', '羊肉', '香菜', '葱', '蒜', '辣']
+  taste: ['适中'],
+  avoid: ['海鲜', '香菜']
 })
 const tasteOptions = ref(['清淡', '适中', '重口'])
+const avoidOptions = ref(['海鲜', '羊肉', '香菜', '葱', '蒜', '辣'])
 const isEditingPrefs = ref(false)
 const isEditingTaste = ref(false)
 const showAddAvoidModal = ref(false)
@@ -1306,7 +1307,12 @@ const newTaste = ref('')
 
 const selectTaste = (t) => {
   if (isEditingTaste.value) return
-  prefs.value.taste = t
+  const idx = prefs.value.taste.indexOf(t)
+  if (idx > -1) {
+    prefs.value.taste.splice(idx, 1)
+  } else {
+    prefs.value.taste.push(t)
+  }
 }
 
 const openAddTasteModal = () => {
@@ -1326,7 +1332,7 @@ const confirmAddTaste = () => {
 
 const removeTaste = (t) => {
   tasteOptions.value = tasteOptions.value.filter(x => x !== t)
-  if (prefs.value.taste === t) prefs.value.taste = tasteOptions.value[0] || ''
+  prefs.value.taste = prefs.value.taste.filter(x => x !== t)
   if (tasteOptions.value.length === 0) isEditingTaste.value = false
 }
 
@@ -1347,16 +1353,18 @@ const openAddAvoidModal = () => {
 const confirmAddAvoid = () => {
   const val = newAvoid.value.trim()
   if (!val) return
-  if (prefs.value.avoid.includes(val)) {
+  if (avoidOptions.value.includes(val)) {
     return uni.showToast({ title: '已在列表中', icon: 'none' })
   }
+  avoidOptions.value.push(val)
   prefs.value.avoid.push(val)
   showAddAvoidModal.value = false
 }
 
 const removeAvoid = (a) => {
+  avoidOptions.value = avoidOptions.value.filter(x => x !== a)
   prefs.value.avoid = prefs.value.avoid.filter(x => x !== a)
-  if (prefs.value.avoid.length === 0) isEditingPrefs.value = false
+  if (avoidOptions.value.length === 0) isEditingPrefs.value = false
 }
 
 // 随机抽菜菜单配置
