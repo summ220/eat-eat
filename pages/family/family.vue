@@ -319,6 +319,11 @@
               <text class="code-val">{{ inviteCode }}</text>
               <text class="copy-btn" @click="copyCode">复制</text>
             </view>
+            <view class="invite-expire-tip">
+              <text class="expire-icon">⏱️</text>
+              <text class="expire-text">邀请码有效期5分钟</text>
+              <text class="expire-countdown">{{ formattedCountdown }}</text>
+            </view>
             <view class="qr-placeholder">
               <text class="qr-icon">📱</text>
               <text>扫码加入家庭</text>
@@ -628,6 +633,10 @@ const inviteCode = ref('')
 const joinCode = ref('')
 const tempNick = ref('')
 const tempRole = ref('')
+// 邀请码有效期相关
+const inviteCodeExpireTime = ref(0) // 邀请码过期时间戳
+const countdownSeconds = ref(0) // 倒计时剩余秒数
+let countdownTimer = null // 倒计时定时器
 
 const openInvite = async () => {
   console.log(familyId.value, familyRole.value, members.value,'--------------')
@@ -641,10 +650,17 @@ const openInvite = async () => {
     if (!ok) return // 创建失败中止
   }
 
-  // 2、无论是新建好的，还是现有的，统一去后端拉取邀请码
-  const ok = await getInviteCode()
-  if (ok) {
+  // 2、检查邀请码是否有效（5分钟内有效）
+  if (!isInviteCodeExpired()) {
+    // 邀请码还在有效期内，直接显示
+    startCountdown() // 重新开始倒计时
     showInviteModal.value = true
+  } else {
+    // 邀请码已过期，重新获取
+    const ok = await getInviteCode()
+    if (ok) {
+      showInviteModal.value = true
+    }
   }
 }
 
@@ -677,14 +693,56 @@ const createFamily = async () => {
 } 
 
 const getInviteCode = async () => {
-  const res = await api.createFamilyInvite(familyId.value, 60)
+  const res = await api.createFamilyInvite(familyId.value, 300) // 改为5分钟有效期
   if (res && res.data) {
     inviteCode.value = res.data.inviteCode
+    // 设置过期时间为当前时间 + 5分钟（300秒）
+    inviteCodeExpireTime.value = Date.now() + 5 * 60 * 1000
+    // 开始倒计时
+    startCountdown()
     return true
   }
   uni.showToast({ title: '获取验证码失败', icon: 'none' })
   return false
 }
+
+// 检查邀请码是否过期
+const isInviteCodeExpired = () => {
+  if (!inviteCode.value) return true
+  return Date.now() > inviteCodeExpireTime.value
+}
+
+// 开始倒计时
+const startCountdown = () => {
+  // 清除之前的定时器
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+  
+  // 计算剩余秒数
+  const updateCountdown = () => {
+    const remaining = Math.max(0, Math.ceil((inviteCodeExpireTime.value - Date.now()) / 1000))
+    countdownSeconds.value = remaining
+    
+    if (remaining <= 0) {
+      if (countdownTimer) {
+        clearInterval(countdownTimer)
+        countdownTimer = null
+      }
+    }
+  }
+  
+  updateCountdown()
+  countdownTimer = setInterval(updateCountdown, 1000)
+}
+
+// 格式化倒计时显示
+const formattedCountdown = computed(() => {
+  const minutes = Math.floor(countdownSeconds.value / 60)
+  const seconds = countdownSeconds.value % 60
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+})
 
 const copyCode = () => {
   uni.setClipboardData({
@@ -2548,7 +2606,7 @@ const handleReminderAction = (r) => {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 50rpx;
+      margin-bottom: 20rpx;
       border: 2rpx dashed var(--primary);
       
       .code-val {
@@ -2565,6 +2623,14 @@ const handleReminderAction = (r) => {
         padding: 10rpx 24rpx;
         border-radius: 100rpx;
         font-weight: bold;
+      }
+    }
+    
+    .invite-expire-tip {
+      margin-bottom: 30rpx;
+      color: #ccc;
+      .expire-countdown {
+        margin-left: 18rpx;
       }
     }
     
