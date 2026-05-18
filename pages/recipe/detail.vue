@@ -120,13 +120,13 @@ onShow(() => {
 })
 
 const loadStock = async () => {
-  const familyId = uni.getStorageSync('family_id') || 'default_family';
-  stockList.value = await eatCo.getStockList(familyId)
+  const familyCode = uni.getStorageSync('family_code') || 'default_family';
+  stockList.value = await eatCo.getStockList(familyCode)
 }
 
 const loadRecipe = async () => {
-  const familyId = uni.getStorageSync('family_id') || 'default_family';
-  const list = await eatCo.getRecipeList(familyId)
+  const familyCode = uni.getStorageSync('family_code') || 'default_family';
+  const list = await eatCo.getRecipeList(familyCode)
   const target = list.find(r => (r._id || r.id) === recipeId.value)
   if (target) {
     recipe.value = target
@@ -175,8 +175,8 @@ const toggleFavorite = async () => {
 
 // 供一键加入和单点加入调用
 const pushToShop = async (ing) => {
-  const familyId = uni.getStorageSync('family_id') || 'default_family';
-  const shopList = await eatCo.getShopList(familyId)
+  const familyCode = uni.getStorageSync('family_code') || 'default_family';
+  const shopList = await eatCo.getShopList(familyCode)
   const alreadyInShop = shopList.some(s => !s.done && s.name.includes(ing.name))
   if (!alreadyInShop) {
     await eatCo.addShop({
@@ -185,7 +185,7 @@ const pushToShop = async (ing) => {
       price: '',
       category: '其他',
       done: false,
-      family_id: familyId
+      family_code: familyCode
     })
     return true
   }

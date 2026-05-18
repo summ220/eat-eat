@@ -254,9 +254,9 @@ onShow(() => {
 })
 
 const load = async () => {
-  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  const familyCode = uni.getStorageSync('family_code') || 'default_family';
   try {
-    const data = await eatCo.getShopList(familyId)
+    const data = await eatCo.getShopList(familyCode)
     list.value = data.map(item => {
       item.id = item._id
       item.done = !!item.done
@@ -294,7 +294,7 @@ const toggle = async (item) => {
           num: item.num,
           category: item.category || '其他',
           has: true,
-          family_id: uni.getStorageSync('family_id') || 'default_family'
+          family_code: uni.getStorageSync('family_code') || 'default_family'
         })
       }
 
@@ -307,7 +307,7 @@ const toggle = async (item) => {
           category: '餐饮',
           type: 'out',
           remark: '购物自动记账',
-          family_id: uni.getStorageSync('family_id') || 'default_family'
+          family_code: uni.getStorageSync('family_code') || 'default_family'
         };
         await eatCo.addCost(costItem);
         uni.showToast({ title: shouldSyncToStock ? '已同步并记账' : '已自动记账', icon: 'success' })
@@ -362,7 +362,7 @@ const clearDone = () => {
                   num: item.num,
                   category: item.category || '其他',
                   has: true,
-                  family_id: uni.getStorageSync('family_id') || 'default_family'
+                  family_code: uni.getStorageSync('family_code') || 'default_family'
                 })
               }
             }

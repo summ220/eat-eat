@@ -22,7 +22,7 @@
           <view class="name-box">
             <view class="family-name-wrap">
               <text class="family-name">{{ familyName }}</text>
-              <view class="edit-icon-btn" @click="openEditFamilyName" v-if="familyId === 'default_family' || familyRole === 'owner'">
+              <view class="edit-icon-btn" @click="openEditFamilyName" v-if="familyCode === 'default_family' || familyRole === 'owner'">
                 <text class="e-icon">✏️</text>
               </view>
             </view>
@@ -57,10 +57,10 @@
         <view class="section-title">
           <text class="title-text">家庭成员</text>
           <view class="title-actions">
-            <text class="action-text secondary" @click="showJoinModal = true" v-if="familyId === 'default_family' || familyRole !== 'owner'">加入</text>
-            <text class="action-text" @click="openInvite" v-if="familyId === 'default_family' || familyRole === 'owner'">邀请</text>
+            <text class="action-text secondary" @click="showJoinModal = true" v-if="familyCode === 'default_family' || familyRole !== 'owner'">加入</text>
+            <text class="action-text" @click="openInvite" v-if="familyCode === 'default_family' || familyRole === 'owner'">邀请</text>
             <!-- 如果不是创建者，也不是空家庭，显示同步家庭 -->
-            <text class="action-text" @click="refreshStats" v-if="familyId !== 'default_family'">同步</text>
+            <text class="action-text" @click="refreshStats" v-if="familyCode !== 'default_family'">同步</text>
           </view>
         </view>
         <scroll-view scroll-x class="member-scroll" :show-scrollbar="false">
@@ -563,7 +563,7 @@ import { generateInviteCode, generateRandomId } from '@/common/codeGenerator.js'
 
 const showCompassPopup = ref(false)
 const familyName = ref(uni.getStorageSync('family_name') || '快乐干饭小家')
-const familyId = ref(uni.getStorageSync('family_id') || 'default_family')
+const familyCode = ref(uni.getStorageSync('family_code') || 'default_family')
 const familyRole = ref(uni.getStorageSync('family_role') || 'personal')
 
 // 天气/日历弹窗控制
@@ -579,9 +579,9 @@ const tempFamilyName = ref('')
 // 同步调用示例
 // async function createFamily() {
 //   const inviteCode = await generateInviteCode()
-//   const familyId = await generateRandomId()
+//   const familyCode = await generateRandomId()
 //   console.log('邀请码:', inviteCode)
-//   console.log('家庭ID:', familyId)
+//   console.log('家庭ID:', familyCode)
 // }
 
 const openEditFamilyName = () => {
@@ -596,7 +596,7 @@ const saveFamilyName = async () => {
   }
 
   // 如果不属于家庭（个人模式），直接修改本地缓存
-  if (familyId.value === 'default_family') {
+  if (familyCode.value === 'default_family') {
     familyName.value = newName
     uni.setStorageSync('family_name', familyName.value)
     showFamilyNameModal.value = false
@@ -605,7 +605,7 @@ const saveFamilyName = async () => {
     // 走接口同步云端
     uni.showLoading({ title: '保存中...' })
     try {
-      const res = await api.updateFamily(familyId.value, newName)
+      const res = await api.updateFamily(familyCode.value, newName)
       if (res && res.data) {
         familyName.value = res.data.familyName
         uni.setStorageSync('family_name', familyName.value)
@@ -639,13 +639,13 @@ const countdownSeconds = ref(0) // 倒计时剩余秒数
 let countdownTimer = null // 倒计时定时器
 
 const openInvite = async () => {
-  console.log(familyId.value, familyRole.value, members.value,'--------------')
-  if (familyId.value !== 'default_family' && familyRole.value !== 'owner' && members.value.length > 1) {
+  console.log(familyCode.value, familyRole.value, members.value,'--------------')
+  if (familyCode.value !== 'default_family' && familyRole.value !== 'owner' && members.value.length > 1) {
     return uni.showToast({ title: '当前已加入家庭并且不是创建者，不能邀请家人', icon: 'none' })
   }
 
-  // 1、如果还没有创建家庭，先创建家庭，传familyCode、familyName，确定familyId
-  if (familyId.value === 'default_family') {
+  // 1、如果还没有创建家庭，先创建家庭，传familyCode、familyName，确定familyCode
+  if (familyCode.value === 'default_family') {
     const ok = await createFamily()
     if (!ok) return // 创建失败中止
   }
@@ -681,9 +681,9 @@ const createFamily = async () => {
   const res = await api.createFamily(familyName.value)
   
   if (res && res.data) {
-    familyId.value = res.data.family.familyCode
+    familyCode.value = res.data.family.familyCode
     familyRole.value = res.data.member.role // 更新当前响应式状态
-    uni.setStorageSync('family_id', familyId.value)
+    uni.setStorageSync('family_code', familyCode.value)
     uni.setStorageSync('family_role', familyRole.value)
     return true
   }
@@ -693,7 +693,7 @@ const createFamily = async () => {
 } 
 
 const getInviteCode = async () => {
-  const res = await api.createFamilyInvite(familyId.value, 300) // 改为5分钟有效期
+  const res = await api.createFamilyInvite(familyCode.value, 300) // 改为5分钟有效期
   if (res && res.data) {
     inviteCode.value = res.data.inviteCode
     // 设置过期时间为当前时间 + 5分钟（300秒）
@@ -755,19 +755,19 @@ const confirmJoin = async () => {
   if (!joinCode.value) return uni.showToast({ title: '请输入邀请码', icon: 'none' })
   const res = await api.joinFamily(joinCode.value)
   if (res && res.data) {
-    familyId.value = res.data.familyCode
+    familyCode.value = res.data.familyCode
     familyRole.value = res.data.role // 更新当前响应式状态
-    uni.setStorageSync('family_id', familyId.value)
+    uni.setStorageSync('family_code', familyCode.value)
     uni.setStorageSync('family_role', familyRole.value)
     uni.showToast({ title: '成功加入家庭' })
     showJoinModal.value = false
     // 查询家庭成员
-    const memberList = await api.getFamilyMembers(familyId.value)
+    const memberList = await api.getFamilyMembers(familyCode.value)
     if (memberList && memberList.data) {
       members.value = memberList.data
     }
     // 查询家庭信息
-    const family = await api.getFamily(familyId.value)
+    const family = await api.getFamily(familyCode.value)
     if (family && family.data) {
       familyName.value = family.data.familyName
       uni.setStorageSync('family_name', familyName.value)
@@ -859,7 +859,7 @@ const budget = ref({ total: 3000, spent: 0 })
 
 const refreshStats = async () => {
   try {
-    const fId = familyId.value
+    const fId = familyCode.value
     const [stocks, shops, costs, recipes] = await Promise.all([
       eatCo.getStockList(fId),
       eatCo.getShopList(fId),
@@ -1111,7 +1111,7 @@ const openMealSelector = async (m) => {
   showMealPopup.value = true
   
   try {
-    const rList = await eatCo.getRecipeList(familyId.value)
+    const rList = await eatCo.getRecipeList(familyCode.value)
     favoriteRecipes.value = rList.filter(r => r.favorite).map(r => r.name)
     
     // 扫一遍当前已勾选项，确保其中所有野生菜谱都在今日持久池里
@@ -1229,7 +1229,7 @@ const addCustomToSelection = () => {
 
 const checkAndAddMissingIngredients = async (recipesList) => {
   try {
-    const fId = familyId.value || 'default_family'
+    const fId = familyCode.value || 'default_family'
     const allRecipes = await eatCo.getRecipeList(fId)
     const currentStocks = await eatCo.getStockList(fId)
     const currentShops = await eatCo.getShopList(fId)
@@ -1249,7 +1249,7 @@ const checkAndAddMissingIngredients = async (recipesList) => {
                 category: '食材',
                 done: false,
                 price: '',
-                family_id: fId
+                family_code: fId
               })
               addedToShopCount++
               currentShops.push({ name: ing.name, done: false })

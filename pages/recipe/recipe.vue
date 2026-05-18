@@ -136,9 +136,9 @@ const closeCategoryModal = () => {
 }
 
 const loadCategories = async () => {
-  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  const familyCode = uni.getStorageSync('family_code') || 'default_family';
   try {
-    const data = await eatCo.getRecipeCategoryList(familyId)
+    const data = await eatCo.getRecipeCategoryList(familyCode)
     categoryList.value = data
   } catch (e) {
     console.error('加载分类失败', e)
@@ -152,9 +152,9 @@ const addCategory = async () => {
     uni.showToast({ title: '分类已存在', icon: 'none' })
     return
   }
-  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  const familyCode = uni.getStorageSync('family_code') || 'default_family';
   try {
-    await eatCo.addRecipeCategory({ name, family_id: familyId })
+    await eatCo.addRecipeCategory({ name, family_code: familyCode })
     newCategoryName.value = ''
     await loadCategories()
   } catch (e) {
@@ -211,9 +211,9 @@ const makeRecipe = (item, index) => ({
 import eatCo from '@/common/localDB.js'
 
 const loadRecipes = async () => {
-  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  const familyCode = uni.getStorageSync('family_code') || 'default_family';
   try {
-    const data = await eatCo.getRecipeList(familyId)
+    const data = await eatCo.getRecipeList(familyCode)
     recipes.value = data.map((item, index) => {
       const formatted = makeRecipe(item, index)
       formatted.id = item._id

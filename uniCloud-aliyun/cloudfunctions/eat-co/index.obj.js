@@ -5,9 +5,9 @@ module.exports = {
   },
   
   // ============ 食材库存 (eat-stock) ============
-  async getStockList(familyId = 'default_family') {
+  async getStockList(familyCode = 'default_family') {
     const res = await db.collection('eat-stock')
-      .where({ family_id: familyId })
+      .where({ family_code: familyCode })
       .orderBy('create_time', 'desc')
       .get();
     return res.data;
@@ -15,7 +15,7 @@ module.exports = {
   async addStock(data) {
     data.create_time = Date.now();
     if(data.has === undefined) data.has = true;
-    if(!data.family_id) data.family_id = 'default_family';
+    if(!data.family_code) data.family_code = 'default_family';
     return await db.collection('eat-stock').add(data);
   },
   async updateStock(id, data) {
@@ -26,9 +26,9 @@ module.exports = {
   },
 
   // ============ 购物清单 (eat-shop) ============
-  async getShopList(familyId = 'default_family') {
+  async getShopList(familyCode = 'default_family') {
     const res = await db.collection('eat-shop')
-      .where({ family_id: familyId })
+      .where({ family_code: familyCode })
       .orderBy('create_time', 'desc')
       .get();
     return res.data;
@@ -36,7 +36,7 @@ module.exports = {
   async addShop(data) {
     data.create_time = Date.now();
     if(data.done === undefined) data.done = false;
-    if(!data.family_id) data.family_id = 'default_family';
+    if(!data.family_code) data.family_code = 'default_family';
     return await db.collection('eat-shop').add(data);
   },
   async updateShop(id, data) {
@@ -50,16 +50,16 @@ module.exports = {
   },
 
   // ============ 私房菜谱 (eat-recipe) ============
-  async getRecipeList(familyId = 'default_family') {
+  async getRecipeList(familyCode = 'default_family') {
     const res = await db.collection('eat-recipe')
-      .where({ family_id: familyId })
+      .where({ family_code: familyCode })
       .orderBy('create_time', 'desc')
       .get();
     return res.data;
   },
   async addRecipe(data) {
     data.create_time = Date.now();
-    if(!data.family_id) data.family_id = 'default_family';
+    if(!data.family_code) data.family_code = 'default_family';
     return await db.collection('eat-recipe').add(data);
   },
   async updateRecipe(id, data) {
@@ -70,9 +70,9 @@ module.exports = {
   },
 
   // ============ 花费账本 (eat-cost) ============
-  async getCostList(familyId = 'default_family') {
+  async getCostList(familyCode = 'default_family') {
     const res = await db.collection('eat-cost')
-      .where({ family_id: familyId })
+      .where({ family_code: familyCode })
       .orderBy('date', 'desc')
       .orderBy('create_time', 'desc')
       .get();
@@ -80,7 +80,7 @@ module.exports = {
   },
   async addCost(data) {
     data.create_time = Date.now();
-    if(!data.family_id) data.family_id = 'default_family';
+    if(!data.family_code) data.family_code = 'default_family';
     return await db.collection('eat-cost').add(data);
   },
   async updateCost(id, data) {
@@ -91,9 +91,9 @@ module.exports = {
   },
 
   // ============ 家庭管理 (eat-family) ============
-  async getFamilyMembers(familyId) {
+  async getFamilyMembers(familyCode) {
     // 模拟从数据库获取成员，实际应查询关联表
-    const res = await db.collection('eat-family-members').where({ family_id: familyId }).get();
+    const res = await db.collection('eat-family-members').where({ family_code: familyCode }).get();
     return res.data;
   },
   async joinFamily(inviteCode, userInfo) {
@@ -104,13 +104,13 @@ module.exports = {
     const fId = family.data[0]._id;
     // 2. 将用户加入成员表
     await db.collection('eat-family-members').add({
-      family_id: fId,
+      family_code: fId,
       uid: userInfo.uid,
       nick: userInfo.nick,
       avatar: userInfo.avatar,
       role: '干饭人',
       join_time: Date.now()
     });
-    return { familyId: fId, familyName: family.data[0].name };
+    return { familyCode: fId, familyName: family.data[0].name };
   }
 }

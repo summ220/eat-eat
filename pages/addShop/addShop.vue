@@ -67,7 +67,7 @@ const save = async () => {
       category: category.value,
       price: price.value,
       done: false,
-      family_id: uni.getStorageSync('family_id') || 'default_family'
+      family_code: uni.getStorageSync('family_code') || 'default_family'
     })
     uni.showToast({ icon: 'success', title: '添加成功' })
     setTimeout(() => {

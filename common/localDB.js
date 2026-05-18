@@ -6,9 +6,9 @@ const setCollection = (key, data) => uni.setStorageSync(key, data);
 
 const localDB = {
   // ============ 食材库存 (eat-stock) ============
-  async getStockList(familyId = 'default_family') {
+  async getStockList(familyCode = 'default_family') {
     const list = getCollection('eat-stock');
-    return list.filter(item => item.family_id === familyId).sort((a, b) => b.create_time - a.create_time);
+    return list.filter(item => item.family_code === familyCode).sort((a, b) => b.create_time - a.create_time);
   },
   async addStock(data) {
     const list = getCollection('eat-stock');
@@ -17,7 +17,7 @@ const localDB = {
       _id: generateId(),
       create_time: Date.now(),
       has: data.has !== undefined ? data.has : true,
-      family_id: data.family_id || 'default_family'
+      family_code: data.family_code || 'default_family'
     };
     list.push(newItem);
     setCollection('eat-stock', list);
@@ -37,9 +37,9 @@ const localDB = {
   },
 
   // ============ 购物清单 (eat-shop) ============
-  async getShopList(familyId = 'default_family') {
+  async getShopList(familyCode = 'default_family') {
     const list = getCollection('eat-shop');
-    return list.filter(item => item.family_id === familyId).sort((a, b) => b.create_time - a.create_time);
+    return list.filter(item => item.family_code === familyCode).sort((a, b) => b.create_time - a.create_time);
   },
   async addShop(data) {
     const list = getCollection('eat-shop');
@@ -48,7 +48,7 @@ const localDB = {
       _id: generateId(),
       create_time: Date.now(),
       done: data.done !== undefined ? data.done : false,
-      family_id: data.family_id || 'default_family'
+      family_code: data.family_code || 'default_family'
     };
     list.push(newItem);
     setCollection('eat-shop', list);
@@ -74,9 +74,9 @@ const localDB = {
   },
 
   // ============ 私房菜谱 (eat-recipe) ============
-  async getRecipeList(familyId = 'default_family') {
+  async getRecipeList(familyCode = 'default_family') {
     const list = getCollection('eat-recipe');
-    return list.filter(item => item.family_id === familyId).sort((a, b) => b.create_time - a.create_time);
+    return list.filter(item => item.family_code === familyCode).sort((a, b) => b.create_time - a.create_time);
   },
   async addRecipe(data) {
     const list = getCollection('eat-recipe');
@@ -84,7 +84,7 @@ const localDB = {
       ...data,
       _id: generateId(),
       create_time: Date.now(),
-      family_id: data.family_id || 'default_family'
+      family_code: data.family_code || 'default_family'
     };
     list.push(newItem);
     setCollection('eat-recipe', list);
@@ -104,19 +104,40 @@ const localDB = {
   },
 
   // ============ 菜谱分类 (eat-recipe-category) ============
-  async getRecipeCategoryList(familyId = 'default_family') {
+  async getRecipeCategoryList(familyCode = 'default_family') {
     const list = getCollection('eat-recipe-category');
-    if (list.length === 0) {
-       const defaultCategories = ['家常菜', '减脂', '增肌', '健康', '儿童', '汤品'].map(name => ({
-         _id: generateId(),
-         name,
-         family_id: 'default_family',
-         create_time: Date.now()
-       }));
-       setCollection('eat-recipe-category', defaultCategories);
-       return defaultCategories.filter(item => item.family_id === familyId);
+    // 先筛选当前家庭的分类
+    const familyCategories = list.filter(item => item.family_code === familyCode);
+    
+    // 如果当前家庭没有分类，尝试从 default_family 迁移
+    if (familyCategories.length === 0 && familyCode !== 'default_family') {
+      const defaultCategories = list.filter(item => item.family_code === 'default_family');
+      if (defaultCategories.length > 0) {
+        // 复制 default_family 的分类到当前家庭
+        const newCategories = defaultCategories.map(cat => ({
+          ...cat,
+          _id: generateId(),
+          family_code: familyCode,
+          create_time: Date.now()
+        }));
+        setCollection('eat-recipe-category', [...list, ...newCategories]);
+        return newCategories;
+      }
     }
-    return list.filter(item => item.family_id === familyId).sort((a, b) => a.create_time - b.create_time);
+    
+    // 如果还是没有分类，初始化默认分类
+    if (familyCategories.length === 0) {
+      const defaultCategories = ['家常菜', '减脂', '增肌', '健康', '儿童', '汤品'].map(name => ({
+        _id: generateId(),
+        name,
+        family_code: familyCode,
+        create_time: Date.now()
+      }));
+      setCollection('eat-recipe-category', [...list, ...defaultCategories]);
+      return defaultCategories;
+    }
+    
+    return familyCategories.sort((a, b) => a.create_time - b.create_time);
   },
   async addRecipeCategory(data) {
     const list = getCollection('eat-recipe-category');
@@ -124,7 +145,7 @@ const localDB = {
       ...data,
       _id: generateId(),
       create_time: Date.now(),
-      family_id: data.family_id || 'default_family'
+      family_code: data.family_code || 'default_family'
     };
     list.push(newItem);
     setCollection('eat-recipe-category', list);
@@ -138,9 +159,9 @@ const localDB = {
   },
 
   // ============ 花费账本 (eat-cost) ============
-  async getCostList(familyId = 'default_family') {
+  async getCostList(familyCode = 'default_family') {
     const list = getCollection('eat-cost');
-    return list.filter(item => item.family_id === familyId).sort((a, b) => {
+    return list.filter(item => item.family_code === familyCode).sort((a, b) => {
       if (b.date !== a.date) {
         return b.date > a.date ? 1 : -1;
       }
@@ -153,7 +174,7 @@ const localDB = {
       ...data,
       _id: generateId(),
       create_time: Date.now(),
-      family_id: data.family_id || 'default_family'
+      family_code: data.family_code || 'default_family'
     };
     list.push(newItem);
     setCollection('eat-cost', list);
@@ -173,9 +194,9 @@ const localDB = {
   },
 
   // ============ 家庭管理 (eat-family) ============
-  async getFamilyMembers(familyId) {
+  async getFamilyMembers(familyCode) {
     const list = getCollection('eat-family-members');
-    return list.filter(item => item.family_id === familyId);
+    return list.filter(item => item.family_code === familyCode);
   },
   async joinFamily(inviteCode, userInfo) {
     // 这里简单模拟，不再跨设备验证邀请码，直接创建一个家庭或加入
@@ -197,7 +218,7 @@ const localDB = {
     const members = getCollection('eat-family-members');
     const newMember = {
       _id: generateId(),
-      family_id: family._id,
+      family_code: family._id,
       uid: userInfo.uid || generateId(),
       nick: userInfo.nick || '游客',
       avatar: userInfo.avatar || '',
@@ -207,7 +228,7 @@ const localDB = {
     members.push(newMember);
     setCollection('eat-family-members', members);
     
-    return { familyId: family._id, familyName: family.name };
+    return { familyCode: family._id, familyName: family.name };
   }
 };
 

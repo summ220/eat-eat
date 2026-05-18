@@ -9,7 +9,7 @@ import eatCo from './localDB.js'
  * @returns {Promise<any>}
  */
 const request = (url, method = 'POST', data = {}) => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const fullUrl = url.startsWith('http') ? url : (config.apiBaseUrl || 'http://lw.feiyuf.top/api') + url
     const deviceId = uni.getStorageSync('deviceId') || ''
     const deviceSecret = uni.getStorageSync('deviceSecret') || ''
@@ -24,11 +24,16 @@ const request = (url, method = 'POST', data = {}) => {
       },
       data: data,
       success: (res) => {
-        resolve(res.data)
+        // 如果接口返回错误码，也应该 reject
+        if (res.data && res.data.code && res.data.code !== 0) {
+          reject(new Error(res.data.message || '请求失败'))
+        } else {
+          resolve(res.data)
+        }
       },
       fail: (err) => {
         console.error(`[API Error] ${url} :`, err)
-        resolve(null)
+        reject(err)
       }
     })
   })

@@ -254,9 +254,9 @@ onShow(() => {
 })
 
 const load = async () => {
-  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  const familyCode = uni.getStorageSync('family_code') || 'default_family';
   try {
-    const data = await eatCo.getStockList(familyId);
+    const data = await eatCo.getStockList(familyCode);
     list.value = data.map(item => ({ ...item, id: item._id }));
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' });

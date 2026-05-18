@@ -195,9 +195,9 @@ onShow(() => {
 })
 
 const load = async () => {
-  const familyId = uni.getStorageSync('family_id') || 'default_family';
+  const familyCode = uni.getStorageSync('family_code') || 'default_family';
   try {
-    const data = await eatCo.getCostList(familyId)
+    const data = await eatCo.getCostList(familyCode)
     list.value = data.map(item => {
       item.id = item._id
       item.translateX = 0
@@ -328,7 +328,7 @@ const saveModal = async () => {
       name: editForm.value.name,
       date: editForm.value.date,
       category: editForm.value.category,
-      family_id: uni.getStorageSync('family_id') || 'default_family'
+      family_code: uni.getStorageSync('family_code') || 'default_family'
     }
 
     if (modalMode.value === 'add') {
