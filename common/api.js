@@ -11,8 +11,8 @@ import eatCo from './localDB.js'
 const request = (url, method = 'POST', data = {}) => {
   return new Promise((resolve, reject) => {
     const fullUrl = url.startsWith('http') ? url : (config.apiBaseUrl || 'http://lw.feiyuf.top/api') + url
-    const deviceId = uni.getStorageSync('deviceId') || ''
-    const deviceSecret = uni.getStorageSync('deviceSecret') || ''
+    const deviceId = uni.getStorageSync('device_id') || ''
+    const deviceSecret = uni.getStorageSync('device_secret') || ''
 
     uni.request({
       url: fullUrl,

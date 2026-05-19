@@ -57,10 +57,8 @@
         <view class="section-title">
           <text class="title-text">家庭成员</text>
           <view class="title-actions">
-            <text class="action-text secondary" @click="showJoinModal = true" v-if="familyCode === 'default_family' || familyRole !== 'owner'">加入</text>
-            <text class="action-text" @click="openInvite" v-if="familyCode === 'default_family' || familyRole === 'owner'">邀请</text>
-            <!-- 如果不是创建者，也不是空家庭，显示同步家庭 -->
-            <text class="action-text" @click="refreshStats" v-if="familyCode !== 'default_family'">同步</text>
+            <text class="action-text secondary" @click="showJoinModal = true">加入</text>
+            <text class="action-text" @click="openInvite">邀请</text>
           </view>
         </view>
         <scroll-view scroll-x class="member-scroll" :show-scrollbar="false">
@@ -564,7 +562,7 @@ import { generateInviteCode, generateRandomId } from '@/common/codeGenerator.js'
 const showCompassPopup = ref(false)
 const familyName = ref(uni.getStorageSync('family_name') || '快乐干饭小家')
 const familyCode = ref(uni.getStorageSync('family_code') || 'default_family')
-const familyRole = ref(uni.getStorageSync('family_role') || 'personal')
+const familyRole = ref(uni.getStorageSync('family_role') || 'owner')
 
 // 天气/日历弹窗控制
 const weatherLocation = ref('')
@@ -576,14 +574,6 @@ const showReminderModal = ref(false)
 const showFamilyNameModal = ref(false)
 const tempFamilyName = ref('')
 
-// 同步调用示例
-// async function createFamily() {
-//   const inviteCode = await generateInviteCode()
-//   const familyCode = await generateRandomId()
-//   console.log('邀请码:', inviteCode)
-//   console.log('家庭ID:', familyCode)
-// }
-
 const openEditFamilyName = () => {
   tempFamilyName.value = familyName.value
   showFamilyNameModal.value = true
@@ -594,34 +584,23 @@ const saveFamilyName = async () => {
   if (!newName) {
     return uni.showToast({ title: '名称不能为空', icon: 'none' })
   }
-
-  // 如果不属于家庭（个人模式），直接修改本地缓存
-  if (familyCode.value === 'default_family') {
-    familyName.value = newName
-    uni.setStorageSync('family_name', familyName.value)
-    showFamilyNameModal.value = false
-    uni.showToast({ title: '修改成功' })
-  } else {
-    // 走接口同步云端
-    uni.showLoading({ title: '保存中...' })
-    try {
-      const res = await api.updateFamily(familyCode.value, newName)
-      if (res && res.data) {
-        familyName.value = res.data.familyName
-        uni.setStorageSync('family_name', familyName.value)
-        showFamilyNameModal.value = false
-        uni.showToast({ title: '修改成功' })
-      } else {
-        uni.showToast({
-          title: res.message || '修改失败',
-          icon: 'none'
-        })
-      }
-    } catch (err) {
-      uni.showToast({ title: '网络错误', icon: 'none' })
-    } finally {
-      uni.hideLoading()
+  try {
+    const res = await api.updateFamily(familyCode.value, newName)
+    if (res && res.data) {
+      familyName.value = res.data.familyName
+      uni.setStorageSync('family_name', familyName.value)
+      showFamilyNameModal.value = false
+      uni.showToast({ title: '修改成功' })
+    } else {
+      uni.showToast({
+        title: res.message || '修改失败',
+        icon: 'none'
+      })
     }
+  } catch (err) {
+    uni.showToast({ title: '网络错误', icon: 'none' })
+  } finally {
+    uni.hideLoading()
   }
 }
 
@@ -640,11 +619,8 @@ let countdownTimer = null // 倒计时定时器
 
 const openInvite = async () => {
   console.log(familyCode.value, familyRole.value, members.value,'--------------')
-  if (familyCode.value !== 'default_family' && familyRole.value !== 'owner' && members.value.length > 1) {
-    return uni.showToast({ title: '当前已加入家庭并且不是创建者，不能邀请家人', icon: 'none' })
-  }
-
-  // 1、如果还没有创建家庭，先创建家庭，传familyCode、familyName，确定familyCode
+  
+  // 1、如果还没有创建家庭，先创建家庭
   if (familyCode.value === 'default_family') {
     const ok = await createFamily()
     if (!ok) return // 创建失败中止
@@ -677,7 +653,7 @@ const createFamily = async () => {
   })
   if (!ok) return false
   
-  const familyCode = await generateRandomId()
+  const familyCode = 'default_family'
   const res = await api.createFamily(familyName.value)
   
   if (res && res.data) {

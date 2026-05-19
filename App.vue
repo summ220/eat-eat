@@ -11,13 +11,13 @@ export default {
 		if (!deviceId) {
 			api.registerDevice().then(res => {
 				console.log('设备注册响应:', res)
-				// 假设返回格式为 { code: 200, data: { deviceId, deviceSecret } } 或直接是对象
 				const data = res?.data || res
-				console.log('设备注册响应:', data)
 				if (data && data.device.deviceId && data.deviceSecret) {
-					uni.setStorageSync('deviceId', data.device.deviceId)
-					uni.setStorageSync('deviceSecret', data.deviceSecret)
+					uni.setStorageSync('device_id', data.device.deviceId)
+					uni.setStorageSync('device_secret', data.deviceSecret)
 					console.log('设备注册成功，已缓存标识')
+					// 创建家庭
+					this.createFamily()
 				}
 			}).catch(err => {
 				console.error('设备注册失败:', err)
@@ -46,7 +46,22 @@ export default {
 			uni.setTabBarStyle({
 				selectedColor: themes[currentTheme].color
 			})
-		}
+		},
+		async createFamily() {
+			const res = await api.createFamily('快乐干饭小家~')
+			console.log(res)
+			if (res && res.data) {
+				uni.setStorageSync('family_code', res.data.family.familyCode || 'default_family')
+				uni.setStorageSync('family_role', res.data.member.role || 'owner')
+				return true
+			} else {
+				// 隔一段时间在请求一次，直到成功为止
+				setTimeout(() => {
+					this.createFamily()
+				}, 1000 * 5)
+			}
+			
+		} 
 	}
 }
 </script>
