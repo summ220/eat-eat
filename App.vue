@@ -1,35 +1,33 @@
 <script>
-import api from '@/common/api.js'
+import familyApi from '@/common/api/family.js'
 
 export default {
 	onLaunch() {
 		console.log("家庭小厨房启动啦")
+		this.setTabTheme()
 
 		// 1. 设备注册逻辑
-		const deviceId = uni.getStorageSync('deviceId')
+		const deviceId = uni.getStorageSync('device_id') || ''
+		const deviceSecret = uni.getStorageSync('device_secret') || ''
+
 		console.log('设备ID:', deviceId)
-		if (!deviceId) {
-			api.registerDevice().then(res => {
+		console.log('设备密钥:', deviceSecret)
+		if (uni.getStorageSync('device_id') && uni.getStorageSync('')) return
+		else if (!deviceId) {
+			familyApi.registerDevice().then(res => {
 				console.log('设备注册响应:', res)
 				const data = res?.data || res
 				if (data && data.device.deviceId && data.deviceSecret) {
 					uni.setStorageSync('device_id', data.device.deviceId)
 					uni.setStorageSync('device_secret', data.deviceSecret)
 					console.log('设备注册成功，已缓存标识')
-					// 创建家庭
+					// 2. 自动创建家庭
 					this.createFamily()
 				}
 			}).catch(err => {
 				console.error('设备注册失败:', err)
 			})
 		}
-
-		// 2. 初始化分类配置
-		const cats = uni.getStorageSync('ingredient_categories')
-		if (!cats || cats.length === 0) {
-			uni.setStorageSync('ingredient_categories', ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他'])
-		}
-		this.setTabTheme()
 	},
 	onShow() {
 		this.setTabTheme()
@@ -48,7 +46,7 @@ export default {
 			})
 		},
 		async createFamily() {
-			const res = await api.createFamily('快乐干饭小家~')
+			const res = await familyApi.createFamily('快乐干饭小家~')
 			console.log(res)
 			if (res && res.data) {
 				uni.setStorageSync('family_code', res.data.family.familyCode || 'default_family')
@@ -60,8 +58,7 @@ export default {
 					this.createFamily()
 				}, 1000 * 5)
 			}
-			
-		} 
+		}, 
 	}
 }
 </script>

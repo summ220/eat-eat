@@ -1,8 +1,8 @@
 <template>
   <view class="page" :style="themeStyle">
-    <custom-header title="添加购物" icon="🛒" :back="true" />
+    <custom-header title="添加食材" icon="🍅" :back="true" />
     <view class="card">
-      <text class="title">🛒 添加购物清单</text>
+      <text class="title">🍅 添加食材</text>
       
       <view class="category-wrap">
         <text class="label">选择分类</text>
@@ -13,13 +13,20 @@
             v-for="cat in categories" 
             :key="cat" 
             @click="category = cat"
-          >{{ cat }}</text>
+          >{{ cat.name }}</text>
         </view>
       </view>
 
-      <input v-model="name" placeholder="请输入要购买的任务或物品" class="input" />
+      <input v-model="name" placeholder="请输入食材名称" class="input" />
       <input v-model="num" placeholder="数量：例如 3个 (选填)" class="input" />
-      <input v-model="price" placeholder="花费/单价 ¥ (选填)" class="input" />
+      
+      <picker mode="date" @change="onDateChange">
+        <view class="input picker-view">
+          <text class="picker-label">过期时间：</text>
+          <text class="picker-val">{{ expireDate || '请选择 (选填)' }}</text>
+        </view>
+      </picker>
+
       <button class="save-btn" @click="save">保存</button>
     </view>
   </view>
@@ -28,22 +35,55 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import stockApi from '@/common/api/stock.js'
+
+const familyCode = uni.getStorageSync('family_code') || 'default_family'
+
+const category = ref('')
+const categories = ref([])
+
+const loadCategories = async () => {
+  const res = await stockApi.getFamilyIngredientCategories(familyCode)
+  categories.value = res.data.categories || []
+  category.value = categories.value[0] || ''
+}
+
+const expireDate = ref('')
+const onDateChange = (e) => {
+  expireDate.value = e.detail.value
+}
 
 const name = ref('')
 const num = ref('')
-const price = ref('')
-const category = ref('蔬菜')
-const categories = ref([])
+
+const save = async () => {
+  console.log(category.value,'category.value')
+  if (!name.value) return uni.showToast({ icon: 'none', title: '请输入名称' })
+  try {
+    const ingredientItemJson = {
+      name: name.value,
+      num: num.value,
+      categoryId: category.value.id,
+      expire_date: expireDate.value,
+      has: true,
+    }
+    await stockApi.saveFamilyIngredientItem(familyCode, ingredientItemJson)
+    uni.showToast({ icon: 'success', title: '保存成功' })
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 1000)
+  } catch(e) {
+    uni.showToast({ title: '保存失败', icon: 'none' })
+  }
+}
 
 onShow(() => {
-  categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
-  if (!categories.value.includes(category.value)) {
-    category.value = categories.value[0] || '其他'
-  }
+  loadCategories()
   currentTheme.value = uni.getStorageSync('current_theme') || 0
 })
 
-const themes = [
+// 主题
+ const themes = [
   { color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
   { color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
   { color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
@@ -55,28 +95,6 @@ const themeStyle = computed(() => {
   return `--primary:${t.color};--primary-grad:${t.gradient};--primary-light:${t.light};--primary-shadow:${t.shadow};`
 })
 
-import eatCo from '@/common/localDB.js'
-
-const save = async () => {
-  if (!name.value) return uni.showToast({ icon: 'none', title: '请输入名称' })
-  
-  try {
-    await eatCo.addShop({
-      name: name.value,
-      num: num.value,
-      category: category.value,
-      price: price.value,
-      done: false,
-      family_code: uni.getStorageSync('family_code') || 'default_family'
-    })
-    uni.showToast({ icon: 'success', title: '添加成功' })
-    setTimeout(() => {
-      uni.navigateBack()
-    }, 1000)
-  } catch (e) {
-    uni.showToast({ title: '添加失败', icon: 'none' })
-  }
-}
 </script>
 
 <style lang="less" scoped>
@@ -139,6 +157,18 @@ const save = async () => {
   &:focus {
     border: 2rpx solid var(--primary);
     background: #FFF;
+  }
+}
+.picker-view {
+  display: flex;
+  align-items: center;
+  .picker-label {
+    color: #888;
+    margin-right: 10rpx;
+  }
+  .picker-val {
+    color: #333;
+    flex: 1;
   }
 }
 .save-btn {

@@ -13,8 +13,8 @@
           <view class="nav-item" :class="{ active: currentCategory === '全部' }" @click="switchCategory('全部')">
             <text class="nav-text">全部</text>
           </view>
-          <view class="nav-item" v-for="cat in categories" :key="cat" :class="{ active: currentCategory === cat }" @click="switchCategory(cat)">
-            <text class="nav-text">{{ cat }}</text>
+          <view class="nav-item" v-for="cat in categories" :key="cat.id" :class="{ active: currentCategory === cat.id }" @click="switchCategory(cat.id)">
+            <text class="nav-text">{{ cat.name }}</text>
           </view>
         </view>
         <view class="nav-item add-cat-btn-side" @click="showCatModal = true">
@@ -32,7 +32,7 @@
           <view class="item-header">
             <view class="title-group">
               <text class="name">{{ item.name }}</text>
-              <text class="cat-tag" v-if="currentCategory === '全部'">{{ item.category || '其他' }}</text>
+              <text class="cat-tag" v-if="currentCategory === '全部'">{{ item.categoryName || '其他' }}</text>
             </view>
             <!-- 自定义勾选框，避免原生 switch 在列表重排后状态不同步 -->
             <view
@@ -66,19 +66,19 @@
       <view class="modal-content" @click.stop>
         <text class="modal-title">{{ modalMode === 'add' ? '添加物品' : '编辑物品' }}</text>
         
-        <input class="modal-input" v-model="editData.name" placeholder="物品名称 (必填)" />
-        <input class="modal-input" v-model="editData.num" placeholder="数量/单位 (选填，如 2斤)" />
-        <input class="modal-input" type="digit" v-model="editData.price" placeholder="花费/单价 ¥ (选填)" />
-        
         <view class="modal-tags">
           <text 
             class="tag" 
-            :class="{ active: editData.category === cat }" 
+            :class="{ active: editData.categoryName === cat.name }" 
             v-for="cat in categories" 
-            :key="cat" 
-            @click="editData.category = cat"
-          >{{ cat }}</text>
+            :key="cat.id" 
+            @click="editData.categoryName = cat.name"
+          >{{ cat.name }}</text>
         </view>
+        
+        <input class="modal-input" v-model="editData.name" placeholder="物品名称 (必填)" />
+        <input class="modal-input" v-model="editData.num" placeholder="数量/单位 (选填，如 2斤)" />
+        <input class="modal-input" type="digit" v-model="editData.price" placeholder="花费/单价 ¥ (选填)" />
         
         <view class="modal-btns">
           <button class="cancel-btn" @click="showModal = false">取消</button>
@@ -93,8 +93,8 @@
         <text class="modal-title">管理分类</text>
         <view class="cat-manage-list">
           <view class="cat-manage-item" v-for="(cat, idx) in categories" :key="idx">
-            <text>{{ cat }}</text>
-            <text class="del-cat" @click="removeCategory(idx)">删除</text>
+            <text>{{ cat.name }}</text>
+            <text class="del-cat" @click="removeCategory(cat)">删除</text>
           </view>
         </view>
         <view class="add-cat-box">
@@ -130,62 +130,72 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import shopApi from '@/common/api/shop.js'
+import stockApi from '@/common/api/stock.js'
+
+const familyCode = uni.getStorageSync('family_code') || 'default_family';
 
 const list = ref([])
-const categories = ref([])
-const currentCategory = ref('全部')
 const isStatExpanded = ref(false)
 
-// 分类管理
+// ========================分类管理========================
+const categories = ref([])
+const currentCategory = ref('全部')
+
 const showCatModal = ref(false)
 const newCat = ref('')
 
-const loadCategories = () => {
-  categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+const loadCategories = async () => {
+  try {
+    const res = await shopApi.getFamilyShoppingCategories(familyCode)
+    categories.value = res.data.categories || []
+  } catch (e) {
+    console.error('加载分类失败', e)
+  }
 }
-const addCategory = () => {
-  if (!newCat.value.trim()) return
-  if (categories.value.includes(newCat.value.trim())) {
+const addCategory = async () => {
+  const name = newCat.value.trim()
+  if (!name) return
+  
+  // 避免重复
+  if (categories.value.some(c => c.name === name)) {
     return uni.showToast({ title: '分类已存在', icon: 'none' })
   }
-  categories.value.push(newCat.value.trim())
-  newCat.value = ''
-  uni.setStorageSync('ingredient_categories', categories.value)
-  showCatModal.value = false
+  
+  // API创建分类
+  let shoppingCategoryJson = {name: name, sortOrder: 60}
+  try {
+    await shopApi.saveFamilyShoppingCategory(familyCode, shoppingCategoryJson)
+    newCat.value = ''
+    await loadCategories()
+    uni.showToast({ title: '添加成功', icon: 'none' })
+  } catch (e) {
+    console.error('添加分类失败', e)
+    uni.showToast({ title: '添加失败', icon: 'none' })
+  }
 }
-const removeCategory = (idx) => {
-  const catName = categories.value[idx]
+const removeCategory = (cat) => {
   uni.showModal({
     title: '提示',
-    content: `确定要删除分类「${catName}」吗？`,
+    content: `确定要删除分类「${cat.name}」吗？`,
     confirmColor: '#FF7DA8',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        categories.value.splice(idx, 1)
-        uni.setStorageSync('ingredient_categories', categories.value)
+        try {
+          await shopApi.deleteFamilyShoppingCategory(cat.id)
+          await loadCategories()
+          uni.showToast({ title: '删除成功', icon: 'none' })
+        } catch (e) {
+          console.error('删除分类失败', e)
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        }
       }
     }
   })
 }
+// ===================================分类管理=====================================
 
-// 主题系统
-const themes = [
-  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
-  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
-  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
-  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
-]
-const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
-const themeStyle = computed(() => {
-  const t = themes[currentTheme.value]
-  return `
-    --primary: ${t.color};
-    --primary-grad: ${t.gradient};
-    --primary-light: ${t.light};
-    --primary-shadow: ${t.shadow};
-  `
-})
-
+// ===================================Shopping List=====================================
 const showModal = ref(false)
 const modalMode = ref('add')
 const editData = ref({
@@ -193,7 +203,7 @@ const editData = ref({
   name: '',
   num: '',
   price: '',
-  category: '蔬菜'
+  categoryName: '蔬菜'
 })
 
 // sortedIds 存储当前显示顺序的 id 列表，只在加载/切分类时更新，不因 toggle 而重排
@@ -254,29 +264,25 @@ onShow(() => {
 })
 
 const load = async () => {
-  const familyCode = uni.getStorageSync('family_code') || 'default_family';
   try {
-    const data = await eatCo.getShopList(familyCode)
-    list.value = data.map(item => {
-      item.id = item._id
-      item.done = !!item.done
-      return item
-    })
+    uni.showLoading({ title: '加载中...' })
+    const res = await shopApi.getFamilyShoppingItems(familyCode,currentCategory.value)
+    list.value = res.data.items || []
     // 加载后初始化显示顺序
     buildSortedIds()
+    uni.hideLoading()
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' })
+    uni.hideLoading()
   }
 }
 
 // 切换分类时重新构建顺序快照
 const switchCategory = (cat) => {
   currentCategory.value = cat
-  buildSortedIds()
+  load()
 }
 
-// 移除本地 save 方法
-// const save = () => { ... }
 
 const toggle = async (item) => {
   if (item.done) return; // 勾选之后不能取消勾选
@@ -286,16 +292,25 @@ const toggle = async (item) => {
   
   const proceedUpdate = async (shouldSyncToStock) => {
     try {
-      await eatCo.updateShop(item._id, { done: newDone })
+      await shopApi.updateFamilyShoppingItem(familyCode, {
+        id: item.id,
+        name: item.name,
+        num: item.num,
+        price: item.price,
+        category: item.category,
+        done: newDone
+      })
       
       if (shouldSyncToStock) {
-        await eatCo.addStock({
+        // 走新增食材的接口
+        const ingredientItemJson = {
           name: item.name,
           num: item.num,
-          category: item.category || '其他',
+          category: item.category,
+          expire_date: '',
           has: true,
-          family_code: uni.getStorageSync('family_code') || 'default_family'
-        })
+        }
+        await stockApi.saveFamilyIngredientItem(familyCode, ingredientItemJson)
       }
 
       if (newDone && item.price && parseFloat(item.price) > 0) {
@@ -314,6 +329,7 @@ const toggle = async (item) => {
       } else if (shouldSyncToStock) {
         uni.showToast({ title: '已同步到食材', icon: 'success' })
       }
+      load()
     } catch (e) {
       item.done = false // 回滚
       uni.showToast({ title: '更新失败', icon: 'none' })
@@ -391,7 +407,7 @@ const deleteItem = (item) => {
       if (res.confirm) {
         uni.showLoading({ title: '删除中...' })
         try {
-          await eatCo.deleteShop(item._id)
+          await shopApi.deleteFamilyShoppingItem(item.id)
           list.value = list.value.filter(v => v.id !== item.id)
           uni.showToast({ title: '删除成功', icon: 'success' })
         } catch (e) {
@@ -411,7 +427,7 @@ const openAddModal = () => {
 }
 
 const goAdd = () => {
-  uni.navigateTo({ url: '/pages/addShop/addShop' })
+  uni.navigateTo({ url: '/pages/shop/component/addShop' })
 }
 
 const openEditModal = (item) => {
@@ -421,7 +437,7 @@ const openEditModal = (item) => {
     name: item.name,
     num: item.num || '',
     price: item.price || '',
-    category: item.category || '其他'
+    categoryName: item.categoryName || '其他'
   };
   showModal.value = true;
 }
@@ -433,7 +449,7 @@ const reAdd = (item) => {
     name: item.name,
     num: item.num || '',
     price: item.price || '',
-    category: item.category || '其他'
+    categoryName: item.categoryName || '其他'
   };
   showModal.value = true;
 }
@@ -453,15 +469,17 @@ const saveModal = async () => {
         category: editData.value.category,
         done: false
       }
-      await eatCo.addShop(newItem)
+      await shopApi.saveFamilyShoppingItem(familyCode, newItem)
       uni.showToast({ title: '添加成功', icon: 'success' })
     } else {
-      await eatCo.updateShop(editData.value.id, {
+      let shoppingItemJson = {
+        id: editData.value.id,
         name: editData.value.name,
         num: editData.value.num,
         price: editData.value.price,
-        category: editData.value.category
-      })
+        categoryId: editData.value.category.id,
+      }
+      await shopApi.updateFamilyShoppingItem(familyCode, shoppingItemJson)
       uni.showToast({ title: '修改成功', icon: 'success' })
     }
     showModal.value = false
@@ -476,6 +494,26 @@ const saveModal = async () => {
 const checkCost = () => {
   uni.navigateTo({ url: '/pages/cost/cost' })
 }
+
+
+
+// 主题系统
+const themes = [
+  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
+  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
+  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
+  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
+]
+const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
+const themeStyle = computed(() => {
+  const t = themes[currentTheme.value]
+  return `
+    --primary: ${t.color};
+    --primary-grad: ${t.gradient};
+    --primary-light: ${t.light};
+    --primary-shadow: ${t.shadow};
+  `
+})
 </script>
 
 <style lang="less" scoped>

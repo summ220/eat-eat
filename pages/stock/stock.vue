@@ -24,7 +24,7 @@
             :class="{ active: currentCategory === cat }" 
             @click="switchCategory(cat)"
           >
-            <text class="nav-text">{{ cat }}</text>
+            <text class="nav-text">{{ cat.name }}</text>
           </view>
         </view>
         <view class="nav-item add-cat-btn-side" @click="showCatModal = true">
@@ -34,15 +34,15 @@
 
       <!-- 右侧食材列表 -->
       <view class="list-container">
-        <view class="empty" v-if="filteredList.length === 0">
+        <view class="empty" v-if="list.length === 0">
           <text>暂时没有食材哦～</text>
         </view>
         
-        <view class="item-card" v-for="item in filteredList" :key="item.id">
+        <view class="item-card" v-for="item in list" :key="item.id">
           <view class="item-header">
             <view class="title-group">
               <text class="name">{{ item.name }}</text>
-              <text class="cat-tag" v-if="currentCategory === '全部'">{{ item.category || '其他' }}</text>
+              <text class="cat-tag" v-if="currentCategory === '全部'">{{ item.categoryName || '其他' }}</text>
             </view>
             <!-- <switch :checked="item.has" @change="toggle(item)" color="#FF93B6" style="transform: scale(0.8); margin-right: -10rpx;" /> -->
           </view>
@@ -73,6 +73,16 @@
       <view class="modal-content" @click.stop>
         <text class="modal-title">编辑食材</text>
         
+        <view class="modal-tags">
+          <text 
+            class="tag" 
+            :class="{ active: editData.categoryName === cat.name }"
+            v-for="cat in categories" 
+            :key="cat.id"
+            @click="editData.categoryName = cat.name"
+          >{{ cat.name }}</text>
+        </view>
+        
         <input class="modal-input" v-model="editData.name" placeholder="请输入食材名称" />
         <input class="modal-input" v-model="editData.num" placeholder="数量 (选填)" />
         
@@ -82,16 +92,6 @@
             <text class="p-val">{{ editData.expire_date || '请选择 (选填)' }}</text>
           </view>
         </picker>
-        
-        <view class="modal-tags">
-          <text 
-            class="tag" 
-            :class="{ active: editData.category === cat }"
-            v-for="cat in categories" 
-            :key="cat"
-            @click="editData.category = cat"
-          >{{ cat }}</text>
-        </view>
         
         <view class="modal-btns">
           <button class="cancel-btn" @click="showModal = false">取消</button>
@@ -106,15 +106,14 @@
         <text class="modal-title">管理分类</text>
         <view class="cat-manage-list">
           <view class="cat-manage-item" v-for="(cat, idx) in categories" :key="idx">
-            <text>{{ cat }}</text>
-            <text class="del-cat" @click="removeCategory(idx)">删除</text>
+            <text>{{ cat.name }}</text>
+            <text class="del-cat" @click="removeCategory(cat)">删除</text>
           </view>
         </view>
         <view class="add-cat-box">
           <input class="add-cat-input" v-model="newCat" placeholder="新分类名称" />
           <view class="add-cat-btn-modal" @click="addCategory">添加</view>
         </view>
-        <!-- <button class="close-modal-btn" @click="showCatModal = false">完成</button> -->
       </view>
     </view>
   </view>
@@ -123,75 +122,66 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import stockApi from '@/common/api/stock.js'
 
-const list = ref([])
+const familyCode = uni.getStorageSync('family_code') || ''
+
+// =============================== 分类管理 =============================
+const showCatModal = ref(false)
 const categories = ref([])
 const currentCategory = ref('全部')
-
-// 分类管理
-const showCatModal = ref(false)
 const newCat = ref('')
 
-const loadCategories = () => {
-  categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+const loadCategories = async () => {
+  const res = await stockApi.getFamilyIngredientCategories(familyCode)
+  categories.value = res.data.categories || []
 }
-const addCategory = () => {
-  if (!newCat.value.trim()) return
-  if (categories.value.includes(newCat.value.trim())) {
-    return uni.showToast({ title: '分类已存在', icon: 'none' })
-  }
-  categories.value.push(newCat.value.trim())
-  newCat.value = ''
-  uni.setStorageSync('ingredient_categories', categories.value)
-  showCatModal.value = false
+const addCategory = async () => {
+    if (!newCat.value.trim()) return
+    if (categories.value.includes(newCat.value.trim())) {
+      return uni.showToast({ title: '分类已存在', icon: 'none' })
+    }
+    const ingredientCategoryJson = {name: newCat.value.trim(), sortOrder: 70 }
+    await stockApi.saveFamilyIngredientCategory(familyCode, ingredientCategoryJson)
+    uni.showToast({ title: '分类添加成功', icon: 'success' })
+    loadCategories()
+    newCat.value = ''
+    // showCatModal.value = false
 }
-const removeCategory = (idx) => {
-  const catName = categories.value[idx]
+const removeCategory = (cat) => {
+  console.log(cat, 'cat')
   uni.showModal({
     title: '提示',
-    content: `确定要删除分类「${catName}」吗？`,
+    content: `确定要删除分类「${cat.name}」吗？`,
     confirmColor: '#FF7DA8',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        categories.value.splice(idx, 1)
-        uni.setStorageSync('ingredient_categories', categories.value)
+        await stockApi.deleteFamilyIngredientCategory(cat.id)
+        loadCategories()
+        uni.showToast({ title: '分类删除成功', icon: 'success' })
       }
     }
   })
 }
 
-// 主题系统
-const themes = [
-  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
-  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
-  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
-  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
-]
-const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
-const themeStyle = computed(() => {
-  const t = themes[currentTheme.value]
-  return `
-    --primary: ${t.color};
-    --primary-grad: ${t.gradient};
-    --primary-light: ${t.light};
-    --primary-shadow: ${t.shadow};
-  `
-})
+const switchCategory = (cat) => {
+  currentCategory.value = cat;
+  load()
+}
+// =============================== 分类管理 =============================
 
-const showModal = ref(false)
-import eatCo from '@/common/localDB.js'
-
-const editData = ref({
-  _id: '',
-  id: '',
-  name: '',
-  num: '',
-  category: '',
-  expire_date: ''
-})
-
-const onEditDateChange = (e) => {
-  editData.value.expire_date = e.detail.value
+// =============================== 食材列表 =============================
+const list = ref([])
+const load = async () => {
+  try {
+    uni.showLoading({ title: '加载中...' })
+    const res = await stockApi.getFamilyIngredientItems(familyCode, currentCategory.value.id || '')
+    list.value = res.data.items || []
+    uni.hideLoading()
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' });
+    uni.hideLoading()
+  }
 }
 
 const getExpireStatus = (dateStr) => {
@@ -208,7 +198,9 @@ const getExpireStatus = (dateStr) => {
   if (diffDays <= 3) return { type: 'warning', text: `剩 ${diffDays} 天` }
   return { type: 'safe', text: '新鲜' }
 }
+// =============================== 食材列表 =============================
 
+// =============================== 清除过期食材 =============================
 const clearExpired = async () => {
   const today = new Date().toISOString().split('T')[0]
   const expired = list.value.filter(item => item.expire_date && item.expire_date < today)
@@ -236,50 +228,27 @@ const clearExpired = async () => {
     }
   })
 }
+// =============================== 清除过期食材 =============================
 
-const filteredList = computed(() => {
-  if (currentCategory.value === '全部') {
-    return list.value;
-  }
-  return list.value.filter(item => (item.category || '其他') === currentCategory.value);
-})
-
-onShow(() => {
-  currentTheme.value = uni.getStorageSync('current_theme') || 0
-  loadCategories()
-  if (!categories.value.includes(currentCategory.value) && currentCategory.value !== '全部') {
-    currentCategory.value = '全部'
-  }
-  load()
-})
-
-const load = async () => {
-  const familyCode = uni.getStorageSync('family_code') || 'default_family';
-  try {
-    const data = await eatCo.getStockList(familyCode);
-    list.value = data.map(item => ({ ...item, id: item._id }));
-  } catch (e) {
-    uni.showToast({ title: '加载失败', icon: 'none' });
-  }
-}
-
-const switchCategory = (cat) => {
-  currentCategory.value = cat;
-}
-
-const toggle = async (item) => {
-  const newHas = !item.has;
-  item.has = newHas; // 乐观更新
-  try {
-    await eatCo.updateStock(item._id, { has: newHas });
-  } catch(e) {
-    item.has = !newHas; // 失败回滚
-    uni.showToast({ title: '状态更新失败', icon: 'none' });
-  }
-}
-
+// =============================== 添加弹窗 =============================
 const goAdd = () => {
-  uni.navigateTo({ url: '/pages/addStock/addStock' });
+  uni.navigateTo({ url: '/pages/stock/component/addStock' });
+}
+// =============================== 添加弹窗 =============================
+
+// =============================== 修改弹窗 =============================
+const showModal = ref(false)
+const editData = ref({
+  _id: '',
+  id: '',
+  name: '',
+  num: '',
+  categoryName: '',
+  expire_date: ''
+})
+
+const onEditDateChange = (e) => {
+  editData.value.expire_date = e.detail.value
 }
 
 const editItem = (item) => {
@@ -288,7 +257,7 @@ const editItem = (item) => {
     id: item.id,
     name: item.name,
     num: item.num || '',
-    category: item.category || '其他',
+    categoryName: item.categoryName || '其他',
     expire_date: item.expire_date || ''
   };
   showModal.value = true;
@@ -298,29 +267,22 @@ const saveEdit = async () => {
   if (!editData.value.name) {
     return uni.showToast({ icon: 'none', title: '请输入名称' });
   }
-  
-  try {
-    await eatCo.updateStock(editData.value._id, {
-      name: editData.value.name,
-      num: editData.value.num,
-      category: editData.value.category,
-      expire_date: editData.value.expire_date
-    });
-    uni.showToast({ icon: 'success', title: '修改成功' });
-    
-    const index = list.value.findIndex(item => item.id === editData.value.id);
-    if (index !== -1) {
-      list.value[index].name = editData.value.name;
-      list.value[index].num = editData.value.num;
-      list.value[index].category = editData.value.category;
-      list.value[index].expire_date = editData.value.expire_date;
-    }
-    showModal.value = false;
-  } catch(e) {
-    uni.showToast({ title: '修改失败', icon: 'none' });
+  const ingredientItemJson = {
+    id: editData.value.id,
+    name: editData.value.name,
+    num: editData.value.num,
+    categoryId: editData.value.category.id,
+    expire_date: editData.value.expire_date,
+    has: editData.value.has,
   }
+  await stockApi.updateFamilyIngredientItem(familyCode, ingredientItemJson);
+  uni.showToast({ icon: 'success', title: '修改成功' });
+  showModal.value = false;
+  load()
 }
+// =============================== 修改弹窗 =============================
 
+// =============================== 删除弹窗 =============================
 const deleteItem = (item) => {
   uni.showModal({
     title: '提示',
@@ -330,9 +292,9 @@ const deleteItem = (item) => {
       if (res.confirm) {
         uni.showLoading({ title: '删除中...' });
         try {
-          await eatCo.deleteStock(item._id);
-          list.value = list.value.filter(v => v.id !== item.id);
-          uni.showToast({ icon: 'success', title: '已删除' });
+          await stockApi.deleteFamilyIngredientItem(item.id);
+          load()
+          uni.showToast({ icon: 'success', title: '删除成功' });
         } catch(e) {
           uni.showToast({ title: '删除失败', icon: 'none' });
         } finally {
@@ -342,6 +304,34 @@ const deleteItem = (item) => {
     }
   });
 }
+// =============================== 删除弹窗 =============================
+
+
+onShow(() => {
+  currentTheme.value = uni.getStorageSync('current_theme') || 0
+  loadCategories()
+  load()
+})
+
+// =============================== 主题系统 =============================
+const themes = [
+  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
+  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
+  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
+  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
+]
+const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
+const themeStyle = computed(() => {
+  const t = themes[currentTheme.value]
+  return `
+    --primary: ${t.color};
+    --primary-grad: ${t.gradient};
+    --primary-light: ${t.light};
+    --primary-shadow: ${t.shadow};
+  `
+})
+// =============================== 主题系统 =============================
+
 </script>
 
 <style lang="less" scoped>

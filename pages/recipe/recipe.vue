@@ -16,13 +16,20 @@
 
     <view class="category-wrapper">
       <scroll-view class="category-bar" scroll-x="true" show-scrollbar="false">
+        <view 
+            class="category-chip"
+            :class="{ active: currentCategory === '全部' }"
+            @click="changeCategory('全部')"
+          >
+            <text class="category-text">全部</text>
+          </view>
         <view
           class="category-chip"
-          :class="{ active: currentCategory === category }"
+          :class="{ active: currentCategory === category.name }"
           v-for="category in categories"
-          :key="category"
-          @click="changeCategory(category)"
-        >{{ category }}</view>
+          :key="category.name"
+          @click="changeCategory(category.name)"
+        >{{ category.name }}</view>
       </scroll-view>
       <view class="category-chip add-chip" @click="openCategoryModal">+</view>
     </view>
@@ -32,7 +39,7 @@
       <view class="modal-content" @click.stop>
         <text class="modal-title">管理分类</text>
         <view class="cat-manage-list">
-          <view class="cat-manage-item" v-for="cat in categoryList" :key="cat._id">
+          <view class="cat-manage-item" v-for="cat in categories" :key="cat._id">
             <text>{{ cat.name }}</text>
             <text class="del-cat" @click="deleteCategory(cat)">删除</text>
           </view>
@@ -56,15 +63,16 @@
         :class="{ 'edit-shake': editMode }"
         v-for="recipe in visibleRecipes"
         :key="recipe.id"
-        @click.stop="handleCardClick(recipe.id)"
+        @click.stop="handleCardClick(recipe)"
         @longpress="enterEditMode"
       >
         <!-- 删除角标按钮 -->
         <view class="delete-badge" v-if="editMode" @click.stop="confirmDelete(recipe)">
           <text class="delete-badge-icon">✕</text>
         </view>
-
-        <image class="cover" :src="recipe.cover || defaultCover" mode="aspectFill" />
+        <view class="cover-wrapper">
+          <image class="cover" :src="config.imgBaseUrl + recipe.cover || defaultCover" mode="heightFix" />
+        </view>
         <view class="card-body">
           <view class="card-header">
             <text class="recipe-name">{{ recipe.name }}</text>
@@ -94,35 +102,37 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
+import recipeApi from '@/common/api/recipe.js'
+import config from '@/common/config'
+
+const familyCode = uni.getStorageSync('family_code') || 'default_family';
 
 const searchText = ref('')
-const currentCategory = ref('全部')
 const page = ref(1)
 const pageSize = ref(6)
 const recipes = ref([])
 
-// 主题系统
-const themes = [
-  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
-  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
-  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
-  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
-]
-const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
-const themeStyle = computed(() => {
-  const t = themes[currentTheme.value]
-  return `
-    --primary: ${t.color};
-    --primary-grad: ${t.gradient};
-    --primary-light: ${t.light};
-    --primary-shadow: ${t.shadow};
-  `
-})
+// =========================分类管理=========================
+const currentCategory = ref('全部')
+const categories = ref([])
 
-const categoryList = ref([])
-const categories = computed(() => {
-  return ['全部', ...categoryList.value.map(c => c.name)]
-})
+const loadCategories = async () => {
+  try {
+    uni.showLoading({ title: '加载中...' })
+    const res = await recipeApi.getFamilyRecipeCategories(familyCode)
+    categories.value = res.data.categories || []
+    uni.hideLoading()
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+    uni.hideLoading()
+  }
+}
+
+const changeCategory = (category) => {
+  currentCategory.value = category
+  loadRecipes()
+  page.value = 1
+}
 
 const showCategoryModal = ref(false)
 const newCategoryName = ref('')
@@ -135,40 +145,27 @@ const closeCategoryModal = () => {
   newCategoryName.value = ''
 }
 
-const loadCategories = async () => {
-  const familyCode = uni.getStorageSync('family_code') || 'default_family';
-  try {
-    const data = await eatCo.getRecipeCategoryList(familyCode)
-    categoryList.value = data
-  } catch (e) {
-    console.error('加载分类失败', e)
-  }
-}
 
 const addCategory = async () => {
   const name = newCategoryName.value.trim()
   if (!name) return
-  if (categories.value.includes(name)) {
+  if (categories.value.some(c => c.name === name)) {
     uni.showToast({ title: '分类已存在', icon: 'none' })
     return
   }
-  const familyCode = uni.getStorageSync('family_code') || 'default_family';
+  let recipeCategoryJson = {name: name, sortOrder: 60}
   try {
-    await eatCo.addRecipeCategory({ name, family_code: familyCode })
+    await recipeApi.saveFamilyRecipeCategory(familyCode, recipeCategoryJson)
     newCategoryName.value = ''
     await loadCategories()
+    uni.showToast({ title: '添加成功', icon: 'none' })
   } catch (e) {
+    console.error('添加分类失败', e)
     uni.showToast({ title: '添加失败', icon: 'none' })
   }
 }
 
 const deleteCategory = async (cat) => {
-  const hasRecipe = recipes.value.some(r => r.category === cat.name)
-  if (hasRecipe) {
-    uni.showToast({ title: '该分类下有菜谱，不能删除', icon: 'none' })
-    return
-  }
-  
   uni.showModal({
     title: '确认删除',
     content: `确定要删除「${cat.name}」分类吗？`,
@@ -176,7 +173,7 @@ const deleteCategory = async (cat) => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await eatCo.deleteRecipeCategory(cat._id)
+          await recipeApi.deleteFamilyRecipeCategory(cat.id)
           await loadCategories()
           if (currentCategory.value === cat.name) {
             currentCategory.value = '全部'
@@ -191,35 +188,35 @@ const deleteCategory = async (cat) => {
   })
 }
 
+// ====================================分类管理====================================
+
 const defaultCover = 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png'
 
-const makeRecipe = (item, index) => ({
-  id: item.id || `recipe_${Date.now()}_${index}`,
-  name: item.name || '新菜谱',
-  category: item.category || '家常菜',
-  cover: item.cover || defaultCover,
-  duration: item.duration || '30分钟',
-  difficulty: item.difficulty || '中等',
-  ingredients: item.ingredients || [],
-  steps: item.steps || [],
-  favorite: !!item.favorite,
-  own: item.own !== undefined ? item.own : true,
-  kcal: item.kcal || Math.floor(Math.random() * 400 + 100), // 模拟热量数据
-  healthTag: item.healthTag || (['低脂', '高蛋白', '均衡', '营养'][index % 4])
-})
-
-import eatCo from '@/common/localDB.js'
+const makeRecipe = (item, index) => {
+  let recipeDetails = {}
+  if (item.recipeJson) {
+    recipeDetails = typeof item.recipeJson === 'string' ? JSON.parse(item.recipeJson) : item.recipeJson
+  }
+  return {
+    id: item.id || recipeDetails.id || `recipe_${Date.now()}_${index}`,
+    name: item.name || recipeDetails.name || '新菜谱',
+    category: item.category || recipeDetails.category || '家常菜',
+    cover: item.coverUrl || item.cover || recipeDetails.cover || defaultCover,
+    duration: item.duration || recipeDetails.duration || '30分钟',
+    difficulty: item.difficulty || recipeDetails.difficulty || '中等',
+    ingredients: item.ingredients || recipeDetails.ingredients || [],
+    steps: item.steps || recipeDetails.steps || [],
+    favorite: item.favorite !== undefined ? !!item.favorite : !!recipeDetails.favorite,
+    own: item.own !== undefined ? item.own : (recipeDetails.own !== undefined ? recipeDetails.own : true),
+    kcal: item.kcal || recipeDetails.kcal || Math.floor(Math.random() * 400 + 100), // 模拟热量数据
+    healthTag: item.healthTag || recipeDetails.healthTag || (['低脂', '高蛋白', '均衡', '营养'][index % 4])
+  }
+}
 
 const loadRecipes = async () => {
-  const familyCode = uni.getStorageSync('family_code') || 'default_family';
   try {
-    const data = await eatCo.getRecipeList(familyCode)
-    recipes.value = data.map((item, index) => {
-      const formatted = makeRecipe(item, index)
-      formatted.id = item._id
-      formatted._id = item._id
-      return formatted
-    })
+    const res = await recipeApi.getFamilyRecipeByMember(familyCode,currentCategory.value || '')
+    recipes.value = res.data.recipe?.recipes || []
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' })
   }
@@ -238,10 +235,6 @@ const visibleRecipes = computed(() => {
   return filteredRecipes.value.slice(0, page.value * pageSize.value)
 })
 
-const changeCategory = (category) => {
-  currentCategory.value = category
-  page.value = 1
-}
 
 const loadMore = () => {
   if (page.value * pageSize.value < filteredRecipes.value.length) {
@@ -253,7 +246,8 @@ const toggleFavorite = async (item) => {
   const newFav = !item.favorite
   item.favorite = newFav // 乐观更新
   try {
-    await eatCo.updateRecipe(item._id, { favorite: newFav })
+    const submitData = { ...item, favorite: newFav }
+    await recipeApi.updateFamilyRecipe(familyCode, submitData, item.cover)
     uni.showToast({ title: newFav ? '已收藏' : '已取消', icon: 'none' })
   } catch (e) {
     item.favorite = !newFav // 失败回滚
@@ -262,11 +256,11 @@ const toggleFavorite = async (item) => {
 }
 
 const goDetail = (id) => {
-  uni.navigateTo({ url: `/pages/recipe/detail?recipeId=${id}` })
+  uni.navigateTo({ url: `/pages/recipe/component/detail?id=${id}` })
 }
 
 const openEditor = () => {
-  uni.navigateTo({ url: '/pages/recipe/edit' })
+  uni.navigateTo({ url: '/pages/recipe/component/edit' })
 }
 
 // ===== 编辑模式 & 删除 =====
@@ -280,13 +274,14 @@ const exitEditMode = () => {
   editMode.value = false
 }
 
-const handleCardClick = (id) => {
+const handleCardClick = (recipe) => {
   if (editMode.value) {
     // 编辑模式下点卡片主体退出编辑模式（@click.stop 阻断了冒泡，需在此处主动退出）
     exitEditMode()
     return
   }
-  goDetail(id)
+  console.log(recipe, '=================>>')
+  goDetail(recipe.id)
 }
 
 const confirmDelete = (recipe) => {
@@ -297,8 +292,8 @@ const confirmDelete = (recipe) => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await eatCo.deleteRecipe(recipe._id)
-          recipes.value = recipes.value.filter(r => r._id !== recipe._id)
+          await recipeApi.deleteFamilyRecipe(recipe._id || recipe.id)
+          recipes.value = recipes.value.filter(r => (r._id !== recipe._id && r.id !== recipe.id))
           uni.showToast({ title: '已删除', icon: 'success' })
         } catch (e) {
           uni.showToast({ title: '删除失败', icon: 'none' })
@@ -317,6 +312,24 @@ onShow(() => {
 
 onReachBottom(() => {
   loadMore()
+})
+
+// 主题系统
+const themes = [
+  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
+  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
+  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
+  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
+]
+const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
+const themeStyle = computed(() => {
+  const t = themes[currentTheme.value]
+  return `
+    --primary: ${t.color};
+    --primary-grad: ${t.gradient};
+    --primary-light: ${t.light};
+    --primary-shadow: ${t.shadow};
+  `
 })
 </script>
 
@@ -556,19 +569,31 @@ onReachBottom(() => {
   position: relative;
   background: #ffffff;
   border-radius: 40rpx;
-  overflow: visible;
+  // overflow: visible;
   box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s;
+  transition: transform 0.2s, margin 0.2s;
   &:active {
     transform: scale(0.98);
   }
 }
 
-/* 卡片主体圆角裁切：让图片不溢出 */
-.recipe-card > .cover {
-  border-radius: 40rpx 40rpx 0 0;
+.cover-wrapper {
+  width: 92%;
+  height: 360rpx;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10rpx 4%;
+  border-bottom: 1px dashed var(--primary-light);
+  .cover {
+    height: 340rpx;
+    width: auto;
+    margin: 0 auto;
+    overflow: hidden;
+  }
 }
+
 
 /* 删除角标 */
 .delete-badge {
@@ -597,6 +622,10 @@ onReachBottom(() => {
 .edit-shake {
   animation: card-shake 0.5s ease infinite alternate;
   transform-origin: center;
+  .cover-wrapper {
+    width: 90%;
+    height: 340rpx;
+  }
 }
 @keyframes card-shake {
   0%   { transform: rotate(-0.5deg); }
@@ -607,9 +636,9 @@ onReachBottom(() => {
   100% { transform: scale(1); opacity: 1; }
 }
 .cover {
-  width: 100%;
-  height: 320rpx;
-  display: block;
+  height: 360rpx;
+  width: auto;
+  margin: 0 auto;
   background-color: var(--primary-light);
 }
 .card-body {

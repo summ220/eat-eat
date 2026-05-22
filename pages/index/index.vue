@@ -51,8 +51,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import familyApi from '@/common/api/family.js'
 
-import eatCo from '@/common/localDB.js'
+const familyCode = ref(uni.getStorageSync('family_code') || 'default_family')
+
 
 const defaultMenu = [
   '番茄炒蛋', '可乐鸡翅', '青椒肉丝', '蒜蓉西兰花',
@@ -63,8 +65,9 @@ const result = ref('点击开始抽菜～')
 
 // 随机推荐池动态配置
 const randomMenuPool = ref([])
-const loadRandomMenuPool = () => {
-  randomMenuPool.value = uni.getStorageSync('custom_random_menu') || defaultMenu
+const loadRandomMenuPool = async () => {
+  const res = await familyApi.getFamilyRecipePoolItems(familyCode.value)
+  randomMenuPool.value = res?.data?.dishes.map(dish => dish.name) || defaultMenu
 }
 
 // 主题系统
@@ -105,6 +108,7 @@ const getRandomDish = () => {
     if (times > 12) clearInterval(timer)
   }, 50)
 }
+
 const goToStock = () => uni.switchTab({ url: '/pages/stock/stock' })
 const goToShop = () => uni.switchTab({ url: '/pages/shop/shop' })
 const goToRecipe = () => uni.switchTab({ url: '/pages/recipe/recipe' })

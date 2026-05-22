@@ -2,9 +2,13 @@
   <custom-header :title="isEdit ? '编辑菜谱' : '添加菜谱'" icon="🍳" back />
   <view class="page" :style="themeStyle">
     <view class="form-card">
-      <view class="cover-uploader">
-        <input class="input-line cover-input" v-model="form.cover" placeholder="请输入封面图片网络链接 (选填)" />
-        <image class="cover-preview" v-if="form.cover" :src="form.cover" mode="aspectFill" style="background-color: var(--primary-light);" />
+      <view class="cover-uploader" @click="chooseCover">
+        <view class="upload-area" v-if="!form.cover">
+          <text class="upload-icon">📷</text>
+          <text class="upload-text">点击上传封面图片</text>
+        </view>
+        <!-- 域名+路径 的格式不对,需要和后端统一 -->
+        <image class="cover-preview" v-if="form.cover" :src="form.cover.startsWith('http') ? form.cover : config.imgBaseUrl + form.cover" mode="heightFix" style="background-color: var(--primary-light);" />
       </view>
 
       <view class="input-group">
@@ -121,7 +125,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import eatCo from '@/common/localDB.js'
+import recipeApi from '@/common/api/recipe.js'
+import config from '@/common/config.js'
+
+const familyCode = uni.getStorageSync('family_code') || ''
 
 // 主题系统
 const themes = [
@@ -211,13 +218,40 @@ onLoad((options) => {
   }
 })
 
+const chooseCover = () => {
+  uni.chooseImage({
+    count: 1,
+    success: async (res) => {
+      const tempFilePath = res.tempFilePaths[0]
+      uni.showLoading({ title: '上传中...' })
+      try {
+        const fileManager = uni.getFileSystemManager()
+        const base64 = fileManager.readFileSync(tempFilePath, 'base64')
+        const imageData = 'data:image/jpeg;base64,' + base64
+        
+        const response = await recipeApi.uploadFamilyRecipeCover(familyCode, imageData)
+        if (response && response.data && response.data.coverUrl) {
+          form.value.cover = response.data.coverUrl
+          uni.showToast({ title: '上传成功', icon: 'success' })
+        } else {
+          uni.showToast({ title: '上传失败', icon: 'none' })
+        }
+      } catch (e) {
+        uni.showToast({ title: '上传失败', icon: 'none' })
+      } finally {
+        uni.hideLoading()
+      }
+    }
+  })
+}
+
 const loadData = async () => {
   uni.showLoading({ title: '加载中...' })
   try {
-    const list = await eatCo.getRecipeList()
-    const target = list.find(r => r._id === recipeId.value)
+    const res = await recipeApi.getFamilyRecipeItem(familyCode, recipeId.value)
+    const target = res.data.recipe
     if (target) {
-      form.value = { ...target, id: target._id }
+      form.value = { ...target, id: target.id }
       categoryIndex.value = Math.max(0, categories.indexOf(form.value.category))
       difficultyIndex.value = Math.max(0, difficulties.indexOf(form.value.difficulty))
       
@@ -274,19 +308,19 @@ const save = async () => {
     const submitData = {
       name: form.value.name,
       category: form.value.category,
-      cover: form.value.cover,
       duration: form.value.duration,
       difficulty: form.value.difficulty,
       ingredients: form.value.ingredients,
-      steps: form.value.steps,
+      steps: JSON.stringify(form.value.steps),
       favorite: form.value.favorite,
       own: true
     }
 
     if (isEdit.value) {
-      await eatCo.updateRecipe(recipeId.value, submitData)
+      submitData.id = form.value.id
+      await recipeApi.updateFamilyRecipe(familyCode, submitData, form.value.cover)
     } else {
-      await eatCo.addRecipe(submitData)
+      await recipeApi.saveFamilyRecipe(familyCode, submitData, form.value.cover)
     }
     
     uni.hideLoading().catch(() => {})
@@ -323,9 +357,23 @@ const save = async () => {
   text-align: center;
   font-weight: bold;
 }
-.cover-preview {
-  width: 100%;
+.upload-area {
   height: 360rpx;
+  border: 4rpx dashed #dcdde1;
+  border-radius: 24rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #f8f9fa;
+  color: #7f8fa6;
+}
+.upload-icon { font-size: 60rpx; margin-bottom: 20rpx; }
+.upload-text { font-size: 28rpx; font-weight: bold; }
+.cover-preview {
+  height: 360rpx;
+  width: auto;
+  margin: 0 auto;
   border-radius: 24rpx;
   box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.05);
 }

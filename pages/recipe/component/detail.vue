@@ -1,7 +1,7 @@
 <template>
   <custom-header title="菜谱详情" back />
   <view class="page" v-if="recipe" :style="themeStyle">
-    <image class="cover-img" :src="recipe.cover" mode="aspectFill" style="background-color: #FFF5F7;" />
+    <image class="cover-img" :src="config.imgBaseUrl + recipe.cover" mode="aspectFill" style="background-color: #FFF5F7;" />
     
     <view class="content">
       <view class="header-card">
@@ -82,6 +82,10 @@
 import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import eatCo from '@/common/localDB.js'
+import recipeApi from '@/common/api/recipe.js'
+import config from '@/common/config.js'
+
+const familyCode = uni.getStorageSync('family_code') || 'default_family';
 
 // 主题系统
 const themes = [
@@ -108,8 +112,8 @@ const stockList = ref([])
 const completedSteps = ref([])
 
 onLoad((options) => {
-  if (options.recipeId) {
-    recipeId.value = options.recipeId
+  if (options.id) {
+    recipeId.value = options.id
   }
 })
 
@@ -120,18 +124,20 @@ onShow(() => {
 })
 
 const loadStock = async () => {
-  const familyCode = uni.getStorageSync('family_code') || 'default_family';
   stockList.value = await eatCo.getStockList(familyCode)
 }
 
 const loadRecipe = async () => {
-  const familyCode = uni.getStorageSync('family_code') || 'default_family';
-  const list = await eatCo.getRecipeList(familyCode)
-  const target = list.find(r => (r._id || r.id) === recipeId.value)
-  if (target) {
-    recipe.value = target
-  } else {
-    uni.showToast({ title: '菜谱不存在', icon: 'none' })
+  try {
+    const res = await recipeApi.getFamilyRecipeItem(familyCode,recipeId.value)
+    if (res && res.data) {
+      recipe.value = res.data.recipe
+    } else {
+      uni.showToast({ title: '菜谱不存在', icon: 'none' })
+      setTimeout(() => uni.navigateBack(), 1500)
+    }
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
     setTimeout(() => uni.navigateBack(), 1500)
   }
 }
@@ -165,7 +171,10 @@ const toggleFavorite = async () => {
   recipe.value.favorite = newFav
   
   try {
-    await eatCo.updateRecipe(recipe.value._id || recipe.value.id, { favorite: newFav })
+    const familyCode = uni.getStorageSync('family_code') || 'default_family';
+    // 保留需要更新的属性
+    const submitData = { ...recipe.value, favorite: newFav }
+    await recipeApi.updateFamilyRecipe(familyCode, submitData, recipe.value.cover)
     uni.showToast({ title: newFav ? '已收藏' : '已取消', icon: 'none' })
   } catch (e) {
     recipe.value.favorite = !newFav
@@ -230,7 +239,7 @@ const toggleStep = (index) => {
 }
 
 const editRecipe = () => {
-  uni.navigateTo({ url: `/pages/recipe/edit?recipeId=${recipeId.value}` })
+  uni.navigateTo({ url: `/pages/recipe/component/edit?recipeId=${recipeId.value}` })
 }
 
 const deleteRecipe = () => {
@@ -241,7 +250,7 @@ const deleteRecipe = () => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await eatCo.deleteRecipe(recipe.value._id || recipe.value.id)
+          await recipeApi.deleteFamilyRecipe(recipe.value.id || recipe.value._id)
           uni.showToast({ title: '已删除', icon: 'success' })
           setTimeout(() => uni.navigateBack(), 1000)
         } catch (e) {

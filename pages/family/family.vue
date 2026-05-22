@@ -18,12 +18,16 @@
 
       <view class="top-header">
         <view class="user-info">
-          <image class="avatar" src="https://img-blog.csdnimg.cn/20240110133807328.png" mode="aspectFill" />
+          <image class="avatar" :src="familyAvatar ? (familyAvatar.startsWith('http') ? familyAvatar : config.imgBaseUrl + familyAvatar) : 'https://lh3.googleusercontent.com/YPKb37vEKWjVFcIf58MoE5BIFQ6eQ6z2pX6dxG2c0-iEZ6VKm-r4EN8fHEhMvWJBf_XePnqcH_Y6JxRUzsIQW3-TP8V9GfAciOR0SCUO4LX9A6p5hbQ=w1440-h810-n-nu-rw-lo'" mode="aspectFill" @click.stop="previewImage(familyAvatar || 'https://lh3.googleusercontent.com/YPKb37vEKWjVFcIf58MoE5BIFQ6eQ6z2pX6dxG2c0-iEZ6VKm-r4EN8fHEhMvWJBf_XePnqcH_Y6JxRUzsIQW3-TP8V9GfAciOR0SCUO4LX9A6p5hbQ=w1440-h810-n-nu-rw-lo')" />
           <view class="name-box">
             <view class="family-name-wrap">
               <text class="family-name">{{ familyName }}</text>
               <view class="edit-icon-btn" @click="openEditFamilyName" v-if="familyCode === 'default_family' || familyRole === 'owner'">
                 <text class="e-icon">✏️</text>
+              </view>
+              <!-- 如果加入了多个家庭，允许切换家庭 -->
+              <view class="edit-icon-btn" @click="switchToAnotherFamily">
+                <text class="e-icon">🔀</text>
               </view>
             </view>
             <text class="greeting">{{ greeting }}</text>
@@ -67,19 +71,21 @@
               class="member-card" 
               v-for="(m, idx) in members" 
               :key="idx"
-              @click="handleMemberClick(m)"
             >
               <view class="avatar-wrap">
-                <image class="m-avatar" :src="m.avatar" mode="aspectFill" />
-                <view class="edit-tag" v-if="m.isSelf">✏️</view>
+                <image class="m-avatar" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'" mode="aspectFill" @click.stop="previewImage(m.avatarUrl || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo')" />
+                <view class="edit-tag" v-if="m.isSelf" @click="handleMemberClick(m)">✏️</view>
               </view>
-              <text class="m-nick">{{ m.nick }}{{ m.isSelf ? ' (我)' : '' }}</text>
-              <view class="m-role"><text>{{ m.role }}</text></view>
+              <text class="m-nick">{{ m.name || '乌啦啦啦' }}{{ m.isSelf ? ' (我)' : m.role === 'owner' ? ' (管理员)' : '' }}</text>
+              <view class="m-role"><text>{{ m.title || '大主厨' }}</text></view>
             </view>
           </view>
         </scroll-view>
         <view class="family-ops" v-if="members.length > 1">
           <text class="exit-btn" @click="leaveFamily">退出当前家庭</text>
+        </view>
+        <view class="family-ops" v-if="members.length > 1 && familyRole === 'owner'">
+          <text class="exit-btn" @click="disbandFamily">解散当前家庭</text>
         </view>
       </view>
 
@@ -87,7 +93,7 @@
       <view class="section health-section" @click="goToHealth">
         <view class="section-title">
           <text class="title-text">家庭健康管理</text>
-          <text class="action-text">查看 ></text>
+          <text class="action-text">查看 👉</text>
         </view>
         <view class="health-card-body">
           <view class="health-info-row">
@@ -148,7 +154,7 @@
       <view class="section memo-section" @click="goToMemo">
         <view class="section-title">
           <text class="title-text">家庭备忘录</text>
-          <text class="action-text">查看 ></text>
+          <text class="action-text">查看 👉</text>
         </view>
         <view class="memo-preview">
           <text class="memo-desc">记录家庭琐事、重要日子或购物心愿单...</text>
@@ -284,17 +290,17 @@
           <view class="set-item">
             <text class="set-icon" @click="handleClearCache">🧹</text>
             <text class="set-text">清除缓存</text>
-            <text class="set-arrow">></text>
+            <text class="set-arrow"> 👉</text>
           </view>
           <view class="set-item">
             <text class="set-icon">📖</text>
             <text class="set-text">使用帮助</text>
-            <text class="set-arrow">></text>
+            <text class="set-arrow"> 👉</text>
           </view>
           <view class="set-item">
             <text class="set-icon">💬</text>
             <text class="set-text">意见反馈</text>
-            <text class="set-arrow">></text>
+            <text class="set-arrow"> 👉</text>
           </view>
           <view class="set-item version">
             <text class="set-icon">✨</text>
@@ -349,7 +355,11 @@
       <!-- 修改家庭名称弹窗 -->
       <view class="modal-mask" v-if="showFamilyNameModal" @click="showFamilyNameModal = false">
         <view class="modal-content" @click.stop>
-          <text class="modal-title">修改家庭名称</text>
+          <view class="avatar-box">
+            <image class="avatar" :src="tempAvatar ? (tempAvatar.startsWith('http') ? tempAvatar : config.imgBaseUrl + tempAvatar) : 'https://lh3.googleusercontent.com/YPKb37vEKWjVFcIf58MoE5BIFQ6eQ6z2pX6dxG2c0-iEZ6VKm-r4EN8fHEhMvWJBf_XePnqcH_Y6JxRUzsIQW3-TP8V9GfAciOR0SCUO4LX9A6p5hbQ=w1440-h810-n-nu-rw-lo'" mode="aspectFill" @click.stop="previewImage(tempAvatar || 'https://lh3.googleusercontent.com/YPKb37vEKWjVFcIf58MoE5BIFQ6eQ6z2pX6dxG2c0-iEZ6VKm-r4EN8fHEhMvWJBf_XePnqcH_Y6JxRUzsIQW3-TP8V9GfAciOR0SCUO4LX9A6p5hbQ=w1440-h810-n-nu-rw-lo')" />
+            <view class="camera-icon" @click.stop="changeAv">📷</view>
+          </view>
+          <!-- <text class="modal-title">修改家庭名称</text> -->
           <view class="input-box">
             <input class="join-input" v-model="tempFamilyName" placeholder="请输入新名称" maxlength="15" />
           </view>
@@ -363,12 +373,16 @@
       <!-- 修改昵称弹窗 -->
       <view class="modal-mask" v-if="showNickModal" @click="showNickModal = false">
         <view class="modal-content" @click.stop>
-          <text class="modal-title">修改我的昵称</text>
+          <view class="avatar-box">
+            <image class="avatar" :src="tempAvatarUrl ? (tempAvatarUrl.startsWith('http') ? tempAvatarUrl : config.imgBaseUrl + tempAvatarUrl) : 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'" mode="aspectFill" @click.stop="previewImage(tempAvatarUrl || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo')"></image>
+            <view class="camera-icon" @click.stop="chooseAvatar">📷</view>
+          </view>
+          <!-- <text class="modal-title">修改我的昵称</text> -->
           <view class="input-box">
             <input class="join-input" v-model="tempNick" placeholder="请输入新昵称" />
           </view>
           <view class="input-box">
-            <input class="join-input" v-model="tempRole" placeholder="请输入新角色" />
+            <input class="join-input" v-model="tempTitle" placeholder="请输入新角色" />
           </view>
           <view class="modal-btns">
             <button class="m-btn-sub" @click="showNickModal = false">取消</button>
@@ -384,7 +398,7 @@
           <scroll-view scroll-y style="max-height: 500rpx; margin-top: 20rpx; margin-bottom: 20rpx;">
             <view class="cat-manage-list">
               <view class="cat-manage-item" v-for="(dish, idx) in randomMenu" :key="idx">
-                <text>{{ dish }}</text>
+                <text>{{ dish.name || dish }}</text>
                 <text class="del-cat" @click="removeRandomDish(idx)">删除</text>
               </view>
               <view class="cat-manage-item empty-tip" v-if="randomMenu.length === 0" style="justify-content: center; color: #999; font-size: 24rpx; border-bottom: none;">
@@ -545,24 +559,46 @@
         <button class="close-reminder-btn" @click="showReminderModal = false">我知道了</button>
       </view>
     </view>
+
+    <!-- 查看大图蒙版 -->
+    <view class="big-image-mask" v-if="showBigImage" @click="closeBigImage">
+      <view class="big-image-content" @click.stop>
+        <image class="big-image" :src="bigImageUrl" mode="aspectFit" />
+        <view class="close-big-btn" @click="closeBigImage">✕</view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import request from '@/common/request.js'
-import eatCo from '@/common/localDB.js'
-import api from '@/common/api.js'
+import familyApi from '@/common/api/family.js'
+import recipeApi from '@/common/api/recipe.js'
 import weatherPopup from '@/components/weather-popup/weather-popup.vue'
 import calendarPopup from '@/components/calendar-popup/calendar-popup.vue'
 import compassPopup from '@/components/compass-popup/compass-popup.vue'
-import { generateInviteCode, generateRandomId } from '@/common/codeGenerator.js'
+import config from '@/common/config'
+import request from '@/common/request.js'
 
 const showCompassPopup = ref(false)
-const familyName = ref(uni.getStorageSync('family_name') || '快乐干饭小家')
-const familyCode = ref(uni.getStorageSync('family_code') || 'default_family')
-const familyRole = ref(uni.getStorageSync('family_role') || 'owner')
+const showBigImage = ref(false)
+const bigImageUrl = ref('')
+
+const previewImage = (url) => {
+  if (!url) return
+  const fullUrl = url.startsWith('http') ? url : config.imgBaseUrl + url
+  bigImageUrl.value = fullUrl
+  showBigImage.value = true
+}
+const closeBigImage = () => {
+  showBigImage.value = false
+  bigImageUrl.value = ''
+}
+const familyName = ref('')
+const familyCode = ref(uni.getStorageSync('family_code'))
+const familyRole = ref('owner')
+const familyAvatar = ref(uni.getStorageSync('family_avatar') || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo')
 
 // 天气/日历弹窗控制
 const weatherLocation = ref('')
@@ -576,19 +612,57 @@ const tempFamilyName = ref('')
 
 const openEditFamilyName = () => {
   tempFamilyName.value = familyName.value
+  tempAvatar.value = familyAvatar.value
   showFamilyNameModal.value = true
+}
+
+const switchToAnotherFamily = () => {
+  uni.showToast({ title: '切换家庭', icon: 'none' })
+  // showFamilyNameModal.value = false
+}
+
+const tempAvatar = ref('')
+const changeAv = () => {
+  uni.chooseImage({
+    count: 1,
+    success: async (res) => {
+      const tempFilePath = res.tempFilePaths[0]
+      uni.showLoading({ title: '上传中...' })
+      try {
+        const fileManager = uni.getFileSystemManager()
+        const base64 = fileManager.readFileSync(tempFilePath, 'base64')
+        const imageData = 'data:image/jpeg;base64,' + base64
+        
+        const response = await recipeApi.uploadFamilyRecipeCover(familyCode.value || 'default_family', imageData)
+        if (response && response.data && response.data.coverUrl) {
+          tempAvatar.value = response.data.coverUrl
+          uni.showToast({ title: '上传成功', icon: 'success' })
+        } else {
+          uni.showToast({ title: '上传失败', icon: 'none' })
+        }
+      } catch (e) {
+        uni.showToast({ title: '上传失败', icon: 'none' })
+      } finally {
+        uni.hideLoading()
+      }
+    }
+  })
 }
 
 const saveFamilyName = async () => {
   const newName = tempFamilyName.value.trim()
+  const avatar = tempAvatar.value
   if (!newName) {
     return uni.showToast({ title: '名称不能为空', icon: 'none' })
   }
   try {
-    const res = await api.updateFamily(familyCode.value, newName)
+    const res = await familyApi.updateFamily(familyCode.value, newName, avatar)
     if (res && res.data) {
       familyName.value = res.data.familyName
       uni.setStorageSync('family_name', familyName.value)
+      familyAvatar.value = res.data.avatarUrl
+      uni.setStorageSync('family_avatar', res.data.avatarUrl)
+      loadFamily(familyCode.value)
       showFamilyNameModal.value = false
       uni.showToast({ title: '修改成功' })
     } else {
@@ -607,11 +681,8 @@ const saveFamilyName = async () => {
 // 家庭成员功能
 const showInviteModal = ref(false)
 const showJoinModal = ref(false)
-const showNickModal = ref(false)
 const inviteCode = ref('')
 const joinCode = ref('')
-const tempNick = ref('')
-const tempRole = ref('')
 // 邀请码有效期相关
 const inviteCodeExpireTime = ref(0) // 邀请码过期时间戳
 const countdownSeconds = ref(0) // 倒计时剩余秒数
@@ -654,7 +725,7 @@ const createFamily = async () => {
   if (!ok) return false
   
   const familyCode = 'default_family'
-  const res = await api.createFamily(familyName.value)
+  const res = await familyApi.createFamily(familyName.value)
   
   if (res && res.data) {
     familyCode.value = res.data.family.familyCode
@@ -669,7 +740,7 @@ const createFamily = async () => {
 } 
 
 const getInviteCode = async () => {
-  const res = await api.createFamilyInvite(familyCode.value, 300) // 改为5分钟有效期
+  const res = await familyApi.createFamilyInvite(familyCode.value, 300) // 改为5分钟有效期
   if (res && res.data) {
     inviteCode.value = res.data.inviteCode
     // 设置过期时间为当前时间 + 5分钟（300秒）
@@ -729,7 +800,7 @@ const copyCode = () => {
 
 const confirmJoin = async () => {
   if (!joinCode.value) return uni.showToast({ title: '请输入邀请码', icon: 'none' })
-  const res = await api.joinFamily(joinCode.value)
+  const res = await familyApi.joinFamily(joinCode.value)
   if (res && res.data) {
     familyCode.value = res.data.familyCode
     familyRole.value = res.data.role // 更新当前响应式状态
@@ -737,37 +808,101 @@ const confirmJoin = async () => {
     uni.setStorageSync('family_role', familyRole.value)
     uni.showToast({ title: '成功加入家庭' })
     showJoinModal.value = false
-    // 查询家庭成员
-    const memberList = await api.getFamilyMembers(familyCode.value)
-    if (memberList && memberList.data) {
-      members.value = memberList.data
-    }
     // 查询家庭信息
-    const family = await api.getFamily(familyCode.value)
-    if (family && family.data) {
-      familyName.value = family.data.familyName
-      uni.setStorageSync('family_name', familyName.value)
-    }
-    refreshStats()
+    await loadFamily()
+    // 查询家庭成员
+    await loadFamilyMembers()
+
+    // refreshStats()
   } else {
     uni.showToast({ title: res.message || '加入家庭失败', icon: 'none' })
   }
 }
 
-const handleMemberClick = (m) => {
-  if (m.isSelf) {
-    tempNick.value = m.nick
-    tempRole.value = m.role
-    showNickModal.value = true
+// 家庭信息
+const loadFamily = async () => {
+  const family = await familyApi.getFamily(familyCode.value)
+  if (family && family.data) {
+    familyName.value = family.data.familyName
+    familyAvatar.value = family.data.avatarUrl || uni.getStorageSync('family_avatar') || 'https://lh3.googleusercontent.com/YPKb37vEKWjVFcIf58MoE5BIFQ6eQ6z2pX6dxG2c0-iEZ6VKm-r4EN8fHEhMvWJBf_XePnqcH_Y6JxRUzsIQW3-TP8V9GfAciOR0SCUO4LX9A6p5hbQ=w1440-h810-n-nu-rw-lo'
   }
 }
 
-const confirmNick = () => {
-  const self = members.value.find(m => m.isSelf)
-  if (self) {
-    self.nick = tempNick.value
-    self.role = tempRole.value
-    uni.showToast({ title: '昵称已更新' })
+// 家庭成员
+const loadFamilyMembers = async () => {
+  const res = await familyApi.getFamilyMembers(familyCode.value)
+  if (res && res.data) {
+    members.value = res.data || []
+    // 找出自己
+    members.value.forEach(m => {
+      if (m.deviceId === uni.getStorageSync('device_id')) {
+        m.isSelf = true
+      } else {
+        m.isSelf = false
+      }
+    })
+    // 自己排到第一位，管理员第二，其他按加入时间倒序
+    members.value.sort((a, b) => {
+      if (a.isSelf) return -1
+      if (b.isSelf) return 1
+      if (a.role === 'owner') return -1
+      if (b.role === 'owner') return 1
+      return 1
+    })
+    uni.setStorageSync('family_role', members.value.find(m => m.isSelf)?.role || 'member')
+    familyRole.value = members.value.find(m => m.isSelf)?.role || 'member'
+  }
+}
+
+const tempAvatarUrl = ref('')
+const tempNick = ref('')
+const tempTitle = ref('')
+const showNickModal = ref(false)
+
+const handleMemberClick = (m) => {
+  tempAvatarUrl.value = m.avatarUrl ? m.avatarUrl : 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'
+  tempNick.value = m.nick || '乌啦啦'
+  tempTitle.value = m.title || '大主厨'
+  showNickModal.value = true
+}
+
+const chooseAvatar = () => {
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: async (res) => {
+      const tempFilePath = res.tempFilePaths[0]
+      uni.showLoading({ title: '上传中...' })
+      try {
+        const fileManager = uni.getFileSystemManager()
+        const base64 = fileManager.readFileSync(tempFilePath, 'base64')
+        const imageData = 'data:image/jpeg;base64,' + base64
+        
+        const response = await recipeApi.uploadFamilyRecipeCover(familyCode.value || 'default_family', imageData)
+        if (response && response.data && response.data.coverUrl) {
+          tempAvatarUrl.value = response.data.coverUrl
+          uni.showToast({ title: '上传成功', icon: 'success' })
+        } else {
+          uni.showToast({ title: '上传失败', icon: 'none' })
+        }
+      } catch (e) {
+        uni.showToast({ title: '上传失败', icon: 'none' })
+      } finally {
+        uni.hideLoading()
+      }
+    }
+  })
+}
+
+const confirmNick = async () => {
+  const res = await familyApi.updateMyFamilyMemberProfile(familyCode.value, tempNick.value, tempTitle.value, tempAvatarUrl.value)
+  if (res && res.data) {
+    uni.showToast({ title: '更新成功' })
+    // 查询家庭成员
+    await loadFamilyMembers()
+  } else {
+    uni.showToast({ title: res.message || '更新失败,请稍后重试', icon: 'none' })
   }
   showNickModal.value = false
 }
@@ -777,12 +912,23 @@ const leaveFamily = () => {
     title: '退出提醒',
     content: '确定要退出当前家庭吗？退出后将无法查看该家庭数据。',
     confirmColor: '#FF4D4F',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        uni.showToast({ title: '已退出家庭' })
-        // 重置为个人模式
-        members.value = members.value.filter(m => m.isSelf)
-        refreshStats()
+        const res = await familyApi.leaveFamily(familyCode.value)
+        if (res && res.data) {
+          uni.showToast({ title: '已退出家庭' })
+          // 后面改成自己的家庭  ==== 根据DeviceId,查familyCode和familyRole
+          // ============================================================
+          familyCode.value = ''
+          uni.setStorageSync('family_code', familyCode.value)
+          // 查自己家庭信息，现在由于都置空了，没查到code，需要重新查询
+          loadFamily()
+          loadFamilyMembers()
+          
+          // refreshStats()
+        } else {
+          uni.showToast({ title: res.message || '退出家庭失败,请稍后重试', icon: 'none' })
+        }
       }
     }
   })
@@ -871,13 +1017,15 @@ const refreshStats = async () => {
 
 let lastUpdateDate = ''
 onShow(() => {
-  refreshStats()
+  // refreshStats()
   loadMeals()
   const today = new Date().toDateString()
   if (lastUpdateDate !== today) {
     initDateWeather()
     lastUpdateDate = today
   }
+  loadFamily()
+  loadFamilyMembers()
 })
 
 // 日期与天气数据
@@ -941,30 +1089,6 @@ const refreshWeatherAndLocation = async () => {
   } finally {
     isRefreshingWeather.value = false
   }
-}
-
-const getWeatherEmoji = (iconCode) => {
-  const emojiMap = {
-    // 晴天
-    '100': '☀️', '150': '🌙', '152': '☁️🌙',
-    // 多云阴天
-    '101': '⛅', '102': '🌤️', '103': '⛅', '104': '☁️',
-    '151': '☁️🌙', '153': '🌙',
-    // 雨
-    '300': '🌦️', '301': '🌧️', '302': '⛈️', '303': '⛈️',
-    '304': '🌩️', '305': '🌧️', '306': '🌧️', '307': '🌧️',
-    '308': '🌊🌧️', '309': '🌧️', '310': '🌧️', '311': '🌧️',
-    '312': '🌧️', '313': '🧊🌧️', '399': '🌧️',
-    // 雪
-    '400': '❄️', '401': '❄️', '402': '❄️', '403': '❄️',
-    '404': '🌨️', '405': '🌨️', '406': '❄️', '499': '❄️',
-    // 雾霾沙尘
-    '500': '🌫️', '501': '🌫️', '502': '😷', '503': '🏜️',
-    '504': '🏜️', '505': '🏜️', '506': '🌪️', '507': '🌫️',
-    '508': '🌫️', '509': '😷', '510': '😷', '511': '😷',
-    '512': '😷', '513': '🌫️', '514': '🌫️', '515': '🌧️🌫️'
-  }
-  return emojiMap[String(iconCode)] || '🌤️'
 }
 
 const initDateWeather = () => {
@@ -1401,37 +1525,45 @@ const removeAvoid = (a) => {
   if (avoidOptions.value.length === 0) isEditingPrefs.value = false
 }
 
-// 随机抽菜菜单配置
+// 随机抽菜菜单配置===========================
 const showRandomMenuModal = ref(false)
 const randomMenu = ref([])
 const newRandomDish = ref('')
 
-const loadRandomMenu = () => {
-  const defaultList = [
-    '番茄炒蛋', '可乐鸡翅', '青椒肉丝', '蒜蓉西兰花',
-    '红烧肉', '酸辣土豆丝', '水煮肉片', '香菇滑鸡', '蛋炒饭',
-    '粉蒸排骨', '糖醋里脊', '麻婆豆腐', '手撕包菜', '清炒菜心'
-  ]
-  randomMenu.value = uni.getStorageSync('custom_random_menu') || defaultList
+const loadRandomMenu = async () => {
+  const res = await familyApi.getFamilyRecipePoolItems(familyCode.value)
+  randomMenu.value = res.data.dishes || []
+  showRandomMenuModal.value = true
 }
 
-const addRandomDish = () => {
+const addRandomDish = async () => {
   const val = newRandomDish.value.trim()
   if (!val) return
-  if (randomMenu.value.includes(val)) {
-    return uni.showToast({ title: '该菜已在池中', icon: 'none' })
-  }
-  randomMenu.value.push(val)
-  newRandomDish.value = ''
-  uni.setStorageSync('custom_random_menu', randomMenu.value)
+  const dishJson = { name: val, type: "manual" } // type: manual 手动添加
+  const res = await familyApi.saveFamilyRecipePoolItem(familyCode.value, dishJson)
   uni.showToast({ title: '添加成功', icon: 'none' })
+  newRandomDish.value = ''
+  loadRandomMenu()
 }
 
-const removeRandomDish = (idx) => {
-  randomMenu.value.splice(idx, 1)
-  uni.setStorageSync('custom_random_menu', randomMenu.value)
-  uni.showToast({ title: '已删除', icon: 'none' })
+const removeRandomDish = async (idx) => {
+  // 弹框确认
+  uni.showModal({
+    title: '确认删除',
+    content: '确定要删除该抽菜项吗？',
+    successText: '确认删除',
+    successColor: '#FF4444',
+    success: async (res) => {
+      if (res.confirm) {
+        // 执行删除
+        const res = await familyApi.deleteFamilyRecipePoolItem(randomMenu.value[idx].id)
+        uni.showToast({ title: '已删除', icon: 'none' })
+        loadRandomMenu()
+      }
+    }
+  })
 }
+// ===========================================
 
 // 分类管理
 const showCatModal = ref(false)
@@ -1460,7 +1592,6 @@ const removeCategory = (idx) => {
 const handleSetting = (name) => {
   if (name === '抽菜配置') {
     loadRandomMenu()
-    showRandomMenuModal.value = true
   } else {
     uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
   }
@@ -1502,13 +1633,13 @@ const handleClearCache = () => {
 }
 
 const goToMemo = () => {
-  uni.navigateTo({ url: '/pages/family/memo' })
+  uni.navigateTo({ url: '/pages/family/component/memo' })
 }
 
 const goToHealth = () => {
   console.log('Attempting to navigate to health page...')
   uni.navigateTo({ 
-    url: '/pages/family/health',
+    url: '/pages/family/component/health',
     success: () => console.log('Navigation success'),
     fail: (err) => {
       console.error('Navigation to health page failed:', err)
@@ -1830,6 +1961,40 @@ const handleReminderAction = (r) => {
   background: #fff;
   border-radius: 40rpx;
   padding: 40rpx;
+
+  .avatar-box {
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: 50%;
+    background: #F0F0F0;
+    position: relative;
+    margin: 0 auto 20rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    .avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    
+    .camera-icon {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 40rpx;
+      height: 40rpx;
+      background: #FF4D4F;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24rpx;
+      color: #fff;
+    }
+  }
   
   .modal-title {
     display: block;
@@ -3117,4 +3282,60 @@ const handleReminderAction = (r) => {
   }
 }
 
+.big-image-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.65); /* 调浅背景以获得更通透的透光质感 */
+  backdrop-filter: blur(15px); /* 加强毛玻璃，背景更加高级细腻 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+  
+  .big-image-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40rpx;
+    
+    .big-image {
+      max-width: 80vw; /* 限制视口宽度，绝不顶头 */
+      max-height: 60vh; /* 限制视口高度，绝不顶头 */
+      border-radius: 32rpx; /* 高级优雅微圆角 */
+      box-shadow: 0 24rpx 72rpx rgba(0, 0, 0, 0.35); /* 质感立体悬浮阴影 */
+      border: 4rpx solid rgba(255, 255, 255, 0.15); /* 精致透亮白边框 */
+    }
+    
+    .close-big-btn {
+      margin-top: 48rpx; /* 布局在大图下方，防止顶到头，也更符合单手点击习惯 */
+      width: 100rpx;
+      height: 100rpx;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      border: 2rpx solid rgba(255, 255, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 40rpx;
+      backdrop-filter: blur(5px);
+      transition: all 0.2s;
+      
+      &:active {
+        transform: scale(0.9);
+        background: rgba(255, 255, 255, 0.35);
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 </style>

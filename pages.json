@@ -28,14 +28,14 @@
 			}
 		},
 		{
-			"path": "pages/recipe/detail",
+			"path": "pages/recipe/component/detail",
 			"style": {
 				"navigationBarTitleText": "菜谱详情",
 				"navigationBarBackgroundColor": "#FFE6E6"
 			}
 		},
 		{
-			"path": "pages/recipe/edit",
+			"path": "pages/recipe/component/edit",
 			"style": {
 				"navigationBarTitleText": "添加菜谱",
 				"navigationBarBackgroundColor": "#FFE6E6"
@@ -56,14 +56,14 @@
 			}
 		},
 		{
-			"path": "pages/addStock/addStock",
+			"path": "pages/stock/component/addStock",
 			"style": {
 				"navigationBarTitleText": "添加食材",
 				"navigationBarBackgroundColor": "#FFF5F7"
 			}
 		},
 		{
-			"path": "pages/addShop/addShop",
+			"path": "pages/shop/component/addShop",
 			"style": {
 				"navigationBarTitleText": "添加购物",
 				"navigationBarBackgroundColor": "#FFF5F7"
@@ -77,7 +77,7 @@
 			}
 		},
 		{
-			"path": "pages/family/memo",
+			"path": "pages/family/component/memo",
 			"style": {
 				"navigationBarTitleText": "家庭备忘录",
 				"navigationBarBackgroundColor": "#FFF5F7"
@@ -98,7 +98,7 @@
 			}
 		},
 		{
-			"path": "pages/family/health",
+			"path": "pages/family/component/health",
 			"style": {
 				"navigationBarTitleText": "家庭健康管理",
 				"navigationBarBackgroundColor": "#FFF5F7"

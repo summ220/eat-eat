@@ -1,8 +1,8 @@
 <template>
   <view class="page" :style="themeStyle">
-    <custom-header title="添加食材" icon="🍅" :back="true" />
+    <custom-header title="添加购物" icon="🛒" :back="true" />
     <view class="card">
-      <text class="title">🍅 添加食材</text>
+      <text class="title">🛒 添加购物清单</text>
       
       <view class="category-wrap">
         <text class="label">选择分类</text>
@@ -11,22 +11,15 @@
             class="tag" 
             :class="{ active: category === cat }" 
             v-for="cat in categories" 
-            :key="cat" 
+            :key="cat.id" 
             @click="category = cat"
-          >{{ cat }}</text>
+          >{{ cat.name }}</text>
         </view>
       </view>
 
-      <input v-model="name" placeholder="请输入食材名称" class="input" />
+      <input v-model="name" placeholder="请输入要购买的任务或物品" class="input" />
       <input v-model="num" placeholder="数量：例如 3个 (选填)" class="input" />
-      
-      <picker mode="date" @change="onDateChange">
-        <view class="input picker-view">
-          <text class="picker-label">过期时间：</text>
-          <text class="picker-val">{{ expireDate || '请选择 (选填)' }}</text>
-        </view>
-      </picker>
-
+      <input v-model="price" placeholder="花费/单价 ¥ (选填)" class="input" />
       <button class="save-btn" @click="save">保存</button>
     </view>
   </view>
@@ -34,28 +27,48 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onLoad } from '@dcloudio/uni-app'
+import shopApi from '@/common/api/shop.js'
 
 const name = ref('')
 const num = ref('')
-const expireDate = ref('')
-const category = ref('蔬菜')
+const price = ref('')
+const category = ref('')
 const categories = ref([])
 
-const onDateChange = (e) => {
-  expireDate.value = e.detail.value
-}
+const familyCode = uni.getStorageSync('family_code') || 'default_family'
 
-onShow(() => {
-  categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
-  if (!categories.value.includes(category.value)) {
-    category.value = categories.value[0] || '其他'
+onLoad(async () => {
+  try {
+    const res = await shopApi.getFamilyShoppingCategories(familyCode)
+    categories.value = res.data.categories || []
+    category.value = categories.value[0]
+  } catch (e) {
+    uni.showToast({ icon: 'none', title: '获取分类失败' })
   }
-  currentTheme.value = uni.getStorageSync('current_theme') || 0
 })
 
-// 主题
- const themes = [
+const save = async () => {
+  if (!name.value) return uni.showToast({ icon: 'none', title: '请输入名称' })
+  let shoppingItemJson = {
+    name: name.value,
+    num: num.value,
+    categoryId: category.value.id,
+    price: price.value,
+    done: false,
+  }
+  try {
+    await shopApi.saveFamilyShoppingItem(familyCode, shoppingItemJson)
+    uni.showToast({ icon: 'success', title: '添加成功' })
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 1000)
+  } catch (e) {
+    uni.showToast({ title: '添加失败', icon: 'none' })
+  }
+}
+
+const themes = [
   { color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
   { color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
   { color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
@@ -67,27 +80,6 @@ const themeStyle = computed(() => {
   return `--primary:${t.color};--primary-grad:${t.gradient};--primary-light:${t.light};--primary-shadow:${t.shadow};`
 })
 
-import eatCo from '@/common/localDB.js'
-
-const save = async () => {
-  if (!name.value) return uni.showToast({ icon: 'none', title: '请输入名称' })
-  try {
-    await eatCo.addStock({ 
-      name: name.value, 
-      num: num.value, 
-      category: category.value,
-      expire_date: expireDate.value,
-      has: true,
-      family_code: uni.getStorageSync('family_code') || 'default_family'
-    })
-    uni.showToast({ icon: 'success', title: '添加成功' })
-    setTimeout(() => {
-      uni.navigateBack()
-    }, 1000)
-  } catch(e) {
-    uni.showToast({ title: '保存失败', icon: 'none' })
-  }
-}
 </script>
 
 <style lang="less" scoped>
@@ -150,18 +142,6 @@ const save = async () => {
   &:focus {
     border: 2rpx solid var(--primary);
     background: #FFF;
-  }
-}
-.picker-view {
-  display: flex;
-  align-items: center;
-  .picker-label {
-    color: #888;
-    margin-right: 10rpx;
-  }
-  .picker-val {
-    color: #333;
-    flex: 1;
   }
 }
 .save-btn {
