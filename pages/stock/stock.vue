@@ -215,10 +215,9 @@ const clearExpired = async () => {
       if (!res.confirm) return
       uni.showLoading({ title: '删除中...' })
       try {
-        for (const item of expired) {
-          await eatCo.deleteStock(item._id)
-        }
-        list.value = list.value.filter(i => !(i.expire_date && i.expire_date < today))
+        const ids = expired.map(item => item.id)
+        await stockApi.deleteFamilyIngredientItems(familyCode, ids)
+        load()
         uni.showToast({ title: '已删除过期食材', icon: 'success' })
       } catch (e) {
         uni.showToast({ title: '删除失败', icon: 'none' })
@@ -271,7 +270,7 @@ const saveEdit = async () => {
     id: editData.value.id,
     name: editData.value.name,
     num: editData.value.num,
-    categoryId: editData.value.category.id,
+    categoryId: editData.value.categoryId,
     expire_date: editData.value.expire_date,
     has: editData.value.has,
   }

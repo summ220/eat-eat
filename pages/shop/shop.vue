@@ -24,11 +24,11 @@
 
       <!-- 右侧购物车列表 -->
       <view class="list-container">
-        <view class="empty" v-if="filteredList.length === 0">
+        <view class="empty" v-if="list.length === 0">
           <text>暂无购物车内容</text>
         </view>
 
-        <view class="item-card" :class="{ 'is-done': item.done }" v-for="item in filteredList" :key="item.id">
+        <view class="item-card" :class="{ 'is-done': item.done }" v-for="item in list" :key="item.id">
           <view class="item-header">
             <view class="title-group">
               <text class="name">{{ item.name }}</text>
@@ -257,17 +257,19 @@ import eatCo from '@/common/localDB.js'
 onShow(() => {
   currentTheme.value = uni.getStorageSync('current_theme') || 0
   loadCategories()
-  if (!categories.value.includes(currentCategory.value) && currentCategory.value !== '全部') {
-    currentCategory.value = '全部'
-  }
   load()
+  if (!categories.value.includes(currentCategory.value) && currentCategory.value !== '全部') {
+    currentCategory.value = ''
+  }
 })
 
 const load = async () => {
   try {
     uni.showLoading({ title: '加载中...' })
-    const res = await shopApi.getFamilyShoppingItems(familyCode,currentCategory.value)
+    const categoryParam = currentCategory.value === '全部' ? '' : currentCategory.value
+    const res = await shopApi.getFamilyShoppingItems(familyCode, categoryParam)
     list.value = res.data.items || []
+    console.log(list.value)
     // 加载后初始化显示顺序
     buildSortedIds()
     uni.hideLoading()
@@ -373,20 +375,24 @@ const clearDone = () => {
             if (syncRes.confirm) {
               uni.showLoading({ title: '同步中...' })
               for (const item of doneItems) {
-                await eatCo.addStock({
+                // 走新增食材接口
+                await stockApi.addStock({
+                  familyCode,
                   name: item.name,
                   num: item.num,
-                  category: item.category || '其他',
-                  has: true,
-                  family_code: uni.getStorageSync('family_code') || 'default_family'
+                  category: item.category,
+                  has: true
                 })
               }
             }
           }
 
           // 2. 执行清理
-          await eatCo.clearDoneShop()
-          list.value = list.value.filter(item => !item.done)
+          
+          const res = await shopApi.clearPurchasedFamilyShoppingItems(familyCode)
+          if (res.data) {
+            load()
+          }
           uni.showToast({ title: '操作完成', icon: 'success' })
         } catch (e) {
           uni.showToast({ title: '操作失败', icon: 'none' })
@@ -408,7 +414,7 @@ const deleteItem = (item) => {
         uni.showLoading({ title: '删除中...' })
         try {
           await shopApi.deleteFamilyShoppingItem(item.id)
-          list.value = list.value.filter(v => v.id !== item.id)
+          load()
           uni.showToast({ title: '删除成功', icon: 'success' })
         } catch (e) {
           uni.showToast({ title: '删除失败', icon: 'none' })

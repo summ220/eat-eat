@@ -57,6 +57,18 @@ export default {
   },
 
   /**
+   * 批量删除家庭食材
+   * @param {string} familyCode 家庭码/ID
+   * @param {string} ids 食材ID列表
+   */
+  deleteFamilyIngredientItems(familyCode, ids) {
+    return request('/deleteFamilyIngredientItems', 'POST', {
+      familyCode,
+      ids
+    })
+  },
+
+  /**
    * 获取家庭食材分类
    * @param {string} familyCode 家庭码/ID
    */

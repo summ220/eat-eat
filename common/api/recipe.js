@@ -62,10 +62,12 @@ export default {
 
   /**
    * 删除家庭食材
-   * @param {string} id 食材ID
+   * @param {string} familyCode 家庭码/ID
+   * @param {number} id 食材ID
    */
-  deleteFamilyRecipe(id) {
-    return request('/deleteFamilyRecipeltem', 'POST', {
+  deleteFamilyRecipe(familyCode, id) {
+    return request('/deleteFamilyRecipeItem', 'POST', {
+      familyCode,
       id
     })
   },

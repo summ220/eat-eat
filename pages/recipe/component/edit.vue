@@ -325,7 +325,8 @@ const save = async () => {
     
     uni.hideLoading().catch(() => {})
     uni.showToast({ title: isEdit.value ? '修改成功' : '保存成功', icon: 'success' })
-    setTimeout(() => uni.navigateBack(), 1000)
+    // 保存成功后返回并刷新列表页面
+    uni.navigateBack()
   } catch (e) {
     uni.hideLoading().catch(() => {})
     uni.showToast({ title: '保存失败', icon: 'none' })

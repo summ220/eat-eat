@@ -100,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import recipeApi from '@/common/api/recipe.js'
 import config from '@/common/config'
@@ -110,6 +110,11 @@ const familyCode = uni.getStorageSync('family_code') || 'default_family';
 const searchText = ref('')
 const page = ref(1)
 const pageSize = ref(6)
+
+// 实时搜索：输入变化时重置分页，确保从第一页展示过滤结果
+watch(searchText, () => {
+  page.value = 1
+})
 const recipes = ref([])
 
 // =========================分类管理=========================
@@ -216,7 +221,7 @@ const makeRecipe = (item, index) => {
 const loadRecipes = async () => {
   try {
     const res = await recipeApi.getFamilyRecipeByMember(familyCode,currentCategory.value || '')
-    recipes.value = res.data.recipe?.recipes || []
+    recipes.value = res.data.recipeList || []
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' })
   }
@@ -249,6 +254,7 @@ const toggleFavorite = async (item) => {
     const submitData = { ...item, favorite: newFav }
     await recipeApi.updateFamilyRecipe(familyCode, submitData, item.cover)
     uni.showToast({ title: newFav ? '已收藏' : '已取消', icon: 'none' })
+    loadRecipes()
   } catch (e) {
     item.favorite = !newFav // 失败回滚
     uni.showToast({ title: '操作失败', icon: 'none' })
@@ -292,9 +298,10 @@ const confirmDelete = (recipe) => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await recipeApi.deleteFamilyRecipe(recipe._id || recipe.id)
+          await recipeApi.deleteFamilyRecipe(familyCode,recipe._id || recipe.id)
           recipes.value = recipes.value.filter(r => (r._id !== recipe._id && r.id !== recipe.id))
           uni.showToast({ title: '已删除', icon: 'success' })
+          loadRecipes()
         } catch (e) {
           uni.showToast({ title: '删除失败', icon: 'none' })
         }

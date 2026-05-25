@@ -58,9 +58,12 @@ export default {
 
   /**
    * 清空已购买的家庭购物
+   * @param {string} familyCode 家庭码/ID
    */
-  clearPurchasedFamilyShoppingItems() {
-    return request('/clearPurchasedFamilyShoppingItems', 'POST')
+  clearPurchasedFamilyShoppingItems(familyCode) {
+    return request('/clearPurchasedFamilyShoppingItems', 'POST', {
+      familyCode
+    })
   },
 
   /**
