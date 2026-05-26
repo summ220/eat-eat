@@ -70,6 +70,16 @@ export default {
   },
 
   /**
+   * 解散家庭
+   * @param {string} familyCode 家庭码/ID
+   */
+  deleteFamily(familyCode) {
+    return request('/deleteFamily', 'POST', {
+      familyCode
+    })
+  },
+
+  /**
    * 获取家庭信息
    * @param {string} familyCode 家庭码/ID
    */
@@ -121,5 +131,12 @@ export default {
     return request('/deleteFamilyRecipePoolItem', 'POST', {
       id
     })
+  },
+
+  /**
+   * 获取我的家庭列表
+   */
+  getMyFamilies() {
+    return request('/getMyFamilies', 'GET', {})
   }
 }

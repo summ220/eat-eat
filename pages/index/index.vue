@@ -89,7 +89,23 @@ const themeStyle = computed(() => {
 })
 
 onShow(() => {
+  const code = uni.getStorageSync('family_code')
+  if (!code) {
+    uni.switchTab({
+      url: '/pages/family/family',
+      success: () => {
+        uni.showToast({
+          title: '请先创建或加入家庭',
+          icon: 'none',
+          duration: 2000
+        })
+      }
+    })
+    return
+  }
+  
   currentTheme.value = uni.getStorageSync('current_theme') || 0
+  familyCode.value = code
   loadRandomMenuPool() // 进入页面拉取最新的自定义随机推荐池数据
 })
 

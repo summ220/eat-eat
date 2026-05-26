@@ -61,7 +61,7 @@
         <view class="section-title">
           <text class="title-text">家庭成员</text>
           <view class="title-actions">
-            <text class="action-text secondary" @click="showJoinModal = true">加入</text>
+            <!-- <text class="action-text secondary" @click="showJoinModal = true">加入</text> -->
             <text class="action-text" @click="openInvite">邀请</text>
           </view>
         </view>
@@ -84,8 +84,8 @@
         <view class="family-ops" v-if="members.length > 1 && familyRole != 'owner'">
           <text class="exit-btn" @click="leaveFamily">退出当前家庭</text>
         </view>
-        <view class="family-ops" v-if="members.length > 1 && familyRole === 'owner'">
-          <text class="exit-btn" @click="disbandFamily">解散当前家庭</text>
+        <view class="family-ops" v-if="familyRole === 'owner'">
+          <text class="exit-btn" @click="disbandFamily">{{members.length > 1 ? '解散当前家庭' : '注销当前家庭'}}</text>
         </view>
       </view>
 
@@ -352,6 +352,70 @@
         </view>
       </view>
 
+      <!-- 切换家庭弹窗 -->
+      <view class="modal-mask" v-if="showSwitchFamilyModal || !familyCode" @click="showSwitchFamilyModal = false">
+        <view class="modal-content switch-family-modal" @click.stop>
+          <view class="modal-header-box">
+            <text class="modal-title">{{ familyCode?'切换家庭':'选择/创建家庭' }}</text>
+            <text class="close-btn" @click="showSwitchFamilyModal = false">✕</text>
+          </view>
+          
+          <!-- 当前使用 -->
+          <view class="family-section-label" v-if="familyCode">当前使用</view>
+          <view class="active-family-card" v-if="familyCode">
+            <view class="active-family-left">
+              <image class="active-family-avatar" :src="familyAvatar ? (familyAvatar.startsWith('http') ? familyAvatar : config.imgBaseUrl + familyAvatar) : 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'" mode="aspectFill" />
+              <view class="active-family-info">
+                <text class="active-family-name">{{ familyName || '默认家庭' }}</text>
+                <text class="active-family-role-label">{{ familyRole === 'owner' ? '管理员' : '成员' }}</text>
+              </view>
+            </view>
+            <view class="active-family-badge">
+              <text class="badge-text">✔ 当前</text>
+            </view>
+          </view>
+
+          <!-- 其他家庭 -->
+          <view class="family-section-label">我加入的其他家庭</view>
+          <view v-if="loadingFamilies" class="other-families-loading">
+            <text class="loading-icon">⏳</text>
+            <text class="loading-text">正在加载家庭列表...</text>
+          </view>
+          <block v-else>
+            <scroll-view scroll-y class="other-families-scroll" v-if="otherFamilies.length > 0">
+              <view 
+                class="other-family-card-item" 
+                v-for="fam in otherFamilies" 
+                :key="fam.familyCode"
+                @click="switchFamily(fam)"
+              >
+                <view class="active-family-left">
+                  <image class="active-family-avatar" :src="fam.avatarUrl ? (fam.avatarUrl.startsWith('http') ? fam.avatarUrl : config.imgBaseUrl + fam.avatarUrl) : 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'" mode="aspectFill" />
+                  <view class="active-family-info">
+                    <text class="active-family-name">{{ fam.familyName }}</text>
+                    <text class="active-family-role-label">{{ fam.role === 'owner' ? '管理员' : '成员' }}</text>
+                  </view>
+                </view>
+                <view class="other-family-action-arrow">👉</view>
+              </view>
+            </scroll-view>
+            <view class="other-families-empty" v-else>
+              <view class="empty-icon-wrap">👪</view>
+              <text class="empty-tip-text">暂无其他可切换家庭</text>
+            </view>
+          </block>
+
+          <!-- 底部操作按钮 -->
+          <view class="bottom-modal-actions">
+            <button class="action-btn-primary" @click="handleCreateFamily">
+              <text class="btn-icon">＋</text> 创建新家庭
+            </button>
+            <button class="action-btn-secondary" @click="handleJoinFamily">
+              <text class="btn-icon">🔗</text> 加入已有家庭
+            </button>
+          </view>
+        </view>
+      </view>
       <!-- 修改家庭名称弹窗 -->
       <view class="modal-mask" v-if="showFamilyNameModal" @click="showFamilyNameModal = false">
         <view class="modal-content" @click.stop>
@@ -600,6 +664,116 @@ const familyCode = ref(uni.getStorageSync('family_code'))
 const familyRole = ref('owner')
 const familyAvatar = ref(uni.getStorageSync('family_avatar') || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo')
 
+// 切换家庭模态弹窗状态及数据
+const showSwitchFamilyModal = ref(false)
+const families = ref([])
+const loadingFamilies = ref(false)
+
+const otherFamilies = computed(() => {
+  return families.value.filter(fam => fam.familyCode !== familyCode.value)
+})
+
+// 获取我的所有家庭列表
+const loadMyFamilies = async () => {
+  loadingFamilies.value = true
+  try {
+    const res = await familyApi.getMyFamilies()
+    if (res && res.data) {
+      families.value = res.data.families || []
+    }
+  } catch (e) {
+    console.error('加载家庭列表失败', e)
+    uni.showToast({ title: '加载家庭列表失败', icon: 'none' })
+  } finally {
+    loadingFamilies.value = false
+  }
+}
+
+// 切换到另一个家庭的触发函数
+const switchToAnotherFamily = async () => {
+  showSwitchFamilyModal.value = true
+  await loadMyFamilies()
+}
+
+// 切换家庭业务逻辑
+const switchFamily = async (fam) => {
+  if (fam.familyCode === familyCode.value) return
+  uni.showLoading({ title: '切换中...' })
+  try {
+    uni.setStorageSync('family_code', fam.familyCode)
+    uni.setStorageSync('family_name', fam.familyName)
+    uni.setStorageSync('family_avatar', fam.avatarUrl || '')
+    uni.setStorageSync('family_role', fam.role || 'member')
+    
+    familyCode.value = fam.familyCode
+    familyName.value = fam.familyName
+    familyAvatar.value = fam.avatarUrl || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'
+    familyRole.value = fam.role || 'member'
+    
+    uni.showToast({ title: '已切换至 ' + fam.familyName, icon: 'success' })
+    showSwitchFamilyModal.value = false
+    
+    // 全页重新加载，使所有本地存储相关的生命周期、API 接口彻底刷新
+    setTimeout(() => {
+      uni.reLaunch({ url: '/pages/family/family' })
+    }, 500)
+  } catch (e) {
+    console.error('切换家庭失败', e)
+    uni.showToast({ title: '切换失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+// 创建新家庭逻辑
+const handleCreateFamily = () => {
+  showSwitchFamilyModal.value = false
+  uni.showModal({
+    title: '创建新家庭',
+    placeholderText: '请输入新家庭名称，如：温馨之家',
+    editable: true,
+    success: async (res) => {
+      if (res.confirm) {
+        const newName = res.content ? res.content.trim() : ''
+        if (!newName) {
+          uni.showToast({ title: '家庭名称不能为空', icon: 'none' })
+          return
+        }
+        uni.showLoading({ title: '正在创建新家庭...' })
+        try {
+          const apiRes = await familyApi.createFamily(newName)
+          if (apiRes && apiRes.data) {
+            const fam = apiRes.data.family
+            const member = apiRes.data.member
+            uni.setStorageSync('family_code', fam.familyCode)
+            uni.setStorageSync('family_name', fam.familyName)
+            uni.setStorageSync('family_avatar', fam.avatarUrl || '')
+            uni.setStorageSync('family_role', member.role || 'owner')
+            
+            uni.showToast({ title: '创建家庭成功', icon: 'success' })
+            setTimeout(() => {
+              uni.reLaunch({ url: '/pages/family/family' })
+            }, 500)
+          } else {
+            uni.showToast({ title: apiRes.message || '创建家庭失败', icon: 'none' })
+          }
+        } catch (e) {
+          console.error(e)
+          uni.showToast({ title: '创建家庭失败', icon: 'none' })
+        } finally {
+          uni.hideLoading()
+        }
+      }
+    }
+  })
+}
+
+// 加入已有家庭按钮触发
+const handleJoinFamily = () => {
+  showSwitchFamilyModal.value = false
+  showJoinModal.value = true
+}
+
 // 天气/日历弹窗控制
 const weatherLocation = ref('')
 const showWeatherPopup = ref(false)
@@ -614,11 +788,6 @@ const openEditFamilyName = () => {
   tempFamilyName.value = familyName.value
   tempAvatar.value = familyAvatar.value
   showFamilyNameModal.value = true
-}
-
-const switchToAnotherFamily = () => {
-  uni.showToast({ title: '切换家庭', icon: 'none' })
-  // showFamilyNameModal.value = false
 }
 
 const tempAvatar = ref('')
@@ -802,8 +971,8 @@ const confirmJoin = async () => {
   if (!joinCode.value) return uni.showToast({ title: '请输入邀请码', icon: 'none' })
   const res = await familyApi.joinFamily(joinCode.value)
   if (res && res.data) {
-    familyCode.value = res.data.familyCode
-    familyRole.value = res.data.role // 更新当前响应式状态
+    familyCode.value = res.data.member.familyCode
+    familyRole.value = res.data.member.role // 更新当前响应式状态
     uni.setStorageSync('family_code', familyCode.value)
     uni.setStorageSync('family_role', familyRole.value)
     uni.showToast({ title: '成功加入家庭' })
@@ -821,6 +990,7 @@ const confirmJoin = async () => {
 
 // 家庭信息
 const loadFamily = async () => {
+  if (!familyCode.value) return
   const family = await familyApi.getFamily(familyCode.value)
   if (family && family.data) {
     familyName.value = family.data.familyName
@@ -830,6 +1000,10 @@ const loadFamily = async () => {
 
 // 家庭成员
 const loadFamilyMembers = async () => {
+  if (!familyCode.value) {
+    members.value = []
+    return
+  }
   const res = await familyApi.getFamilyMembers(familyCode.value)
   if (res && res.data) {
     members.value = res.data || []
@@ -914,20 +1088,128 @@ const leaveFamily = () => {
     confirmColor: '#FF4D4F',
     success: async (res) => {
       if (res.confirm) {
-        const res = await familyApi.leaveFamily(familyCode.value)
-        if (res && res.data) {
-          uni.showToast({ title: '已退出家庭' })
-          // 后面改成自己的家庭  ==== 根据DeviceId,查familyCode和familyRole
-          // ============================================================
-          familyCode.value = ''
-          uni.setStorageSync('family_code', familyCode.value)
-          // 查自己家庭信息，现在由于都置空了，没查到code，需要重新查询
-          loadFamily()
-          loadFamilyMembers()
-          
-          // refreshStats()
-        } else {
-          uni.showToast({ title: res.message || '退出家庭失败,请稍后重试', icon: 'none' })
+        uni.showLoading({ title: '正在退出...', mask: true })
+        try {
+          const resLeave = await familyApi.leaveFamily(familyCode.value)
+          if (resLeave && resLeave.data) {
+            uni.showToast({ title: '已退出家庭', icon: 'success' })
+            
+            // 查询最新的家庭列表
+            const listRes = await familyApi.getMyFamilies()
+            if (listRes && listRes.data && listRes.data.families && listRes.data.families.length > 0) {
+              // 自动顺延到第一个可用家庭
+              const newFam = listRes.data.families[0]
+              uni.setStorageSync('family_code', newFam.familyCode)
+              uni.setStorageSync('family_name', newFam.familyName)
+              uni.setStorageSync('family_avatar', newFam.avatarUrl || '')
+              uni.setStorageSync('family_role', newFam.role || 'member')
+              
+              familyCode.value = newFam.familyCode
+              familyName.value = newFam.familyName
+              familyAvatar.value = newFam.avatarUrl || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'
+              familyRole.value = newFam.role || 'member'
+              
+              uni.showToast({ title: '已自动切换至 ' + newFam.familyName, icon: 'success' })
+              setTimeout(() => {
+                uni.reLaunch({ url: '/pages/family/family' })
+              }, 800)
+            } else {
+              // 没有任何可用家庭了，重置状态
+              uni.setStorageSync('family_code', '')
+              uni.setStorageSync('family_name', '')
+              uni.setStorageSync('family_avatar', '')
+              uni.setStorageSync('family_role', '')
+              
+              familyCode.value = ''
+              familyName.value = ''
+              familyAvatar.value = ''
+              familyRole.value = ''
+              
+              // 打开切换弹窗引导用户创建或加入
+              showSwitchFamilyModal.value = true
+              await loadMyFamilies()
+            }
+          } else {
+            uni.showToast({ title: resLeave.message || '退出家庭失败,请稍后重试', icon: 'none' })
+          }
+        } catch (e) {
+          console.error('退出家庭出错', e)
+          uni.showToast({ title: '退出失败，请重试', icon: 'none' })
+        } finally {
+          uni.hideLoading()
+        }
+      }
+    }
+  })
+}
+
+const disbandFamily = () => {
+  // 如果成员人数大于 1，则拦截解散/注销操作
+  if (members.value.length > 1) {
+    uni.showModal({
+      title: '无法注销家庭',
+      content: '当前家庭中还存在其他成员。为了保障大家的共有数据资产安全，请先请其他成员主动退出，仅剩您一人时方可注销当前家庭。',
+      showCancel: false,
+      confirmColor: '#FF4D4F'
+    })
+    return
+  }
+
+  uni.showModal({
+    title: '注销家庭',
+    content: '确定要注销当前家庭吗？注销后该家庭的全部关联数据（食材、菜谱、账本）将被彻底清除且无法恢复！',
+    confirmColor: '#FF4D4F',
+    success: async (res) => {
+      if (res.confirm) {
+        uni.showLoading({ title: '正在注销...', mask: true })
+        try {
+          const resDelete = await familyApi.deleteFamily(familyCode.value)
+          if (resDelete && resDelete.data) {
+            uni.showToast({ title: '已注销家庭', icon: 'success' })
+            
+            // 查询最新的家庭列表
+            const listRes = await familyApi.getMyFamilies()
+            if (listRes && listRes.data && listRes.data.families && listRes.data.families.length > 0) {
+              // 自动顺延到第一个可用家庭
+              const newFam = listRes.data.families[0]
+              uni.setStorageSync('family_code', newFam.familyCode)
+              uni.setStorageSync('family_name', newFam.familyName)
+              uni.setStorageSync('family_avatar', newFam.avatarUrl || '')
+              uni.setStorageSync('family_role', newFam.role || 'member')
+              
+              familyCode.value = newFam.familyCode
+              familyName.value = newFam.familyName
+              familyAvatar.value = newFam.avatarUrl || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'
+              familyRole.value = newFam.role || 'member'
+              
+              uni.showToast({ title: '已自动切换至 ' + newFam.familyName, icon: 'success' })
+              setTimeout(() => {
+                uni.reLaunch({ url: '/pages/family/family' })
+              }, 800)
+            } else {
+              // 没有任何可用家庭了，重置状态
+              uni.setStorageSync('family_code', '')
+              uni.setStorageSync('family_name', '')
+              uni.setStorageSync('family_avatar', '')
+              uni.setStorageSync('family_role', '')
+              
+              familyCode.value = ''
+              familyName.value = ''
+              familyAvatar.value = ''
+              familyRole.value = ''
+              
+              // 打开切换弹窗引导用户创建或加入
+              showSwitchFamilyModal.value = true
+              await loadMyFamilies()
+            }
+          } else {
+            uni.showToast({ title: resDelete.message || '注销家庭失败,请稍后重试', icon: 'none' })
+          }
+        } catch (e) {
+          console.error('注销家庭出错', e)
+          uni.showToast({ title: '注销失败，请重试', icon: 'none' })
+        } finally {
+          uni.hideLoading()
         }
       }
     }
@@ -3333,8 +3615,268 @@ const handleReminderAction = (r) => {
   }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* 切换家庭弹窗专属样式 (和邀请弹窗及普通居中弹窗风格完全一致，并提供温柔治愈的高精致度) */
+.switch-family-modal {
+  border-radius: 48rpx !important; /* 保持大圆角 */
+  background: #ffffff;
+  padding: 40rpx !important;
+  
+  .modal-header-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40rpx; /* 增加标题与下方内容的留白 */
+    
+    .modal-title {
+      font-size: 34rpx;
+      font-weight: bold;
+      color: #2C3E50;
+    }
+    
+    .close-btn {
+      font-size: 36rpx;
+      font-weight: normal;
+      color: #BDC3C7; /* 统一的浅灰色 */
+      transition: all 0.2s;
+      padding: 10rpx;
+      line-height: 1;
+      
+      &:active {
+        color: #95A5A6;
+        transform: scale(0.85);
+      }
+    }
+  }
+
+  .family-section-label {
+    font-size: 24rpx;
+    font-weight: bold;
+    color: #BDC3C7; /* 浅灰色小字分区标题 */
+    margin: 36rpx 0 20rpx 0;
+    letter-spacing: 1.5rpx;
+    text-transform: uppercase;
+    text-align: left;
+  }
+  
+  /* 当前家庭卡片 (浅粉色温润渐变背景 + 柔和阴影 + 页面统一圆角) */
+  .active-family-card {
+    background: linear-gradient(135deg, #FFF0F2 0%, #FFE4E8 100%);
+    border-radius: 36rpx;
+    padding: 30rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 10rpx 28rpx rgba(255, 192, 203, 0.25);
+    border: 1rpx solid rgba(255, 255, 255, 0.6);
+    
+    .active-family-left {
+      display: flex;
+      align-items: center;
+      gap: 24rpx;
+      
+      .active-family-avatar {
+        width: 96rpx;
+        height: 96rpx;
+        border-radius: 50%;
+        border: 4rpx solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.04);
+      }
+      
+      .active-family-info {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+        
+        .active-family-name {
+          font-size: 32rpx;
+          font-weight: bold;
+          color: #2C3E50;
+        }
+        
+        .active-family-role-label {
+          font-size: 22rpx;
+          color: #95A5A6; /* 浅灰色小字 */
+          margin-top: 6rpx;
+          font-weight: normal;
+        }
+      }
+    }
+    
+    /* 主题色圆角标签 ✔ 当前 */
+    .active-family-badge {
+      background: var(--primary);
+      padding: 10rpx 24rpx;
+      border-radius: 100rpx;
+      border: none;
+      box-shadow: 0 4rpx 12rpx var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      .badge-text {
+        color: #ffffff;
+        font-size: 22rpx;
+        font-weight: bold;
+      }
+    }
+  }
+
+  /* 加载与空状态 */
+  .other-families-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12rpx;
+    padding: 60rpx 0;
+    
+    .loading-icon {
+      font-size: 32rpx;
+      animation: spin 1.5s linear infinite;
+    }
+    
+    .loading-text {
+      font-size: 26rpx;
+      color: #999;
+    }
+  }
+  
+  .other-families-empty {
+    padding: 50rpx 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    .empty-icon-wrap {
+      font-size: 60rpx;
+      color: #BDC3C7;
+      opacity: 0.5;
+      margin-bottom: 12rpx;
+    }
+    
+    .empty-tip-text {
+      font-size: 24rpx;
+      color: #BDC3C7; /* 浅灰色居中小字 */
+    }
+  }
+  
+  /* 其他家庭滚动区域 */
+  .other-families-scroll {
+    max-height: 320rpx;
+    width: 100%;
+    
+    /* 样式与当前家庭卡片完全统一，仅去掉粉色渐变和当前标记，使用白底精致卡片 */
+    .other-family-card-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+      border: 2rpx solid #F0F2F5;
+      border-radius: 36rpx;
+      padding: 30rpx;
+      margin-bottom: 20rpx;
+      transition: all 0.2s ease;
+      
+      &:active {
+        transform: scale(0.97);
+        background: #F8F9FA;
+        border-color: #EAECEF;
+      }
+      
+      .active-family-left {
+        display: flex;
+        align-items: center;
+        gap: 24rpx;
+        
+        .active-family-avatar {
+          width: 96rpx;
+          height: 96rpx;
+          border-radius: 50%;
+          border: 2rpx solid #F0F2F5;
+        }
+        
+        .active-family-info {
+          display: flex;
+          flex-direction: column;
+          text-align: left;
+          
+          .active-family-name {
+            font-size: 32rpx;
+            font-weight: bold;
+            color: #2C3E50;
+          }
+          
+          .active-family-role-label {
+            font-size: 22rpx;
+            color: #95A5A6; /* 浅灰色小字 */
+            margin-top: 6rpx;
+            font-weight: normal;
+          }
+        }
+      }
+      
+      .other-family-action-arrow {
+        font-size: 28rpx;
+        color: #BDC3C7; /* 浅灰色引导箭头 */
+        font-weight: bold;
+      }
+    }
+  }
+  
+  /* 底部按钮优化 */
+  .bottom-modal-actions {
+    margin-top: 40rpx;
+    display: flex;
+    // flex-direction: column;
+    gap: 24rpx; /* 增加间距 */
+    
+    /* + 创建新家庭 (主题色胶囊按钮，和去制作高度对齐) */
+    .action-btn-primary {
+      width: 100%;
+      height: 96rpx;
+      line-height: 96rpx;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-grad) 100%);
+      color: var(--primary);
+      border-radius: 100rpx;
+      font-size: 28rpx;
+      font-weight: bold;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12rpx;
+      box-shadow: 0 8rpx 20rpx var(--primary-light);
+      transition: all 0.2s;
+      
+      &:active {
+        transform: translateY(2rpx);
+        box-shadow: 0 4rpx 10rpx var(--primary-light);
+        opacity: 0.95;
+      }
+    }
+    
+    /* 🔗 加入已有家庭 (白色背景 + 主题色边框胶囊按钮) */
+    .action-btn-secondary {
+      width: 100%;
+      height: 96rpx;
+      line-height: 96rpx;
+      background: #ffffff;
+      color: var(--primary);
+      border-radius: 100rpx;
+      font-size: 28rpx;
+      font-weight: bold;
+      border: 2rpx solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12rpx;
+      transition: all 0.2s;
+      
+      &:active {
+        background: var(--primary-light);
+        opacity: 0.95;
+      }
+    }
+  }
 }
 </style>

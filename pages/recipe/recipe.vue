@@ -105,7 +105,7 @@ import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import recipeApi from '@/common/api/recipe.js'
 import config from '@/common/config'
 
-const familyCode = uni.getStorageSync('family_code') || 'default_family';
+let familyCode = uni.getStorageSync('family_code') || 'default_family';
 
 const searchText = ref('')
 const page = ref(1)
@@ -311,6 +311,21 @@ const confirmDelete = (recipe) => {
 }
 
 onShow(() => {
+  const code = uni.getStorageSync('family_code')
+  if (!code) {
+    uni.switchTab({
+      url: '/pages/family/family',
+      success: () => {
+        uni.showToast({
+          title: '请先创建或加入家庭',
+          icon: 'none',
+          duration: 2000
+        })
+      }
+    })
+    return
+  }
+  familyCode = code
   currentTheme.value = uni.getStorageSync('current_theme') || 0
   loadCategories()
   loadRecipes()

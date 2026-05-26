@@ -133,7 +133,7 @@ import { onShow } from '@dcloudio/uni-app'
 import shopApi from '@/common/api/shop.js'
 import stockApi from '@/common/api/stock.js'
 
-const familyCode = uni.getStorageSync('family_code') || 'default_family';
+let familyCode = uni.getStorageSync('family_code') || 'default_family';
 
 const list = ref([])
 const isStatExpanded = ref(false)
@@ -255,6 +255,21 @@ const totalCost = computed(() => {
 import eatCo from '@/common/localDB.js'
 
 onShow(() => {
+  const code = uni.getStorageSync('family_code')
+  if (!code) {
+    uni.switchTab({
+      url: '/pages/family/family',
+      success: () => {
+        uni.showToast({
+          title: '请先创建或加入家庭',
+          icon: 'none',
+          duration: 2000
+        })
+      }
+    })
+    return
+  }
+  familyCode = code
   currentTheme.value = uni.getStorageSync('current_theme') || 0
   loadCategories()
   load()

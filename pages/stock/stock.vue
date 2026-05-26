@@ -125,7 +125,7 @@ import { onShow } from '@dcloudio/uni-app'
 import stockApi from '@/common/api/stock.js'
 import { formatDate } from '@/uni_modules/uni-dateformat/components/uni-dateformat/date-format'
 
-const familyCode = uni.getStorageSync('family_code') || ''
+let familyCode = uni.getStorageSync('family_code') || ''
 
 // =============================== 分类管理 =============================
 const showCatModal = ref(false)
@@ -314,6 +314,21 @@ const deleteItem = (item) => {
 
 
 onShow(() => {
+  const code = uni.getStorageSync('family_code')
+  if (!code) {
+    uni.switchTab({
+      url: '/pages/family/family',
+      success: () => {
+        uni.showToast({
+          title: '请先创建或加入家庭',
+          icon: 'none',
+          duration: 2000
+        })
+      }
+    })
+    return
+  }
+  familyCode = code
   currentTheme.value = uni.getStorageSync('current_theme') || 0
   loadCategories()
   load()
