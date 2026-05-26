@@ -48,10 +48,12 @@ export default {
 
   /**
    * 删除家庭购物
+   * @param {string} familyCode 家庭码/ID
    * @param {string} id 购物ID
    */
-  deleteFamilyShoppingItem(id) {
+  deleteFamilyShoppingItem(familyCode, id) {
     return request('/deleteFamilyShoppingItem', 'POST', {
+      familyCode,
       id
     })
   },

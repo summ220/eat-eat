@@ -18,7 +18,7 @@
 
       <view class="top-header">
         <view class="user-info">
-          <image class="avatar" :src="familyAvatar ? (familyAvatar.startsWith('http') ? familyAvatar : config.imgBaseUrl + familyAvatar) : 'https://lh3.googleusercontent.com/YPKb37vEKWjVFcIf58MoE5BIFQ6eQ6z2pX6dxG2c0-iEZ6VKm-r4EN8fHEhMvWJBf_XePnqcH_Y6JxRUzsIQW3-TP8V9GfAciOR0SCUO4LX9A6p5hbQ=w1440-h810-n-nu-rw-lo'" mode="aspectFill" @click.stop="previewImage(familyAvatar || 'https://lh3.googleusercontent.com/YPKb37vEKWjVFcIf58MoE5BIFQ6eQ6z2pX6dxG2c0-iEZ6VKm-r4EN8fHEhMvWJBf_XePnqcH_Y6JxRUzsIQW3-TP8V9GfAciOR0SCUO4LX9A6p5hbQ=w1440-h810-n-nu-rw-lo')" />
+          <image class="avatar" :src="familyAvatar ? (familyAvatar.startsWith('http') ? familyAvatar : config.imgBaseUrl + familyAvatar) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'" mode="aspectFill" @click.stop="previewImage(familyAvatar || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg')" />
           <view class="name-box">
             <view class="family-name-wrap">
               <text class="family-name">{{ familyName }}</text>
@@ -73,7 +73,7 @@
               :key="idx"
             >
               <view class="avatar-wrap">
-                <image class="m-avatar" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'" mode="aspectFill" @click.stop="previewImage(m.avatarUrl || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo')" />
+                <image class="m-avatar" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(m.avatarUrl || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg')" />
                 <view class="edit-tag" v-if="m.isSelf" @click="handleMemberClick(m)">✏️</view>
               </view>
               <text class="m-nick">{{ m.name || '乌啦啦啦' }}{{ m.isSelf ? ' (我)' : m.role === 'owner' ? ' (管理员)' : '' }}</text>
@@ -364,7 +364,7 @@
           <view class="family-section-label" v-if="familyCode">当前使用</view>
           <view class="active-family-card" v-if="familyCode">
             <view class="active-family-left">
-              <image class="active-family-avatar" :src="familyAvatar ? (familyAvatar.startsWith('http') ? familyAvatar : config.imgBaseUrl + familyAvatar) : 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'" mode="aspectFill" />
+              <image class="active-family-avatar" :src="familyAvatar ? (familyAvatar.startsWith('http') ? familyAvatar : config.imgBaseUrl + familyAvatar) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'" mode="aspectFill" />
               <view class="active-family-info">
                 <text class="active-family-name">{{ familyName || '默认家庭' }}</text>
                 <text class="active-family-role-label">{{ familyRole === 'owner' ? '管理员' : '成员' }}</text>
@@ -390,7 +390,7 @@
                 @click="switchFamily(fam)"
               >
                 <view class="active-family-left">
-                  <image class="active-family-avatar" :src="fam.avatarUrl ? (fam.avatarUrl.startsWith('http') ? fam.avatarUrl : config.imgBaseUrl + fam.avatarUrl) : 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'" mode="aspectFill" />
+                  <image class="active-family-avatar" :src="fam.avatarUrl ? (fam.avatarUrl.startsWith('http') ? fam.avatarUrl : config.imgBaseUrl + fam.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'" mode="aspectFill" />
                   <view class="active-family-info">
                     <text class="active-family-name">{{ fam.familyName }}</text>
                     <text class="active-family-role-label">{{ fam.role === 'owner' ? '管理员' : '成员' }}</text>
@@ -420,7 +420,7 @@
       <view class="modal-mask" v-if="showFamilyNameModal" @click="showFamilyNameModal = false">
         <view class="modal-content" @click.stop>
           <view class="avatar-box">
-            <image class="avatar" :src="tempAvatar ? (tempAvatar.startsWith('http') ? tempAvatar : config.imgBaseUrl + tempAvatar) : 'https://lh3.googleusercontent.com/YPKb37vEKWjVFcIf58MoE5BIFQ6eQ6z2pX6dxG2c0-iEZ6VKm-r4EN8fHEhMvWJBf_XePnqcH_Y6JxRUzsIQW3-TP8V9GfAciOR0SCUO4LX9A6p5hbQ=w1440-h810-n-nu-rw-lo'" mode="aspectFill" @click.stop="previewImage(tempAvatar || 'https://lh3.googleusercontent.com/YPKb37vEKWjVFcIf58MoE5BIFQ6eQ6z2pX6dxG2c0-iEZ6VKm-r4EN8fHEhMvWJBf_XePnqcH_Y6JxRUzsIQW3-TP8V9GfAciOR0SCUO4LX9A6p5hbQ=w1440-h810-n-nu-rw-lo')" />
+            <image class="avatar" :src="tempAvatar ? (tempAvatar.startsWith('http') ? tempAvatar : config.imgBaseUrl + tempAvatar) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'" mode="aspectFill" @click.stop="previewImage(tempAvatar || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg')" />
             <view class="camera-icon" @click.stop="changeAv">📷</view>
           </view>
           <!-- <text class="modal-title">修改家庭名称</text> -->
@@ -438,7 +438,7 @@
       <view class="modal-mask" v-if="showNickModal" @click="showNickModal = false">
         <view class="modal-content" @click.stop>
           <view class="avatar-box">
-            <image class="avatar" :src="tempAvatarUrl ? (tempAvatarUrl.startsWith('http') ? tempAvatarUrl : config.imgBaseUrl + tempAvatarUrl) : 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'" mode="aspectFill" @click.stop="previewImage(tempAvatarUrl || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo')"></image>
+            <image class="avatar" :src="tempAvatarUrl ? (tempAvatarUrl.startsWith('http') ? tempAvatarUrl : config.imgBaseUrl + tempAvatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(tempAvatarUrl || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg')"></image>
             <view class="camera-icon" @click.stop="chooseAvatar">📷</view>
           </view>
           <!-- <text class="modal-title">修改我的昵称</text> -->
@@ -662,7 +662,7 @@ const closeBigImage = () => {
 const familyName = ref('')
 const familyCode = ref(uni.getStorageSync('family_code'))
 const familyRole = ref('owner')
-const familyAvatar = ref(uni.getStorageSync('family_avatar') || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo')
+const familyAvatar = ref(uni.getStorageSync('family_avatar') || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg')
 
 // 切换家庭模态弹窗状态及数据
 const showSwitchFamilyModal = ref(false)
@@ -707,7 +707,7 @@ const switchFamily = async (fam) => {
     
     familyCode.value = fam.familyCode
     familyName.value = fam.familyName
-    familyAvatar.value = fam.avatarUrl || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'
+    familyAvatar.value = fam.avatarUrl || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'
     familyRole.value = fam.role || 'member'
     
     uni.showToast({ title: '已切换至 ' + fam.familyName, icon: 'success' })
@@ -994,7 +994,7 @@ const loadFamily = async () => {
   const family = await familyApi.getFamily(familyCode.value)
   if (family && family.data) {
     familyName.value = family.data.familyName
-    familyAvatar.value = family.data.avatarUrl || uni.getStorageSync('family_avatar') || 'https://lh3.googleusercontent.com/YPKb37vEKWjVFcIf58MoE5BIFQ6eQ6z2pX6dxG2c0-iEZ6VKm-r4EN8fHEhMvWJBf_XePnqcH_Y6JxRUzsIQW3-TP8V9GfAciOR0SCUO4LX9A6p5hbQ=w1440-h810-n-nu-rw-lo'
+    familyAvatar.value = family.data.avatarUrl || uni.getStorageSync('family_avatar') || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'
   }
 }
 
@@ -1034,7 +1034,7 @@ const tempTitle = ref('')
 const showNickModal = ref(false)
 
 const handleMemberClick = (m) => {
-  tempAvatarUrl.value = m.avatarUrl ? m.avatarUrl : 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'
+  tempAvatarUrl.value = m.avatarUrl ? m.avatarUrl : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'
   tempNick.value = m.nick || '乌啦啦'
   tempTitle.value = m.title || '大主厨'
   showNickModal.value = true
@@ -1106,7 +1106,7 @@ const leaveFamily = () => {
               
               familyCode.value = newFam.familyCode
               familyName.value = newFam.familyName
-              familyAvatar.value = newFam.avatarUrl || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'
+              familyAvatar.value = newFam.avatarUrl || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'
               familyRole.value = newFam.role || 'member'
               
               uni.showToast({ title: '已自动切换至 ' + newFam.familyName, icon: 'success' })
@@ -1179,7 +1179,7 @@ const disbandFamily = () => {
               
               familyCode.value = newFam.familyCode
               familyName.value = newFam.familyName
-              familyAvatar.value = newFam.avatarUrl || 'https://lh3.googleusercontent.com/giSyfgEG7-VFU5pVDKkthFtg1Im2RZq88AHutBKvckINCPKM3wCSa00uNRa2D8uhdNh9UXG-_32B1p77ExGqkYl8vgiruOwb3neo_ojtMsXvj_gjOA=w1440-h810-n-nu-rw-lo'
+              familyAvatar.value = newFam.avatarUrl || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'
               familyRole.value = newFam.role || 'member'
               
               uni.showToast({ title: '已自动切换至 ' + newFam.familyName, icon: 'success' })
@@ -1721,7 +1721,7 @@ const quickFuncs = ref([
 
 // 家庭成员
 const members = ref([
-  { nick: '乌啦啦鲁', role: '大主厨', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: true },
+  { nick: '乌啦啦鲁', role: '大主厨', avatar: config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg', isSelf: true },
   // { nick: '妈妈', role: '采购总监', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: false },
   // { nick: '宝宝', role: '干饭人', avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png', isSelf: false }
 ])

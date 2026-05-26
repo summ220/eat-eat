@@ -72,7 +72,7 @@
             :class="{ active: editData.categoryName === cat.name }" 
             v-for="cat in categories" 
             :key="cat.id" 
-            @click="editData.categoryName = cat.name"
+            @click="editData.categoryName = cat.name;editData.categoryId = cat.id"
           >{{ cat.name }}</text>
         </view>
         
@@ -132,6 +132,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import shopApi from '@/common/api/shop.js'
 import stockApi from '@/common/api/stock.js'
+import costApi from '@/common/api/cost.js'
 
 let familyCode = uni.getStorageSync('family_code') || 'default_family';
 
@@ -314,16 +315,16 @@ const toggle = async (item) => {
         name: item.name,
         num: item.num,
         price: item.price,
-        category: item.category,
+        categoryId: item.categoryId,
         done: newDone
       })
       
       if (shouldSyncToStock) {
-        // 走新增食材的接口
+        // 走新增食材的接口   saveFamilyConsumptionRecord
         const ingredientItemJson = {
           name: item.name,
           num: item.num,
-          category: item.category,
+          categoryId: item.categoryId,
           expire_date: '',
           has: true,
         }
@@ -332,16 +333,13 @@ const toggle = async (item) => {
 
       if (newDone && item.price && parseFloat(item.price) > 0) {
         // 购买后自动记账
-        const costItem = {
+        const consumptionRecordJson = {
           name: item.name,
           price: item.price,
+          categoryId: item.categoryId,
           date: new Date().toISOString().split('T')[0],
-          category: '餐饮',
-          type: 'out',
-          remark: '购物自动记账',
-          family_code: uni.getStorageSync('family_code') || 'default_family'
         };
-        await eatCo.addCost(costItem);
+        await costApi.saveFamilyConsumptionRecord(familyCode, consumptionRecordJson);
         uni.showToast({ title: shouldSyncToStock ? '已同步并记账' : '已自动记账', icon: 'success' })
       } else if (shouldSyncToStock) {
         uni.showToast({ title: '已同步到食材', icon: 'success' })
@@ -395,7 +393,7 @@ const clearDone = () => {
                   familyCode,
                   name: item.name,
                   num: item.num,
-                  category: item.category,
+                  categoryId: item.categoryId,
                   has: true
                 })
               }
@@ -428,7 +426,7 @@ const deleteItem = (item) => {
       if (res.confirm) {
         uni.showLoading({ title: '删除中...' })
         try {
-          await shopApi.deleteFamilyShoppingItem(item.id)
+          await shopApi.deleteFamilyShoppingItem(familyCode,item.id)
           load()
           uni.showToast({ title: '删除成功', icon: 'success' })
         } catch (e) {
@@ -487,7 +485,7 @@ const saveModal = async () => {
         name: editData.value.name,
         num: editData.value.num,
         price: editData.value.price,
-        category: editData.value.category,
+        categoryId: editData.value.categoryId,
         done: false
       }
       await shopApi.saveFamilyShoppingItem(familyCode, newItem)
@@ -498,7 +496,7 @@ const saveModal = async () => {
         name: editData.value.name,
         num: editData.value.num,
         price: editData.value.price,
-        categoryId: editData.value.category.id,
+        categoryId: editData.value.categoryId,
       }
       await shopApi.updateFamilyShoppingItem(familyCode, shoppingItemJson)
       uni.showToast({ title: '修改成功', icon: 'success' })

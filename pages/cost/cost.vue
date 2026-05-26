@@ -12,7 +12,7 @@
     <view class="header-card">
       <text class="title">{{ summaryTitle }} 总花费</text>
       <text class="total-money">¥{{ currentMonthTotal }}</text>
-      <view class="ratio-wrap" v-if="currentMonthRatioText">
+      <view class="ratio-wrap" v-if="currentMonthRatioText && currentCategory === '全部'">
         <text class="ratio-text">{{ currentMonthRatioText }}</text>
       </view>
     </view>
@@ -23,14 +23,14 @@
         <view 
           class="cat-item" 
           :class="{ active: currentCategory === '全部' }" 
-          @click="currentCategory = '全部'"
+          @click="switchCategory('全部')"
         >全部</view>
         <view 
           class="cat-item" 
           v-for="cat in categories" 
           :key="cat.id" 
           :class="{ active: currentCategory === cat.name }" 
-          @click="currentCategory = cat.name"
+          @click="switchCategory(cat.name)"
         >{{ cat.name }}</view>
       </view>
     </scroll-view>
@@ -121,9 +121,9 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import shopApi from '@/common/api/shop.js'
-import eatCo from '@/common/localDB.js'
+import costApi from '@/common/api/cost.js'
 
-const familyCode = uni.getStorageSync('family_code') || ''
+let familyCode = uni.getStorageSync('family_code') || ''
 
 // ---- 核心状态 ----
 const categories = ref([])
@@ -182,6 +182,11 @@ const summaryTitle = computed(() => {
 
 const expandedMonths = ref([])
 
+const switchCategory = (catName) => {
+  currentCategory.value = catName
+  load()
+}
+
 const changeMonth = (delta) => {
   const nd = new Date(currentDate.value)
   nd.setMonth(nd.getMonth() + delta)
@@ -192,6 +197,7 @@ const changeMonth = (delta) => {
   if (!expandedMonths.value.includes(key)) {
     expandedMonths.value.push(key)
   }
+  load()
 }
 
 // 弹窗状态
@@ -203,19 +209,70 @@ const editForm = ref({
 
 // ---- 初始化与加载 ----
 onShow(() => {
+  const code = uni.getStorageSync('family_code')
+  if (!code) {
+    uni.switchTab({
+      url: '/pages/family/family',
+      success: () => {
+        uni.showToast({
+          title: '请先创建或加入家庭',
+          icon: 'none',
+          duration: 2000
+        })
+      }
+    })
+    return
+  }
+  familyCode = code
   currentTheme.value = uni.getStorageSync('current_theme') || 0
   loadCategories()
   load()
 })
 
 const load = async () => {
-  const familyCode = uni.getStorageSync('family_code') || 'default_family';
   try {
-    const data = await eatCo.getCostList(familyCode)
-    list.value = data.map(item => {
-      item.id = item._id
-      item.translateX = 0
-      return item
+    uni.showLoading({ title: '加载中...' })
+    
+    // 1. 根据选中月份计算精确的 startTime 和 endTime (格式：yyyy-mm-dd)
+    const year = currentDate.value.getFullYear()
+    const month = currentDate.value.getMonth() // 0-based
+    const startTime = `${year}-${String(month + 1).padStart(2, '0')}-01`
+    const lastDay = new Date(year, month + 1, 0).getDate() // 下个月第 0 天即为本月最后一天
+    const endTime = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    
+    // 2. 根据 currentCategory 动态计算 categoryId
+    let categoryId = ''
+    if (currentCategory.value !== '全部') {
+      const found = categories.value.find(c => c.name === currentCategory.value)
+      if (found) {
+        categoryId = found.id
+      }
+    }
+    
+    const params = {
+      startTime,
+      endTime
+    }
+    if (categoryId) {
+      params.categoryId = categoryId
+    }
+    
+    const res = await costApi.getFamilyConsumptionRecords(familyCode, params)
+    const records = res.data?.items || res.data?.records || res.data || []
+    
+    list.value = records.map(item => {
+      // 降级与兜底处理，确保在前后端各类模型下字段和左滑 translateX 完美解析
+      const cName = item.categoryName || item.category || categories.value.find(c => c.id === item.categoryId)?.name || '其他'
+      return {
+        id: item.id || item._id,
+        _id: item._id || item.id,
+        price: item.price,
+        name: item.name,
+        date: item.date,
+        category: cName,
+        categoryId: item.categoryId,
+        translateX: 0
+      }
     })
     
     // 默认展开当前月
@@ -223,7 +280,10 @@ const load = async () => {
       expandedMonths.value.push(currentMonthKey.value)
     }
   } catch (e) {
+    console.error('加载消费记录失败', e)
     uni.showToast({ title: '加载失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
   }
 }
 
@@ -335,29 +395,36 @@ const saveModal = async () => {
   const priceNum = parseFloat(editForm.value.price)
   if (isNaN(priceNum)) return uni.showToast({ title: '请输入有效金额', icon: 'none' })
 
-  uni.showLoading({ title: '保存中...' })
+  uni.showLoading({ title: '保存中...', mask: true })
   try {
-    const costData = {
-      price: priceNum,
-      name: editForm.value.name,
-      date: editForm.value.date,
-      category: editForm.value.category,
-      family_code: uni.getStorageSync('family_code') || 'default_family',
-      categoryId: editForm.value.categoryId
-    }
-
     if (modalMode.value === 'add') {
-      await eatCo.addCost(costData)
+      const consumptionRecordJson = {
+        name: editForm.value.name,
+        price: priceNum,
+        categoryId: editForm.value.categoryId,
+        date: editForm.value.date
+      }
+      await costApi.saveFamilyConsumptionRecord(familyCode, consumptionRecordJson)
       uni.showToast({ title: '添加成功', icon: 'success' })
     } else {
-      await eatCo.updateCost(editForm.value.id, costData)
+      const consumptionRecordJson = {
+        id: editForm.value.id || editForm.value._id,
+        name: editForm.value.name,
+        price: priceNum,
+        categoryId: editForm.value.categoryId,
+        date: editForm.value.date
+      }
+      await costApi.updateFamilyConsumptionRecord(familyCode, consumptionRecordJson)
       uni.showToast({ title: '修改成功', icon: 'success' })
     }
     
     showModal.value = false
     load() // 重新加载
   } catch (e) {
+    console.error('保存花费记录失败', e)
     uni.showToast({ title: '保存失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
   }
 }
 
@@ -365,14 +432,16 @@ const deleteItem = (item) => {
   uni.showModal({
     title: '确认删除',
     content: '确定要删除这条花费记录吗？',
+    confirmColor: '#FF4D4F',
     success: async (res) => {
       if (res.confirm) {
-        uni.showLoading({ title: '删除中...' })
+        uni.showLoading({ title: '删除中...', mask: true })
         try {
-          await eatCo.deleteCost(item.id)
+          await costApi.deleteFamilyConsumptionRecord(familyCode, item.id || item._id)
           uni.showToast({ title: '已删除', icon: 'success' })
           load()
         } catch (e) {
+          console.error('删除花费记录失败', e)
           uni.showToast({ title: '删除失败', icon: 'none' })
         } finally {
           uni.hideLoading()
