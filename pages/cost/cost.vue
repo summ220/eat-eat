@@ -28,10 +28,10 @@
         <view 
           class="cat-item" 
           v-for="cat in categories" 
-          :key="cat" 
-          :class="{ active: currentCategory === cat }" 
-          @click="currentCategory = cat"
-        >{{ cat }}</view>
+          :key="cat.id" 
+          :class="{ active: currentCategory === cat.name }" 
+          @click="currentCategory = cat.name"
+        >{{ cat.name }}</view>
       </view>
     </scroll-view>
 
@@ -100,11 +100,11 @@
         <view class="modal-tags">
           <text 
             class="m-tag" 
-            :class="{ active: editForm.category === cat }" 
+            :class="{ active: editForm.category === cat.name }" 
             v-for="cat in categories" 
-            :key="cat" 
-            @click="editForm.category = cat"
-          >{{ cat }}</text>
+            :key="cat.id" 
+            @click="editForm.category = cat.name, editForm.categoryId = cat.id"
+          >{{ cat.name }}</text>
         </view>
 
         <view class="modal-btns">
@@ -120,12 +120,25 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-
+import shopApi from '@/common/api/shop.js'
 import eatCo from '@/common/localDB.js'
 
+const familyCode = uni.getStorageSync('family_code') || ''
+
 // ---- 核心状态 ----
-const categories = ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
+const categories = ref([])
 const currentCategory = ref('全部')
+
+const loadCategories = async () => {
+  try {
+    const res = await shopApi.getFamilyShoppingCategories(familyCode)
+    categories.value = res.data.categories || []
+    console.log('categories.value', categories.value)
+  } catch (e) {
+    console.error('加载分类失败', e)
+  }
+}
+
 const list = ref([])
 
 // 主题系统
@@ -185,12 +198,13 @@ const changeMonth = (delta) => {
 const showModal = ref(false)
 const modalMode = ref('add')
 const editForm = ref({
-  id: '', price: '', name: '', date: '', category: '蔬菜'
+  id: '', price: '', name: '', date: '', category: '', categoryId: ''
 })
 
 // ---- 初始化与加载 ----
 onShow(() => {
   currentTheme.value = uni.getStorageSync('current_theme') || 0
+  loadCategories()
   load()
 })
 
@@ -304,7 +318,7 @@ const openModal = (mode, item = null) => {
       dStr = `${currentMonthKey.value}-01`
     }
     editForm.value = {
-      id: '', price: '', name: '', date: dStr, category: currentCategory.value === '全部' ? '蔬菜' : currentCategory.value
+      id: '', price: '', name: '', date: dStr, category: currentCategory.value === '全部' ? categories.value[0].name : currentCategory.value, categoryId: currentCategory.value === '全部' ? categories.value[0].id : categories.value.find(c => c.name === currentCategory.value).id
     }
   } else {
     editForm.value = { ...item }
@@ -328,7 +342,8 @@ const saveModal = async () => {
       name: editForm.value.name,
       date: editForm.value.date,
       category: editForm.value.category,
-      family_code: uni.getStorageSync('family_code') || 'default_family'
+      family_code: uni.getStorageSync('family_code') || 'default_family',
+      categoryId: editForm.value.categoryId
     }
 
     if (modalMode.value === 'add') {

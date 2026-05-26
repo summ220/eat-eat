@@ -54,7 +54,7 @@
                 <text>{{ getExpireStatus(item.expire_date).text }}</text>
               </view>
             </view>
-            <text class="expire-date" v-if="item.expire_date">📅 过期：{{ item.expire_date }}</text>
+            <text class="expire-date" v-if="item.expire_date">📅 过期：{{ formatDisplayDate(item.expire_date) }}</text>
           </view>
           
           <view class="item-footer">
@@ -79,7 +79,7 @@
             :class="{ active: editData.categoryName === cat.name }"
             v-for="cat in categories" 
             :key="cat.id"
-            @click="editData.categoryName = cat.name"
+            @click="editData.categoryId = cat.id, editData.categoryName = cat.name"
           >{{ cat.name }}</text>
         </view>
         
@@ -89,7 +89,7 @@
         <picker mode="date" @change="onEditDateChange">
           <view class="modal-input picker-item">
             <text class="p-label">过期日期：</text>
-            <text class="p-val">{{ editData.expire_date || '请选择 (选填)' }}</text>
+            <text class="p-val">{{ editData.expire_date ? formatDisplayDate(editData.expire_date) : '请选择 (选填)' }}</text>
           </view>
         </picker>
         
@@ -123,6 +123,7 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import stockApi from '@/common/api/stock.js'
+import { formatDate } from '@/uni_modules/uni-dateformat/components/uni-dateformat/date-format'
 
 const familyCode = uni.getStorageSync('family_code') || ''
 
@@ -245,6 +246,12 @@ const editData = ref({
   categoryName: '',
   expire_date: ''
 })
+
+// 格式化日期显示为 yyyy-MM-dd
+const formatDisplayDate = (dateStr) => {
+  if (!dateStr) return ''
+  return formatDate(dateStr, 'yyyy-MM-dd')
+}
 
 const onEditDateChange = (e) => {
   editData.value.expire_date = e.detail.value

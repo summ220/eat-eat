@@ -81,7 +81,7 @@
             </view>
           </view>
         </scroll-view>
-        <view class="family-ops" v-if="members.length > 1">
+        <view class="family-ops" v-if="members.length > 1 && familyRole != 'owner'">
           <text class="exit-btn" @click="leaveFamily">退出当前家庭</text>
         </view>
         <view class="family-ops" v-if="members.length > 1 && familyRole === 'owner'">
@@ -2291,16 +2291,15 @@ const handleReminderAction = (r) => {
     display: flex;
     justify-content: center;
     align-items: center;
-    color: #2D3748;
+    color: #fff;
     font-size: 36rpx;
     font-weight: bold;
-    /* 让它呈现淡蓝色调更贴合图片 */
-    background: #EBF3FF; 
-    color: #6190E8;
+    background: var(--primary);
+    box-shadow: 0 8rpx 20rpx var(--primary-light);
   }
   
   .sc-pill-go {
-    background: #6190E8;
+    background: var(--primary);
     color: #fff;
     height: 68rpx;
     padding: 0 36rpx;
@@ -2310,7 +2309,7 @@ const handleReminderAction = (r) => {
     align-items: center;
     font-size: 24rpx;
     font-weight: 900;
-    box-shadow: 0 8rpx 20rpx rgba(97, 144, 232, 0.3);
+    box-shadow: 0 8rpx 20rpx var(--primary-light);
     letter-spacing: 2rpx;
     
     &.is-done {
