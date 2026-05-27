@@ -166,5 +166,58 @@ export default {
       question,
       answer
     })
-  }
+  },
+
+
+  // 饮食偏好
+  /**
+   * 保存家庭饮食偏好
+   * @param {string} familyCode 家庭码/ID
+   * @param {string} dietPreferenceJson 饮食偏好JSON
+   */
+  // title、type（family_taste=全家口味，avoid_food=忌口不吃）
+  saveFamilyDietPreference(familyCode, dietPreferenceJson) {
+    return request('/saveFamilyDietPreference', 'POST', {
+      familyCode,
+      dietPreferenceJson
+    })
+  },
+
+  /**
+   * 获取家庭饮食偏好
+   * @param {string} familyCode 家庭码/ID
+   * @param {string} type 饮食偏好类型
+   */
+  // type:family_taste=全家口味，avoid_food=忌口不吃
+  getFamilyDietPreferences(familyCode, type) {
+    return request('/getFamilyDietPreferences', 'GET', {
+      familyCode,
+      type
+    })
+  },
+
+  /**
+   * 更新家庭饮食偏好
+   * @param {string} familyCode 家庭码/ID
+   * @param {string} dietPreferenceJson 饮食偏好JSON
+   */
+  // id、title、preferenceType(family_taste=全家口味，avoid_food=忌口不吃)
+  updateFamilyDietPreference(familyCode, dietPreferenceJson) {
+    return request('/updateFamilyDietPreference', 'POST', {
+      familyCode,
+      dietPreferenceJson
+    })
+  },
+
+  /**
+   * 删除家庭饮食偏好
+   * @param {string} familyCode 家庭码/ID
+   * @param {string} id 饮食偏好ID
+   */
+  deleteFamilyDietPreference(familyCode, id) {
+    return request('/deleteFamilyDietPreference', 'POST', {
+      familyCode,
+      id
+    })
+  },
 }

@@ -179,13 +179,13 @@
           <view class="p-options">
             <view 
               class="p-tag" 
-              :class="{ active: prefs.taste.includes(t), editing: isEditingTaste }" 
+              :class="{ active: true, editing: isEditingTaste }" 
               v-for="t in tasteOptions" 
-              :key="t" 
+              :key="t.id" 
               @click.stop="selectTaste(t)"
               @longpress.stop="isEditingTaste = !isEditingTaste"
             >
-              <text>{{ t }}</text>
+              <text>{{ t.title }}</text>
               <view class="p-del" v-if="isEditingTaste" @click.stop="removeTaste(t)">×</view>
             </view>
             <view class="p-tag add-btn" @click.stop="openAddTasteModal">
@@ -198,13 +198,13 @@
           <view class="p-options">
             <view 
               class="p-tag" 
-              :class="{ active: prefs.avoid.includes(a), editing: isEditingPrefs }" 
+              :class="{ active: true, editing: isEditingPrefs }" 
               v-for="a in avoidOptions" 
-              :key="a" 
+              :key="a.id" 
               @click.stop="toggleAvoid(a)"
               @longpress.stop="isEditingPrefs = !isEditingPrefs"
             >
-              <text>{{ a }}</text>
+              <text>{{ a.title }}</text>
               <view class="p-del" v-if="isEditingPrefs" @click.stop="removeAvoid(a)">×</view>
             </view>
             <!-- 添加按钮 -->
@@ -1442,6 +1442,7 @@ onShow(() => {
   }
   loadFamily()
   loadFamilyMembers()
+  loadDietPreferences()
 })
 
 // 日期与天气数据
@@ -1867,11 +1868,11 @@ const trends = ref({
 
 // 偏好
 const prefs = ref({
-  taste: ['适中'],
-  avoid: ['海鲜', '香菜']
+  taste: [],
+  avoid: []
 })
-const tasteOptions = ref(['清淡', '适中', '重口'])
-const avoidOptions = ref(['海鲜', '羊肉', '香菜', '葱', '蒜', '辣'])
+const tasteOptions = ref([])
+const avoidOptions = ref([])
 const isEditingPrefs = ref(false)
 const isEditingTaste = ref(false)
 const showAddAvoidModal = ref(false)
@@ -1879,14 +1880,54 @@ const showAddTasteModal = ref(false)
 const newAvoid = ref('')
 const newTaste = ref('')
 
+const loadDietPreferences = async () => {
+  try {
+    const resTaste = await familyApi.getFamilyDietPreferences(familyCode.value, 'family_taste')
+    tasteOptions.value = resTaste.data?.preferences || []
+    
+    const resAvoid = await familyApi.getFamilyDietPreferences(familyCode.value, 'avoid_food')
+    avoidOptions.value = resAvoid.data?.preferences || []
+    
+    // 如果该家庭尚未配置过任何口味和忌口，启动温情静默预置常见口味与忌口
+    if (tasteOptions.value.length === 0 && avoidOptions.value.length === 0) {
+      await initDefaultDietPreferences()
+    }
+  } catch (e) {
+    console.error('加载饮食偏好失败', e)
+  }
+}
+
+const initDefaultDietPreferences = async () => {
+  try {
+    const defaultTastes = ['清淡', '适中', '重口']
+    for (const title of defaultTastes) {
+      await familyApi.saveFamilyDietPreference(familyCode.value, JSON.stringify({
+        title,
+        type: 'family_taste'
+      }))
+    }
+    
+    const defaultAvoids = ['海鲜', '香菜']
+    for (const title of defaultAvoids) {
+      await familyApi.saveFamilyDietPreference(familyCode.value, JSON.stringify({
+        title,
+        type: 'avoid_food'
+      }))
+    }
+    
+    // 初始化后重新拉取
+    const resTaste = await familyApi.getFamilyDietPreferences(familyCode.value, 'family_taste')
+    tasteOptions.value = resTaste.data?.preferences || []
+    const resAvoid = await familyApi.getFamilyDietPreferences(familyCode.value, 'avoid_food')
+    avoidOptions.value = resAvoid.data?.preferences || []
+  } catch (e) {
+    console.error('初始化默认偏好出错', e)
+  }
+}
+
 const selectTaste = (t) => {
   if (isEditingTaste.value) return
-  const idx = prefs.value.taste.indexOf(t)
-  if (idx > -1) {
-    prefs.value.taste.splice(idx, 1)
-  } else {
-    prefs.value.taste.push(t)
-  }
+  uni.showToast({ title: '💡 长按可删除该口味', icon: 'none' })
 }
 
 const openAddTasteModal = () => {
@@ -1894,29 +1935,62 @@ const openAddTasteModal = () => {
   showAddTasteModal.value = true
 }
 
-const confirmAddTaste = () => {
+const confirmAddTaste = async () => {
   const val = newTaste.value.trim()
   if (!val) return
-  if (tasteOptions.value.includes(val)) {
+  if (tasteOptions.value.some(x => x.title === val)) {
     return uni.showToast({ title: '已在列表中', icon: 'none' })
   }
-  tasteOptions.value.push(val)
-  showAddTasteModal.value = false
+  
+  uni.showLoading({ title: '正在添加...', mask: true })
+  try {
+    await familyApi.saveFamilyDietPreference(familyCode.value, JSON.stringify({
+      title: val,
+      type: 'family_taste'
+    }))
+    uni.showToast({ title: '添加成功', icon: 'success' })
+    showAddTasteModal.value = false
+    
+    const resTaste = await familyApi.getFamilyDietPreferences(familyCode.value, 'family_taste')
+    tasteOptions.value = resTaste.data?.preferences || []
+  } catch (e) {
+    console.error('添加口味失败', e)
+    uni.showToast({ title: '添加失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
 }
 
-const removeTaste = (t) => {
-  tasteOptions.value = tasteOptions.value.filter(x => x !== t)
-  prefs.value.taste = prefs.value.taste.filter(x => x !== t)
-  if (tasteOptions.value.length === 0) isEditingTaste.value = false
+const removeTaste = async (t) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除“${t.title}”口味偏好吗？`,
+    confirmColor: '#FF4D6D',
+    success: async (res) => {
+      if (res.confirm) {
+        uni.showLoading({ title: '正在删除...', mask: true })
+        try {
+          await familyApi.deleteFamilyDietPreference(familyCode.value, t.id)
+          uni.showToast({ title: '删除成功', icon: 'success' })
+          
+          const resTaste = await familyApi.getFamilyDietPreferences(familyCode.value, 'family_taste')
+          tasteOptions.value = resTaste.data?.preferences || []
+          
+          if (tasteOptions.value.length === 0) isEditingTaste.value = false
+        } catch (e) {
+          console.error('删除口味失败', e)
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        } finally {
+          uni.hideLoading()
+        }
+      }
+    }
+  })
 }
 
 const toggleAvoid = (a) => {
-  if (isEditingPrefs.value) return // 编辑模式下不触发切换
-  if (prefs.value.avoid.includes(a)) {
-    prefs.value.avoid = prefs.value.avoid.filter(x => x !== a)
-  } else {
-    prefs.value.avoid.push(a)
-  }
+  if (isEditingPrefs.value) return
+  uni.showToast({ title: '💡 长按可删除该忌口', icon: 'none' })
 }
 
 const openAddAvoidModal = () => {
@@ -1924,21 +1998,57 @@ const openAddAvoidModal = () => {
   showAddAvoidModal.value = true
 }
 
-const confirmAddAvoid = () => {
+const confirmAddAvoid = async () => {
   const val = newAvoid.value.trim()
   if (!val) return
-  if (avoidOptions.value.includes(val)) {
+  if (avoidOptions.value.some(x => x.title === val)) {
     return uni.showToast({ title: '已在列表中', icon: 'none' })
   }
-  avoidOptions.value.push(val)
-  prefs.value.avoid.push(val)
-  showAddAvoidModal.value = false
+  
+  uni.showLoading({ title: '正在添加...', mask: true })
+  try {
+    await familyApi.saveFamilyDietPreference(familyCode.value, JSON.stringify({
+      title: val,
+      type: 'avoid_food'
+    }))
+    uni.showToast({ title: '添加成功', icon: 'success' })
+    showAddAvoidModal.value = false
+    
+    const resAvoid = await familyApi.getFamilyDietPreferences(familyCode.value, 'avoid_food')
+    avoidOptions.value = resAvoid.data?.preferences || []
+  } catch (e) {
+    console.error('添加忌口失败', e)
+    uni.showToast({ title: '添加失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
 }
 
-const removeAvoid = (a) => {
-  avoidOptions.value = avoidOptions.value.filter(x => x !== a)
-  prefs.value.avoid = prefs.value.avoid.filter(x => x !== a)
-  if (avoidOptions.value.length === 0) isEditingPrefs.value = false
+const removeAvoid = async (a) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除忌口“${a.title}”吗？`,
+    confirmColor: '#FF4D6D',
+    success: async (res) => {
+      if (res.confirm) {
+        uni.showLoading({ title: '正在删除...', mask: true })
+        try {
+          await familyApi.deleteFamilyDietPreference(familyCode.value, a.id)
+          uni.showToast({ title: '删除成功', icon: 'success' })
+          
+          const resAvoid = await familyApi.getFamilyDietPreferences(familyCode.value, 'avoid_food')
+          avoidOptions.value = resAvoid.data?.preferences || []
+          
+          if (avoidOptions.value.length === 0) isEditingPrefs.value = false
+        } catch (e) {
+          console.error('删除忌口失败', e)
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        } finally {
+          uni.hideLoading()
+        }
+      }
+    }
+  })
 }
 
 // 随机抽菜菜单配置===========================
