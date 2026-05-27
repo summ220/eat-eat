@@ -138,5 +138,33 @@ export default {
    */
   getMyFamilies() {
     return request('/getMyFamilies', 'GET', {})
+  },
+
+  /**
+   * 设置家庭密保
+   * @param {string} familyCode 家庭码
+   * @param {string} question 密保问题
+   * @param {string} answer 密保答案
+   */
+  setFamilySecurityQuestion(familyCode, question, answer) {
+    return request('/setFamilySecurityQuestion', 'POST', {
+      familyCode,
+      question,
+      answer
+    })
+  },
+
+  /**
+   * 密保找回家庭数据
+   * @param {string} familyCode 家庭码
+   * @param {string} question 密保问题
+   * @param {string} answer 密保答案
+   */
+  recoverFamilyBySecurity(familyCode, question, answer) {
+    return request('/recoverFamilyBySecurity', 'POST', {
+      familyCode,
+      question,
+      answer
+    })
   }
 }

@@ -282,6 +282,18 @@
       <!-- 11. 底部设置模块 -->
       <view class="bottom-settings">
         <view class="set-list">
+          <view class="set-item" @click="openShowFamilyCodeModal" v-if="familyCode">
+            <text class="set-icon">🔑</text>
+            <text class="set-text">家庭编码</text>
+            <text class="set-desc" style="margin-right:16rpx; color: #999;">查看并复制</text>
+            <text class="set-arrow">👉</text>
+          </view>
+          <view class="set-item" @click="openSetSecurityModal" v-if="familyCode">
+            <text class="set-icon">🛡️</text>
+            <text class="set-text">数据找回密保设置</text>
+            <text class="set-desc" style="margin-right:16rpx; color: #999;">保障历史数据</text>
+            <text class="set-arrow">👉</text>
+          </view>
           <!-- <view class="set-item" @click="handleSetting('分类设置')">
             <text class="set-icon">🏷️</text>
             <text class="set-text">分类设置</text>
@@ -413,6 +425,11 @@
             <button class="action-btn-secondary" @click="handleJoinFamily">
               <text class="btn-icon">🔗</text> 加入已有家庭
             </button>
+          </view>
+          <view class="text-center">
+            <text class="abandon-btn" @click="abandonFamily">
+              找回其他家庭
+            </text>
           </view>
         </view>
       </view>
@@ -631,6 +648,155 @@
         <view class="close-big-btn" @click="closeBigImage">✕</view>
       </view>
     </view>
+
+    <!-- 12. 新增：家庭编码复制弹窗 -->
+    <view class="modal-mask" v-if="showFamilyCodeModal" @click="showFamilyCodeModal = false">
+      <view class="modal-content" @click.stop>
+        <text class="modal-title">🔑 家庭安全编码</text>
+        <view class="invite-info" style="margin: 20rpx 0;">
+          <text class="invite-desc" style="color: #666; font-size: 26rpx; line-height: 1.5; margin-bottom: 20rpx; display: block; text-align: center;">家庭编码是数据丢失后找回的唯一凭证，请务必截图或保存至安全位置！</text>
+          <view class="invite-code-box" style="background: #FAFAFA; border: 2rpx dashed var(--primary); padding: 24rpx; border-radius: 16rpx; display: flex; justify-content: space-between; align-items: center;">
+            <text class="code-val" style="font-size: 32rpx; font-weight: bold; color: #333; letter-spacing: 1rpx;">{{ familyCode }}</text>
+            <text class="copy-btn" style="background: var(--primary); color: #fff; padding: 10rpx 24rpx; border-radius: 12rpx; font-size: 24rpx; font-weight: bold;" @click="copyFamilyCode">复制</text>
+          </view>
+        </view>
+        <button class="close-modal-btn prim" style="margin-top: 20rpx;" @click="showFamilyCodeModal = false">关闭</button>
+      </view>
+    </view>
+
+    <!-- 13. 新增：密保找回设置弹窗 -->
+    <view class="modal-mask" v-if="showSecuritySettingModal" @click="showSecuritySettingModal = false">
+      <view class="modal-content" @click.stop>
+        <text class="modal-title">🛡️ 数据找回密保设置</text>
+        <view class="invite-info" style="text-align: left; width: 100%; margin: 20rpx 0;">
+          <text class="invite-desc" style="color: #666; font-size: 26rpx; line-height: 1.5; text-align: center; margin-bottom: 30rpx; display: block;">设置密保答案，若未来发生小程序误删或缓存清空，可通过密保安全找回数据。</text>
+          
+          <view class="security-form" style="background: #FAFAFA; padding: 30rpx; border-radius: 20rpx;">
+            <view class="sec-label" style="font-size: 26rpx; color: #888; margin-bottom: 12rpx;">选择密保问题：</view>
+            <picker mode="selector" :range="securityQuestions" @change="onSecurityQuestionChange">
+              <view class="picker-value-box" style="background: #fff; border: 2rpx solid #EFEFEF; border-radius: 12rpx; height: 80rpx; padding: 0 20rpx; display: flex; justify-content: space-between; align-items: center; font-size: 28rpx; color: #333; margin-bottom: 24rpx;">
+                <text>{{ securityForm.question || '请选择密保问题' }}</text>
+                <text class="down-arrow" style="font-size: 20rpx; color: #bbb;">▼</text>
+              </view>
+            </picker>
+
+            <view class="sec-label" style="font-size: 26rpx; color: #888; margin-bottom: 12rpx; margin-top: 10rpx;">密保问题答案：</view>
+            <input 
+              class="sec-input" 
+              style="background: #fff; border: 2rpx solid #EFEFEF; border-radius: 12rpx; height: 80rpx; padding: 0 20rpx; font-size: 28rpx; color: #333;"
+              v-model="securityForm.answer" 
+              placeholder="请输入您的密保答案" 
+            />
+          </view>
+        </view>
+        <view class="modal-btns" style="margin-top: 30rpx; display: flex; gap: 20rpx; width: 100%;">
+          <button class="m-btn-sub" style="flex: 1; border-radius: 40rpx; font-size: 28rpx; height: 80rpx; line-height: 80rpx; background: #F5F5F5; color: #666; margin:0;" @click="showSecuritySettingModal = false">取消</button>
+          <button class="m-btn-main" style="flex: 1; border-radius: 40rpx; font-size: 28rpx; height: 80rpx; line-height: 80rpx; background: var(--primary-grad); color: #fff; box-shadow: 0 8rpx 16rpx var(--primary-shadow); margin:0;" @click="saveSecurityQuestion">保存</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 14. 新增：全局数据找回启动开屏全屏大面板 -->
+    <view class="restore-splash-fullscreen" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 100%); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40rpx;" v-if="showRestoreSplash">
+      
+      <!-- 页面一：选择操作页 -->
+      <view class="splash-step-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;" v-if="restoreStep === 1">
+        <view class="splash-brand" style="text-align: center; margin-bottom: 60rpx;">
+          <view class="splash-logo" style="font-size: 120rpx; margin-bottom: 10rpx;">🍳</view>
+          <text class="splash-name" style="font-size: 52rpx; font-weight: 900; color: #333; display: block; letter-spacing: 2rpx;">Eat-Eat</text>
+          <text class="splash-tag" style="font-size: 26rpx; color: var(--primary); font-weight: bold; background: var(--primary-light); padding: 4rpx 20rpx; border-radius: 20rpx; display: inline-block; margin-top: 10rpx;">智能厨房管家</text>
+        </view>
+        
+        <view class="splash-intro-card" style="background: #fff; width: 620rpx; padding: 48rpx; border-radius: 40rpx; box-shadow: 0 16rpx 40rpx rgba(0,0,0,0.03); margin-bottom: 80rpx; text-align: center; border: 2rpx solid var(--primary-light);">
+          <text class="splash-warning-title" style="font-size: 34rpx; font-weight: bold; color: #333; display: block; margin-bottom: 20rpx;">⚠️ 本地家庭数据已丢失</text>
+          <text class="splash-warning-desc" style="font-size: 26rpx; color: #666; line-height: 1.6; display: block;">由于小程序误删或清空缓存，本地关联已被切断。若您此前设置过密保或保存过编码，可安全找回全部食材、菜单和账本数据！</text>
+        </view>
+        
+        <view class="splash-action-box" style="width: 620rpx; display: flex; flex-direction: column; gap: 30rpx;">
+          <button class="splash-btn-primary" style="background: var(--primary-grad); color: #fff; font-size: 30rpx; font-weight: bold; height: 100rpx; line-height: 100rpx; border-radius: 50rpx; box-shadow: 0 10rpx 24rpx var(--primary-shadow); border: none; margin: 0; width: 100%;" @click="goToRestoreStep2">
+            我之前用过，找回家庭数据
+          </button>
+          <button class="splash-btn-secondary" style="background: #fff; color: #666; font-size: 30rpx; font-weight: bold; height: 100rpx; line-height: 100rpx; border-radius: 50rpx; border: 2rpx solid #EFEFEF; margin: 0; width: 100%; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.01);" @click="silentCreateNewFamily">
+            首次使用 / 重新开始
+          </button>
+        </view>
+      </view>
+      
+      <!-- 页面二：密保找回页 -->
+      <view class="splash-step-container" style="width: 100%; display: flex; flex-direction: column;" v-if="restoreStep === 2">
+        <view class="splash-back-bar" style="display: flex; align-items: center; padding: 20rpx 0; margin-bottom: 40rpx; color: #666;" @click="() => { if (familyCode) { showRestoreSplash = false; showSwitchFamilyModal = false; } else { restoreStep = 1; } }">
+          <text class="back-arrow" style="font-size: 28rpx; margin-right: 10rpx;">◀</text>
+          <text class="back-text" style="font-size: 28rpx; font-weight: 500;">返回</text>
+        </view>
+        
+        <view class="splash-form-header" style="margin-bottom: 40rpx;">
+          <text class="form-title" style="font-size: 42rpx; font-weight: 900; color: #333; display: block; margin-bottom: 12rpx;">🔍 找回家庭数据</text>
+          <text class="form-subtitle" style="font-size: 26rpx; color: #888; display: block;">双重密保校验验证，安全找回家庭云端共有资产</text>
+        </view>
+        
+        <view class="splash-form-body" style="background: #fff; padding: 40rpx; border-radius: 36rpx; box-shadow: 0 16rpx 40rpx rgba(0,0,0,0.02); border: 2rpx solid var(--primary-light);">
+          <!-- 锁定提示 -->
+          <view class="lock-banner" style="background: #FFF2F4; border: 2rpx solid #FFD3DC; padding: 24rpx; border-radius: 16rpx; display: flex; flex-direction: column; align-items: center; margin-bottom: 30rpx; text-align: center;" v-if="isRestoreLocked">
+            <text class="lock-icon" style="font-size: 48rpx; margin-bottom: 8rpx;">🔒</text>
+            <text class="lock-text" style="color: #FF4D6D; font-size: 26rpx; font-weight: bold;">输入连续错误5次，设备已锁定！</text>
+            <text class="lock-countdown" style="color: #FF4D6D; font-size: 24rpx; margin-top: 4rpx;">请于 {{ lockCountdown }} 秒后重试</text>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label" style="font-size: 26rpx; font-weight: bold; color: #555; display: block; margin-bottom: 16rpx;">家庭编码 (FamilyCode)</text>
+            <input 
+              class="form-input" 
+              style="background: #FAFAFA; border: 2rpx solid #F0F0F0; border-radius: 16rpx; height: 90rpx; padding: 0 24rpx; font-size: 28rpx; color: #333;"
+              v-model="restoreForm.familyCode" 
+              placeholder="请输入您的家庭编码 (必填)" 
+              :disabled="isRestoreLocked"
+            />
+            <text class="form-hint" style="font-size: 22rpx; color: #bbb; display: block; margin-top: 12rpx; line-height: 1.4;">建议截图保存编码以防数据丢失。如已加入，可向其他成员询问。</text>
+          </view>
+          
+          <view class="form-item" style="margin-top: 36rpx;">
+            <text class="form-label" style="font-size: 26rpx; font-weight: bold; color: #555; display: block; margin-bottom: 16rpx;">安全密保问题</text>
+            <picker 
+              mode="selector" 
+              :range="securityQuestions" 
+              @change="onRestoreQuestionChange"
+              :disabled="isRestoreLocked"
+            >
+              <view class="picker-value-box" style="background: #FAFAFA; border: 2rpx solid #F0F0F0; border-radius: 16rpx; height: 90rpx; padding: 0 24rpx; display: flex; justify-content: space-between; align-items: center; font-size: 28rpx; color: #333;" :class="{ disabled: isRestoreLocked }">
+                <text>{{ restoreForm.question || '请选择密保问题' }}</text>
+                <text class="down-arrow" style="font-size: 20rpx; color: #bbb;">▼</text>
+              </view>
+            </picker>
+          </view>
+          
+          <view class="form-item" style="margin-top: 36rpx;">
+            <text class="form-label" style="font-size: 26rpx; font-weight: bold; color: #555; display: block; margin-bottom: 16rpx;">密保问题答案</text>
+            <input 
+              class="form-input" 
+              style="background: #FAFAFA; border: 2rpx solid #F0F0F0; border-radius: 16rpx; height: 90rpx; padding: 0 24rpx; font-size: 28rpx; color: #333;"
+              v-model="restoreForm.answer" 
+              placeholder="请输入对应的密保问题答案" 
+              :disabled="isRestoreLocked"
+            />
+          </view>
+        </view>
+        
+        <view class="splash-form-footer" style="margin-top: 48rpx; display: flex; flex-direction: column; align-items: center; gap: 24rpx;">
+          <button 
+            class="splash-btn-primary" 
+            style="background: var(--primary-grad); color: #fff; font-size: 30rpx; font-weight: bold; height: 100rpx; line-height: 100rpx; border-radius: 50rpx; box-shadow: 0 10rpx 24rpx var(--primary-shadow); border: none; margin: 0; width: 100%;"
+            :class="{ disabled: !isRestoreFormComplete || isRestoreLocked }" 
+            :disabled="!isRestoreFormComplete || isRestoreLocked"
+            @click="submitRestore"
+          >
+            立即验证并找回
+          </button>
+          <view class="abandon-btn" style="padding: 10rpx 40rpx;" @click="() => { if (familyCode) { showRestoreSplash = false; showSwitchFamilyModal = false; } else { restoreStep = 1; } }">
+            <text class="abandon-text" style="font-size: 26rpx; color: #999; font-weight: 500;">暂不找回，返回</text>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -644,6 +810,220 @@ import calendarPopup from '@/components/calendar-popup/calendar-popup.vue'
 import compassPopup from '@/components/compass-popup/compass-popup.vue'
 import config from '@/common/config'
 import request from '@/common/request.js'
+
+// --- 数据找回与密保双重验证系统 ---
+const showFamilyCodeModal = ref(false)
+const showSecuritySettingModal = ref(false)
+const securityQuestions = ['我的家庭名称是？', '家中常吃的一道菜是？', '自定义家庭备注是？']
+const securityForm = ref({ question: '我的家庭名称是？', answer: '' })
+
+const showRestoreSplash = ref(false)
+const restoreStep = ref(1)
+const restoreForm = ref({ familyCode: '', question: '我的家庭名称是？', answer: '' })
+
+// 安全防暴力破解
+const errorCount = ref(0)
+const isRestoreLocked = ref(false)
+const lockCountdown = ref(0)
+let lockTimer = null
+
+const isRestoreFormComplete = computed(() => {
+  return restoreForm.value.familyCode.trim() && restoreForm.value.question && restoreForm.value.answer.trim()
+})
+
+const openShowFamilyCodeModal = () => {
+  showFamilyCodeModal.value = true
+}
+
+const copyFamilyCode = () => {
+  if (!familyCode.value) return
+  uni.setClipboardData({
+    data: familyCode.value,
+    success: () => {
+      uni.showToast({ title: '复制成功', icon: 'success' })
+    }
+  })
+}
+
+const openSetSecurityModal = () => {
+  securityForm.value = {
+    question: '我的家庭名称是？',
+    answer: ''
+  }
+  showSecuritySettingModal.value = true
+}
+
+const onSecurityQuestionChange = (e) => {
+  const index = e.detail.value
+  securityForm.value.question = securityQuestions[index]
+}
+
+const saveSecurityQuestion = async () => {
+  if (!securityForm.value.answer.trim()) {
+    return uni.showToast({ title: '请输入密保答案', icon: 'none' })
+  }
+  
+  uni.showLoading({ title: '正在云端保存...', mask: true })
+  try {
+    await familyApi.setFamilySecurityQuestion(
+      familyCode.value,
+      securityForm.value.question,
+      securityForm.value.answer.trim()
+    )
+    uni.showToast({ title: '密保设置成功', icon: 'success' })
+    showSecuritySettingModal.value = false
+  } catch (e) {
+    console.error('设置密保失败', e)
+    uni.showToast({ title: '设置密保失败，请重试', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+const goToRestoreStep2 = () => {
+  restoreForm.value = {
+    familyCode: '',
+    question: '我的家庭名称是？',
+    answer: ''
+  }
+  restoreStep.value = 2
+}
+
+const onRestoreQuestionChange = (e) => {
+  const index = e.detail.value
+  restoreForm.value.question = securityQuestions[index]
+}
+
+// 静默生成全新默认家庭并直接进入
+const silentCreateNewFamily = async () => {
+  uni.showLoading({ title: '正在初始化...', mask: true })
+  try {
+    const res = await familyApi.createFamily('我的厨房')
+    if (res && res.data && res.data.family) {
+      const fam = res.data.family
+      const member = res.data.member
+      
+      uni.setStorageSync('family_code', fam.familyCode)
+      uni.setStorageSync('family_name', fam.familyName)
+      uni.setStorageSync('family_avatar', fam.avatarUrl || '')
+      uni.setStorageSync('family_role', member.role || 'owner')
+      
+      familyCode.value = fam.familyCode
+      familyName.value = fam.familyName
+      familyAvatar.value = fam.avatarUrl || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'
+      familyRole.value = member.role || 'owner'
+      
+      uni.showToast({ title: '已为您创建默认家庭', icon: 'success' })
+      showRestoreSplash.value = false
+      
+      setTimeout(() => {
+        uni.reLaunch({ url: '/pages/family/family' })
+      }, 500)
+    } else {
+      uni.showToast({ title: '创建默认家庭失败', icon: 'none' })
+    }
+  } catch (e) {
+    console.error('静默创建家庭出错', e)
+    uni.showToast({ title: '初始化失败，请重试', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+// 错误处理与防暴力破解锁定
+const handleRestoreFailure = () => {
+  errorCount.value++
+  if (errorCount.value >= 5) {
+    isRestoreLocked.value = true
+    lockCountdown.value = 300 // 5分钟 = 300秒
+    
+    uni.showModal({
+      title: '尝试次数过多',
+      content: '您的尝试次数过多，已被安全锁定5分钟！请稍后再试。',
+      showCancel: false
+    })
+    
+    if (lockTimer) clearInterval(lockTimer)
+    lockTimer = setInterval(() => {
+      lockCountdown.value--
+      if (lockCountdown.value <= 0) {
+        clearInterval(lockTimer)
+        lockTimer = null
+        isRestoreLocked.value = false
+        errorCount.value = 0
+      }
+    }, 1000)
+  } else {
+    uni.showModal({
+      title: '验证失败',
+      content: '信息校验失败，请核对后重试',
+      showCancel: false
+    })
+  }
+}
+
+// 提交密保找回云端验证
+const submitRestore = async () => {
+  if (isRestoreLocked.value) {
+    return uni.showToast({ title: '尝试次数过多，请稍后再试', icon: 'none' })
+  }
+  
+  const targetCode = restoreForm.value.familyCode.trim()
+  const targetQuestion = restoreForm.value.question
+  const targetAnswer = restoreForm.value.answer.trim()
+  
+  if (!targetCode || !targetAnswer) {
+    return uni.showToast({ title: '请填写完整信息', icon: 'none' })
+  }
+  
+  uni.showLoading({ title: '正在验证中...', mask: true })
+  try {
+    const res = await familyApi.recoverFamilyBySecurity(targetCode, targetQuestion, targetAnswer)
+    
+    // 双重校验逻辑：校验通过
+    if (res && res.data && res.data.familyCode) {
+      uni.showToast({ title: '找回成功！', icon: 'success' })
+      
+      uni.setStorageSync('family_code', res.data.familyCode)
+      uni.setStorageSync('family_name', res.data.familyName || '找回的家庭')
+      uni.setStorageSync('family_avatar', res.data.avatarUrl || '')
+      uni.setStorageSync('family_role', res.data.role || 'owner')
+      
+      familyCode.value = res.data.familyCode
+      familyName.value = res.data.familyName || '找回的家庭'
+      familyAvatar.value = res.data.avatarUrl || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'
+      familyRole.value = res.data.role || 'owner'
+      
+      showRestoreSplash.value = false
+      errorCount.value = 0
+      
+      setTimeout(() => {
+        uni.reLaunch({ url: '/pages/family/family' })
+      }, 800)
+    } else {
+      // 兼容历史老存量家庭：如果后端判断 familyCode 有效但未设置密保，直接可以通过
+      if (res && res.message && res.message.includes('不存在')) {
+        uni.showToast({ title: '该家庭编码无效，请核对或重新开始', icon: 'none' })
+      } else {
+        handleRestoreFailure()
+      }
+    }
+  } catch (e) {
+    console.error('找回数据请求出错', e)
+    const errText = e.message || e.data?.message || ''
+    if (errText.includes('不存在') || errText.includes('无效')) {
+      uni.showModal({
+        title: '提示',
+        content: '该家庭编码无效，请核对或重新开始',
+        showCancel: false
+      })
+    } else {
+      handleRestoreFailure()
+    }
+  } finally {
+    uni.hideLoading()
+  }
+}
 
 const showCompassPopup = ref(false)
 const showBigImage = ref(false)
@@ -772,6 +1152,13 @@ const handleCreateFamily = () => {
 const handleJoinFamily = () => {
   showSwitchFamilyModal.value = false
   showJoinModal.value = true
+}
+
+// 找回家庭
+const abandonFamily = () => {
+  // 进入找回家庭数据页面
+  showRestoreSplash.value = true
+  restoreStep.value = 2
 }
 
 // 天气/日历弹窗控制
@@ -1299,6 +1686,16 @@ const refreshStats = async () => {
 
 let lastUpdateDate = ''
 onShow(() => {
+  const code = uni.getStorageSync('family_code')
+  if (!code) {
+    showRestoreSplash.value = true
+    restoreStep.value = 1
+    return // 熔断后续数据拉取，保障空 family_code 时的极端稳定性
+  }
+  
+  familyCode.value = code
+  showRestoreSplash.value = false
+  
   // refreshStats()
   loadMeals()
   const today = new Date().toDateString()
@@ -3877,6 +4274,139 @@ const handleReminderAction = (r) => {
         opacity: 0.95;
       }
     }
+  }
+  .text-center {
+    margin-top: 20rpx;
+    text-align: center;
+    .abandon-btn {
+      color: #999;
+      text-decoration: underline;
+      font-size: 26rpx;
+    }
+  }
+}
+
+/* --- 新增：密保找回设置表单样式 --- */
+.security-form {
+  margin-top: 10rpx;
+  .sec-label {
+    font-size: 26rpx;
+    color: #888;
+    margin-bottom: 12rpx;
+  }
+  .picker-value-box {
+    background: #fff;
+    border: 2rpx solid #EFEFEF;
+    border-radius: 12rpx;
+    height: 80rpx;
+    padding: 0 20rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 28rpx;
+    color: #333;
+    transition: all 0.3s ease;
+    
+    &:active {
+      background: #FAFAFA;
+      border-color: var(--primary);
+    }
+  }
+  .sec-input {
+    background: #fff;
+    border: 2rpx solid #EFEFEF;
+    border-radius: 12rpx;
+    height: 80rpx;
+    padding: 0 20rpx;
+    font-size: 28rpx;
+    color: #333;
+    transition: all 0.3s ease;
+    
+    &:focus {
+      border-color: var(--primary);
+      background: #FFFBFB;
+    }
+  }
+}
+
+/* --- 新增：开屏全屏数据找回页 SCSS 样式 --- */
+.restore-splash-fullscreen {
+  animation: splashFadeIn 0.4s ease-out both;
+  
+  .splash-step-container {
+    animation: slideUpIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  
+  .splash-btn-primary {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    &:active {
+      transform: scale(0.97);
+      opacity: 0.9;
+    }
+    
+    &.disabled {
+      background: #E2E8F0 !important;
+      color: #A0AEC0 !important;
+      box-shadow: none !important;
+    }
+  }
+  
+  .splash-btn-secondary {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    &:active {
+      transform: scale(0.97);
+      background: #F8F9FA;
+    }
+  }
+  
+  .abandon-btn {
+    transition: opacity 0.3s;
+    &:active {
+      opacity: 0.6;
+    }
+  }
+  
+  .picker-value-box {
+    transition: all 0.3s ease;
+    &.disabled {
+      background: #F5F5F5 !important;
+      border-color: #E2E8F0 !important;
+      color: #CBD5E0 !important;
+    }
+    &:active:not(.disabled) {
+      background: #F0F4FA;
+      border-color: var(--primary);
+    }
+  }
+  
+  .form-input {
+    transition: all 0.3s ease;
+    &:focus:not(:disabled) {
+      border-color: var(--primary);
+      background: #FFFBFB;
+      box-shadow: 0 0 12rpx var(--primary-shadow);
+    }
+    &:disabled {
+      background: #F5F5F5 !important;
+      border-color: #E2E8F0 !important;
+      color: #CBD5E0 !important;
+    }
+  }
+}
+
+@keyframes splashFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUpIn {
+  from {
+    opacity: 0;
+    transform: translateY(40rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>
