@@ -21,8 +21,6 @@ export default {
 					uni.setStorageSync('device_id', data.device.deviceId)
 					uni.setStorageSync('device_secret', data.deviceSecret)
 					console.log('设备注册成功，已缓存标识')
-					// 2. 自动创建家庭
-					this.createFamily()
 				}
 			}).catch(err => {
 				console.error('设备注册失败:', err)
@@ -41,24 +39,18 @@ export default {
 				{ name: '暖杏黄', color: '#F2A13B' }
 			]
 			const currentTheme = uni.getStorageSync('current_theme') || 0
-			uni.setTabBarStyle({
-				selectedColor: themes[currentTheme].color
-			})
-		},
-		async createFamily() {
-			const res = await familyApi.createFamily('快乐干饭小家~')
-			console.log(res)
-			if (res && res.data) {
-				uni.setStorageSync('family_code', res.data.family.familyCode || 'default_family')
-				uni.setStorageSync('family_role', res.data.member.role || 'owner')
-				return true
-			} else {
-				// 隔一段时间在请求一次，直到成功为止
-				setTimeout(() => {
-					this.createFamily()
-				}, 1000 * 5)
+			try {
+				uni.setTabBarStyle({
+					selectedColor: themes[currentTheme].color,
+					fail: (err) => {
+						// 优雅忽略在非TabBar页面（如独立欢迎首页welcome.vue）调用时的正常错误反馈
+						console.log('非TabBar页面，自动跳过设置TabBar样式')
+					}
+				})
+			} catch (e) {
+				console.warn('非TabBar页面，跳过设置TabBar样式:', e)
 			}
-		}, 
+		}
 	}
 }
 </script>

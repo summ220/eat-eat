@@ -1,5 +1,8 @@
 <template>
-  <view class="page" :style="themeStyle">
+  <!-- 老用户治愈系冷启动3s广告开屏组件 -->
+  <welcome-ad :show="showWelcomeAd" @close="closeWelcomeAd" />
+
+  <view class="page" :style="themeStyle" v-if="hasFamily">
     <!-- <custom-header title="吃什么" icon="🍓" /> -->
     <view class="header">
       <view class="title-wrap">
@@ -52,8 +55,19 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import familyApi from '@/common/api/family.js'
+import welcomeAd from './component/welcome-ad.vue'
 
 const familyCode = ref(uni.getStorageSync('family_code') || 'default_family')
+const hasFamily = ref(!!uni.getStorageSync('family_code'))
+
+// 老用户冷启动开屏广告/欢迎页
+const showWelcomeAd = ref(false)
+let hasShownWelcomeAd = false // 局部持久状态，保证本小程序实例周期内仅首次展示
+
+const closeWelcomeAd = () => {
+  showWelcomeAd.value = false
+  hasFamily.value = true
+}
 
 
 const defaultMenu = [
@@ -91,19 +105,33 @@ const themeStyle = computed(() => {
 onShow(() => {
   const code = uni.getStorageSync('family_code')
   if (!code) {
-    uni.switchTab({
-      url: '/pages/family/family',
-      success: () => {
-        uni.showToast({
-          title: '请先创建或加入家庭',
-          icon: 'none',
-          duration: 2000
-        })
-      }
+    hasFamily.value = false
+    uni.reLaunch({
+      url: '/pages/welcome/welcome'
     })
     return
+  } else {
+    // 检测是否是新注册/新找回的首次旅程免开屏
+    const firstLaunch = uni.getStorageSync('is_first_launch_after_register')
+    if (firstLaunch === 'true') {
+      uni.removeStorageSync('is_first_launch_after_register')
+      showWelcomeAd.value = false
+      hasFamily.value = true
+    } else {
+      // 已经注册的用户，如果是冷启动首次进入该页面，展示老用户治愈开屏
+      if (!hasShownWelcomeAd) {
+        hasShownWelcomeAd = true
+        showWelcomeAd.value = true
+        hasFamily.value = false // 保证背景在广告期间干净不渲染
+        currentTheme.value = uni.getStorageSync('current_theme') || 0
+        familyCode.value = code
+        loadRandomMenuPool()
+        return // 熔断，暂时不让它设置 hasFamily 为 true，直到广告关闭
+      }
+    }
   }
   
+  hasFamily.value = true
   currentTheme.value = uni.getStorageSync('current_theme') || 0
   familyCode.value = code
   loadRandomMenuPool() // 进入页面拉取最新的自定义随机推荐池数据
