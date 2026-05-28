@@ -221,7 +221,7 @@ export default {
     })
   },
 
-  // 备忘录
+  // 家庭备忘录
 
   /**
    * 创建备忘录
@@ -281,5 +281,58 @@ export default {
       familyCode,
       id
     })
-  }
+  },
+
+  // 个人随手记
+
+  /**
+   * 创建备忘录
+   * @param {string} noteJson 备忘录JSON
+   */
+  // content
+  savePersonalNote(noteJson) {
+    return request('/savePersonalNote', 'POST', {
+      noteJson
+    })
+  },
+
+  /**
+   * 获取本家庭备忘录列表
+   * @param {string} id 备忘录ID
+   */
+  getPersonalNotes(id) {
+    return request('/getPersonalNotes', 'GET', {
+      id
+    })
+  },
+
+  /**
+   * 更新备忘录
+   * @param {string} noteJson 备忘录JSON
+   */
+  // id、 content
+  updatePersonalNote(noteJson) {
+    return request('/updatePersonalNote', 'POST', {
+      noteJson
+    })
+  },
+
+  /**
+   * 删除备忘录
+   * @param {string} id 备忘录ID
+   */
+  deletePersonalNote(id) {
+    return request('/deletePersonalNote', 'POST', {
+      id
+    })
+  },
+  /**
+   * 获取本家庭备忘录详情
+   * @param {string} id 备忘录ID
+   */
+  getPersonalNote(id) {
+    return request('/getPersonalNote', 'GET', {
+      id
+    })
+  },
 }

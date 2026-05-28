@@ -2118,6 +2118,10 @@ const removeCategory = (idx) => {
 const handleSetting = (name) => {
   if (name === '抽菜配置') {
     loadRandomMenu()
+  } else if (name === '随手记') {
+    uni.navigateTo({
+      url: '/pages/family/component/memo?type=personal'
+    })
   } else {
     uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
   }

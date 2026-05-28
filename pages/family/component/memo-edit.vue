@@ -1,5 +1,5 @@
 <template>
-  <custom-header title="备忘录" icon="📝" back />
+  <custom-header :title="memoType === 'personal' ? '随手记' : '备忘录'" icon="📝" back />
   <view class="page" :style="themeStyle">
     <view class="content edit-view">
       <!-- 极简治愈系富文本工具栏（支持横向滑动，手感极佳） -->
@@ -109,6 +109,7 @@ const themeStyle = computed(() => {
 const memos = ref([])
 const memoId = ref('')
 const currentMemo = ref({ id: '', content: '' })
+const memoType = ref('family')
 
 let editorCtx = null
 
@@ -116,11 +117,17 @@ onLoad(async (options) => {
   currentTheme.value = Number(uni.getStorageSync('current_theme') || 0)
   memos.value = uni.getStorageSync('family_memos') || []
   
+  if (options.type) {
+    memoType.value = options.type
+  }
+  
   if (options.id) {
     memoId.value = options.id
-    const res = await familyApi.getFamilyMemo(familyCode, options.id)
+    const res = memoType.value === 'personal'
+      ? await familyApi.getPersonalNote(options.id)
+      : await familyApi.getFamilyMemo(familyCode, options.id)
     if (res && res.data) {
-      currentMemo.value = res.data.memo
+      currentMemo.value = (memoType.value === 'personal' ? res.data.note : res.data.memo) || {}
       console.log('详情接口已返回:', currentMemo.value)
       
       // 【双向竞态兼容】若编辑器比接口先 Ready，在此直接装载内容！
@@ -134,7 +141,9 @@ onLoad(async (options) => {
   
   // 动态设置微信原生顶部导航栏的标题
   uni.setNavigationBarTitle({
-    title: memoId.value ? '编辑备忘录' : '新增备忘录'
+    title: memoType.value === 'personal'
+      ? (memoId.value ? '编辑随手记' : '新增随手记')
+      : (memoId.value ? '编辑备忘录' : '新增备忘录')
   })
 })
 
@@ -234,13 +243,21 @@ const saveMemo = () => {
             id: memoId.value,
             content: htmlContent
           }
-          await familyApi.updateFamilyMemo(familyCode, memoJson)
+          if (memoType.value === 'personal') {
+            await familyApi.updatePersonalNote(memoJson)
+          } else {
+            await familyApi.updateFamilyMemo(familyCode, memoJson)
+          }
         } else {
           // 新建保存
           const memoJson = {
             content: htmlContent
           }
-          await familyApi.saveFamilyMemo(familyCode, memoJson)
+          if (memoType.value === 'personal') {
+            await familyApi.savePersonalNote(memoJson)
+          } else {
+            await familyApi.saveFamilyMemo(familyCode, memoJson)
+          }
         }
         
         // 广播全局刷新事件，通知列表页强力刷新接口
@@ -272,7 +289,7 @@ const saveMemo = () => {
 <style lang="less" scoped>
 .page {
   background: #FAFAFA;
-  min-height: 90vh;
+  min-height: 89vh;
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }
 

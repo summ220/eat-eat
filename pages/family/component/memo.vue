@@ -1,7 +1,6 @@
 <template>
+  <custom-header :title="memoType === 'personal' ? '随手记' : '家庭备忘录'" icon="📝" back />
   <view class="page" :style="themeStyle">
-    <custom-header title="家庭备忘录" icon="📝" back />
-    
     <view class="content">
       <view class="memo-list">
         <view class="memo-card" v-for="(item, index) in memos" :key="item.id" @click="editMemo(item)">
@@ -9,24 +8,31 @@
           <text class="delete-btn" @click.stop="deleteMemo(item, index)">删除</text>
         </view>
         <view class="empty-state" v-if="memos.length === 0">
-          <text>暂无备忘录，快来添加一条吧~</text>
+          <text>{{ memoType === 'personal' ? '暂无随手记，快来添加一条吧~' : '暂无备忘录，快来添加一条吧~' }}</text>
         </view>
       </view>
     </view>
 
     <!-- 底部固定的新增按钮 -->
     <view class="footer-actions">
-      <button class="add-btn" @click="addMemo">+ 新增备忘录</button>
+      <button class="add-btn" @click="addMemo">{{ memoType === 'personal' ? '+ 新增随手记' : '+ 新增备忘录' }}</button>
     </view>
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import familyApi from '@/common/api/family.js'
 
 const familyCode = uni.getStorageSync('family_code')
+const memoType = ref('family')
+
+onLoad((options) => {
+  if (options.type) {
+    memoType.value = options.type
+  }
+})
 
 // 主题支持
 const themes = [
@@ -65,9 +71,13 @@ onUnload(() => {
 
 const loadMemos = async () => {
   try {
-    const res = await familyApi.getFamilyMemos(familyCode)
+    const res = memoType.value === 'personal'
+      ? await familyApi.getPersonalNotes()
+      : await familyApi.getFamilyMemos(familyCode)
+    
     if (res && res.data) {
-      memos.value = res.data.memos || []
+      // 兼容后端返回的不同结构属性 notes 或 memos
+      memos.value = (memoType.value === 'personal' ? res.data.notes : res.data.memos) || res.data || []
     }
   } catch (err) {
     console.error('获取备忘录列表失败:', err)
@@ -83,13 +93,13 @@ const getFirstLine = (text) => {
 
 const addMemo = () => {
   uni.navigateTo({
-    url: '/pages/family/component/memo-edit'
+    url: `/pages/family/component/memo-edit?type=${memoType.value}`
   })
 }
 
 const editMemo = (item) => {
   uni.navigateTo({
-    url: `/pages/family/component/memo-edit?id=${item.id}`
+    url: `/pages/family/component/memo-edit?id=${item.id}&type=${memoType.value}`
   })
 }
 
@@ -102,9 +112,12 @@ const deleteMemo = (item, index) => {
       if (res.confirm) {
         uni.showLoading({ title: '删除中...' })
         try {
-          await familyApi.deleteFamilyMemo(familyCode, item.id)
+          if (memoType.value === 'personal') {
+            await familyApi.deletePersonalNote(item.id)
+          } else {
+            await familyApi.deleteFamilyMemo(familyCode, item.id)
+          }
           memos.value.splice(index, 1)
-          uni.setStorageSync('family_memos', memos.value)
           uni.showToast({ title: '已删除', icon: 'success' })
         } catch (err) {
           console.error('删除备忘录失败:', err)
@@ -121,7 +134,7 @@ const deleteMemo = (item, index) => {
 <style lang="less" scoped>
 .page {
   background: #FAFAFA;
-  min-height: 100vh;
+  height: 89vh;
   padding-bottom: 220rpx;
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }
@@ -170,7 +183,7 @@ const deleteMemo = (item, index) => {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: 150rpx;
+  padding-top: 80rpx;
   color: #95A5A6;
   font-size: 28rpx;
 }
