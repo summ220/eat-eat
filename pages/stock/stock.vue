@@ -114,6 +114,10 @@
           <input class="add-cat-input" v-model="newCat" placeholder="新分类名称" />
           <view class="add-cat-btn-modal" @click="addCategory">添加</view>
         </view>
+        <view class="cat-opt-row" style="margin-bottom: 25rpx; display: flex; align-items: center; justify-content: flex-start;" @click="syncToShop = !syncToShop">
+          <checkbox :checked="syncToShop" color="#FF7DA8" style="transform:scale(0.75);" />
+          <text style="font-size: 25rpx; color: #7F8C8D; font-weight: bold;">同时保存到购物分类</text>
+        </view>
       </view>
     </view>
   </view>
@@ -123,6 +127,7 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import stockApi from '@/common/api/stock.js'
+import shopApi from '@/common/api/shop.js'
 import { formatDate } from '@/uni_modules/uni-dateformat/components/uni-dateformat/date-format'
 
 let familyCode = uni.getStorageSync('family_code') || ''
@@ -132,22 +137,42 @@ const showCatModal = ref(false)
 const categories = ref([])
 const currentCategory = ref('全部')
 const newCat = ref('')
+const syncToShop = ref(false)
 
 const loadCategories = async () => {
   const res = await stockApi.getFamilyIngredientCategories(familyCode)
   categories.value = res.data.categories || []
 }
 const addCategory = async () => {
-    if (!newCat.value.trim()) return
-    if (categories.value.includes(newCat.value.trim())) {
+    const name = newCat.value.trim()
+    if (!name) return
+    
+    // 修复原先 includes 判断对象列表的 Bug，采用 some 精确去重
+    if (categories.value.some(c => c.name === name)) {
       return uni.showToast({ title: '分类已存在', icon: 'none' })
     }
-    const ingredientCategoryJson = {name: newCat.value.trim(), sortOrder: 70 }
-    await stockApi.saveFamilyIngredientCategory(familyCode, ingredientCategoryJson)
-    uni.showToast({ title: '分类添加成功', icon: 'success' })
-    loadCategories()
-    newCat.value = ''
-    // showCatModal.value = false
+    
+    const ingredientCategoryJson = {name: name, sortOrder: 70 }
+    try {
+      await stockApi.saveFamilyIngredientCategory(familyCode, ingredientCategoryJson)
+      
+      // 如果勾选了“同时保存到购物分类”，同步添加
+      if (syncToShop.value) {
+        try {
+          let shoppingCategoryJson = {name: name, sortOrder: 60}
+          await shopApi.saveFamilyShoppingCategory(familyCode, shoppingCategoryJson)
+        } catch (err) {
+          console.error('同步购物分类失败:', err)
+        }
+      }
+      
+      uni.showToast({ title: '分类添加成功', icon: 'success' })
+      loadCategories()
+      newCat.value = ''
+    } catch (e) {
+      console.error('添加食材分类失败', e)
+      uni.showToast({ title: '添加失败', icon: 'none' })
+    }
 }
 const removeCategory = (cat) => {
   console.log(cat, 'cat')

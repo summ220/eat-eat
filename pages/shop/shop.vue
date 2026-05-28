@@ -101,6 +101,10 @@
           <input class="add-cat-input" v-model="newCat" placeholder="新分类名称" />
           <view class="add-cat-btn-modal" @click="addCategory">添加</view>
         </view>
+        <view class="cat-opt-row" style="margin-bottom: 25rpx; display: flex; align-items: center; justify-content: flex-start;" @click="syncToStock = !syncToStock">
+          <checkbox :checked="syncToStock" color="#FF7DA8" style="transform:scale(0.75);" />
+          <text style="font-size: 25rpx; color: #7F8C8D; font-weight: bold;">同时保存到食材分类</text>
+        </view>
         <!-- <button class="close-modal-btn" @click="showCatModal = false">完成</button> -->
       </view>
     </view>
@@ -145,6 +149,7 @@ const currentCategory = ref('全部')
 
 const showCatModal = ref(false)
 const newCat = ref('')
+const syncToStock = ref(false)
 
 const loadCategories = async () => {
   try {
@@ -167,6 +172,17 @@ const addCategory = async () => {
   let shoppingCategoryJson = {name: name, sortOrder: 60}
   try {
     await shopApi.saveFamilyShoppingCategory(familyCode, shoppingCategoryJson)
+    
+    // 如果勾选了“同时保存到食材分类”，同步添加
+    if (syncToStock.value) {
+      try {
+        let ingredientCategoryJson = {name: name, sortOrder: 70}
+        await stockApi.saveFamilyIngredientCategory(familyCode, ingredientCategoryJson)
+      } catch (err) {
+        console.error('同步食材分类失败:', err)
+      }
+    }
+    
     newCat.value = ''
     await loadCategories()
     uni.showToast({ title: '添加成功', icon: 'none' })
