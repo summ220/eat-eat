@@ -1,6 +1,38 @@
 <template>
   <view class="welcome-container" :style="themeStyle" @touchmove.stop.prevent="">
-    <image v-if="restoreStep === 0" src="@/static/logo.jpg" mode="aspectFill" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;"></image>
+    <!-- 页面 -1：老用户治愈系冷启动3s广告开屏页 -->
+    <view class="welcome-ad-fullscreen" 
+          v-if="restoreStep === -1" 
+          :class="{ 'ad-exit-active': isExiting }"
+          :style="{ backgroundColor: themeStyleValue?.overlay || '#FFE8EE' }"
+          style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 999999; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 60rpx 40rpx; box-sizing: border-box;">
+      <!-- 4套静态编译大图，分配独一无二的key防原地DOM复用，100% 绝对完美显示！ -->
+      <image v-if="currentTheme == 0" key="pink" src="https://lw.feiyuf.top/static/logo-pink.jpg" mode="aspectFill" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;"></image>
+      <image v-else-if="currentTheme == 1" key="green" src="https://lw.feiyuf.top/static/logo-green.jpg" mode="aspectFill" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;"></image>
+      <image v-else-if="currentTheme == 2" key="blue" src="https://lw.feiyuf.top/static/logo-blue.jpg" mode="aspectFill" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;"></image>
+      <image v-else-if="currentTheme == 3" key="yellow" src="https://lw.feiyuf.top/static/logo-yellow.jpg" mode="aspectFill" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;"></image>
+      
+      <view class="ad-skip-btn" 
+            @click="closeAd" 
+            style="position: absolute; top: 110rpx; left: 40rpx; background: rgba(0,0,0,0.3); color: #fff; padding: 12rpx 30rpx; border-radius: 30rpx; font-size: 24rpx; font-weight: 500; letter-spacing: 2rpx; z-index: 10; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        跳过 {{ adCountdown }}s
+      </view>
+      
+      <view style="z-index: 3; text-align: center; margin-top: 220rpx; display: flex; flex-direction: column; align-items: center;">
+        <text style="font-size: 74rpx; font-weight: 900;color: #fff; display: block; letter-spacing: 6rpx; text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05); font-family: system-ui, -apple-system, sans-serif; transition: color 0.3s ease;">欢迎回家</text>
+        <text style="font-size: 36rpx; font-weight: 500;color: #fff; display: inline-block; margin-top: 24rpx; letter-spacing: 1rpx;">今天，也要记得好好吃饭呀</text>
+      </view>
+      
+      <view style="z-index: 3; width: 560rpx; display: flex; flex-direction: column; align-items: center; gap: 30rpx; margin-bottom: 140rpx;">
+        <button @click="closeAd" 
+                style="color: #fff; font-size: 32rpx; font-weight: bold; height: 100rpx; line-height: 100rpx; border-radius: 50rpx; border: none; margin: 0; width: 100%; text-align: center; transition: all 0.3s ease;"
+                :style="{ background: themeStyleValue?.gradient, boxShadow: '0 12rpx 30rpx ' + themeStyleValue?.shadow }">
+          开启美好一餐
+        </button>
+      </view>
+    </view>
+
+    <image v-if="restoreStep === 0" src="https://lw.feiyuf.top/static/logo-pink.jpg" mode="aspectFill" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;"></image>
     <!-- 页面零：全新温馨治愈欢迎页 -->
     <view class="splash-step-container" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 80vh; z-index: 9;" v-if="restoreStep === 0">
       <view class="splash-brand" style="text-align: center; margin-top: 100rpx;">
@@ -121,22 +153,98 @@
         </view>
       </view>
     </view>
+
+    <!-- 退出转场幕布：isExiting 为 true 时渲染，填满全屏，遮挡底层避免白屏 -->
+    <view
+      v-if="isExiting"
+      :style="{ background: themeStyleValue?.gradientLight || '#130e0e' }"
+      style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 999998; pointer-events: none;">
+    </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { ref, computed, onUnmounted } from 'vue'
+import { onLoad, onShow, onHide } from '@dcloudio/uni-app'
 import familyApi from '@/common/api/family.js'
 import config from '@/common/config'
 
 // --- 数据找回与密保双重验证系统 ---
 const securityQuestions = ['我的家庭名称是？', '家中常吃的一道菜是？', '自定义家庭备注是？']
-const restoreStep = ref(0)
-const restoreForm = ref({ familyCode: '', question: '我的家庭名称是？', answer: '' })
 
 // 路由与逻辑来源参数
 const isFromSettings = ref(false)
+
+// 初始步骤：默认设置为 -2（占位检测状态），在 onShow 中进行真机 Storage 状态分配，彻底杜绝任何欢迎页文字和按钮闪烁！
+const restoreStep = ref(-2)
+const restoreForm = ref({ familyCode: '', question: '我的家庭名称是？', answer: '' })
+
+// 开屏广告相关的变量和逻辑
+const adCountdown = ref(3) // 3s 倒计时广告
+let adTimer = null
+let hasShownAd = false // 局部全局变量，防止在小程序生命周期内重复弹广告
+
+// 治愈系主题色彩系统统一
+const themes = [
+  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', gradientLight: 'linear-gradient(135deg, #FFE8F0 0%, #FFB3C6 40%, #FF7DA8 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)', overlay: 'rgba(255, 235, 238, 0.55)' },
+  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', gradientLight: 'linear-gradient(135deg, #E6F9F0 0%, #A8E6C3 50%, #68CBA6 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)', overlay: 'rgba(230, 247, 240, 0.55)' },
+  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', gradientLight: 'linear-gradient(135deg, #E8F0FF 0%, #AAC3F5 45%, #7AA3ED 100%)' , light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)', overlay: 'rgba(232, 240, 254, 0.55)' },
+  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', gradientLight: 'linear-gradient(135deg, #FEF5EA 0%, #FDD5A8 40%, #F5B96B 100%)', shadow: 'rgba(242,161,59,0.3)', overlay: 'rgba(254, 244, 232, 0.55)' }
+]
+const currentTheme = ref(Number(uni.getStorageSync('current_theme') || 0))
+const themeStyle = computed(() => {
+  const t = themes[currentTheme.value]
+  return `
+    --primary: ${t.color};
+    --primary-grad: ${t.gradient};
+    --primary-light: ${t.light};
+    --primary-shadow: ${t.shadow};
+  `
+})
+
+const themeStyleValue = computed(() => themes[currentTheme.value])
+
+const startAdCountdown = () => {
+  adCountdown.value = 3
+  if (adTimer) clearInterval(adTimer)
+  adTimer = setInterval(() => {
+    adCountdown.value--
+    if (adCountdown.value <= 0) {
+      closeAd()
+    }
+  }, 1000)
+}
+
+const isExiting = ref(false)
+
+const closeAd = () => {
+  if (isExiting.value) return // 防抖，避免重复触发
+
+  if (adTimer) {
+    clearInterval(adTimer)
+    adTimer = null
+  }
+
+  isExiting.value = true
+
+  uni.showToast({
+    title: '欢迎回家，开启美味的一天～ ✨',
+    icon: 'none',
+    duration: 1000
+  })
+
+  // 1s 后跳转，给动画和 Toast 足够的展示时间
+  setTimeout(() => {
+    uni.switchTab({ url: '/pages/index/index' })
+  }, 1000)
+}
+
+const clearAdTimer = () => {
+  if (adTimer) {
+    clearInterval(adTimer)
+    adTimer = null
+  }
+}
 
 // 安全防暴力破解
 const errorCount = ref(0)
@@ -156,14 +264,30 @@ onLoad((options) => {
 })
 
 onShow(() => {
-  // 冷启动检测：如果是常规进入（非设置页主动跳转）且本地已经有了 family_code，直接闪击重定向到首页，不渲染欢迎页！
-  if (!isFromSettings.value) {
-    const code = uni.getStorageSync('family_code')
-    if (code) {
+  // 如果是从设置页面主动跳转过来的，直接切入密保校验模式，不显示广告
+  if (isFromSettings.value) {
+    restoreStep.value = 2
+    return
+  }
+
+  // 常规进入逻辑
+  const code = uni.getStorageSync('family_code')
+  if (code) {
+    // 已经注册的用户，且还没展示过开屏广告
+    if (!hasShownAd) {
+      hasShownAd = true
+      restoreStep.value = -1 // 切换到广告页面展示模式
+      currentTheme.value = Number(uni.getStorageSync('current_theme') || 0)
+      startAdCountdown()
+    } else {
+      // 已经展示过广告了，直接跳回首页，避免在历史回退等生命周期内卡住
       uni.switchTab({
         url: '/pages/index/index'
       })
     }
+  } else {
+    // 未注册用户，展示注册/创建欢迎页
+    restoreStep.value = 0
   }
 })
 
@@ -314,22 +438,13 @@ const submitRestore = async () => {
   }
 }
 
-// 主题与色彩系统统一
-const themes = [
-  { name: '温柔粉', color: '#FF6B8B', gradient: 'linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%)', light: '#FFE8EE', shadow: 'rgba(255,90,121,0.3)' },
-  { name: '清新绿', color: '#4DB88F', gradient: 'linear-gradient(135deg, #68CBA6 0%, #45A57F 100%)', light: '#E6F7F0', shadow: 'rgba(77,184,143,0.3)' },
-  { name: '雾霾蓝', color: '#5B89E5', gradient: 'linear-gradient(135deg, #7AA3ED 0%, #4A78D6 100%)', light: '#E8F0FE', shadow: 'rgba(91,137,229,0.3)' },
-  { name: '暖杏黄', color: '#F2A13B', gradient: 'linear-gradient(135deg, #F5B96B 0%, #ED9121 100%)', light: '#FEF4E8', shadow: 'rgba(242,161,59,0.3)' }
-]
-const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
-const themeStyle = computed(() => {
-  const t = themes[currentTheme.value]
-  return `
-    --primary: ${t.color};
-    --primary-grad: ${t.gradient};
-    --primary-light: ${t.light};
-    --primary-shadow: ${t.shadow};
-  `
+onHide(() => {
+  clearAdTimer()
+})
+
+onUnmounted(() => {
+  clearAdTimer()
+  if (lockTimer) clearInterval(lockTimer)
 })
 </script>
 
@@ -361,5 +476,20 @@ const themeStyle = computed(() => {
 .disabled {
   opacity: 0.6;
   pointer-events: none;
+}
+
+.welcome-ad-fullscreen {
+  animation: fadeIn 0.4s ease;
+}
+
+/* 退出动画：微微放大 + 渐隐 */
+.ad-exit-active {
+  animation: adFadeOut 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes adFadeOut {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.05); }
 }
 </style>

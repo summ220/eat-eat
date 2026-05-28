@@ -1159,7 +1159,7 @@ const showNickModal = ref(false)
 
 const handleMemberClick = (m) => {
   tempAvatarUrl.value = m.avatarUrl ? m.avatarUrl : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'
-  tempNick.value = m.nick || '干饭人'
+  tempNick.value = m.name || '干饭人'
   tempTitle.value = m.title || '大主厨'
   showNickModal.value = true
 }
