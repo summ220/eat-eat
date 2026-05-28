@@ -220,4 +220,66 @@ export default {
       id
     })
   },
+
+  // 备忘录
+
+  /**
+   * 创建备忘录
+   * @param {string} familyCode 家庭码/ID
+   * @param {string} memoJson 备忘录JSON
+   */
+  // content
+  saveFamilyMemo(familyCode, memoJson) {
+    return request('/saveFamilyMemo', 'POST', {
+      familyCode,
+      memoJson
+    })
+  },
+
+  /**
+   * 获取本家庭备忘录列表
+   * @param {string} familyCode 家庭码/ID
+   */
+  getFamilyMemos(familyCode) {
+    return request('/getFamilyMemos', 'GET', {
+      familyCode
+    })
+  },
+
+  /**
+   * 更新备忘录
+   * @param {string} familyCode 家庭码/ID
+   * @param {string} memoJson 备忘录JSON
+   */
+  // id、 content
+  updateFamilyMemo(familyCode, memoJson) {
+    return request('/updateFamilyMemo', 'POST', {
+      familyCode,
+      memoJson
+    })
+  },
+
+  /**
+   * 删除备忘录
+   * @param {string} familyCode 家庭码/ID
+   * @param {string} id 备忘录ID
+   */
+  deleteFamilyMemo(familyCode, id) {
+    return request('/deleteFamilyMemo', 'POST', {
+      familyCode,
+      id
+    })
+  },
+
+  /**
+   * 获取本家庭备忘录详情
+   * @param {string} familyCode 家庭码
+   * @param {string} id 备忘录ID
+   */
+  getFamilyMemo(familyCode, id) {
+    return request('/getFamilyMemo', 'GET', {
+      familyCode,
+      id
+    })
+  }
 }

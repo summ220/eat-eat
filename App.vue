@@ -57,7 +57,8 @@ export default {
 
 <style>
 page {
-	background-color: #FFE6E6;
+	/* background-color: #FFE6E6; */
+	background-color: #FFFFFF;
 	font-family: PingFang SC, Helvetica Neue;
 }
 .card-cute {

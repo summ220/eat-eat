@@ -110,6 +110,13 @@
 				"navigationBarTitleText": "家庭健康管理",
 				"navigationBarBackgroundColor": "#FFF5F7"
 			}
+		},
+		{
+			"path": "pages/family/component/memo-edit",
+			"style": {
+				"navigationBarTitleText": "编辑备忘录",
+				"navigationBarBackgroundColor": "#FFF5F7"
+			}
 		}
 	],
 	"tabBar": {

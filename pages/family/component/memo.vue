@@ -6,7 +6,7 @@
       <view class="memo-list">
         <view class="memo-card" v-for="(item, index) in memos" :key="item.id" @click="editMemo(item)">
           <text class="memo-text">{{ getFirstLine(item.content) }}</text>
-          <text class="delete-btn" @click.stop="deleteMemo(index)">删除</text>
+          <text class="delete-btn" @click.stop="deleteMemo(item, index)">删除</text>
         </view>
         <view class="empty-state" v-if="memos.length === 0">
           <text>暂无备忘录，快来添加一条吧~</text>
@@ -14,21 +14,9 @@
       </view>
     </view>
 
-    <!-- 底部按钮 -->
+    <!-- 底部固定的新增按钮 -->
     <view class="footer-actions">
       <button class="add-btn" @click="addMemo">+ 新增备忘录</button>
-    </view>
-
-    <!-- 编辑弹窗 -->
-    <view class="modal-mask" v-if="showModal" @click="showModal = false">
-      <view class="modal-content" @click.stop>
-        <text class="modal-title">{{ currentMemo.id ? '编辑备忘录' : '新增备忘录' }}</text>
-        <textarea class="memo-input" v-model="currentMemo.content" placeholder="输入备忘内容..." auto-height />
-        <view class="modal-btns">
-          <button class="cancel-btn" @click="showModal = false">取消</button>
-          <button class="confirm-btn" @click="saveMemo">保存</button>
-        </view>
-      </view>
     </view>
   </view>
 </template>
@@ -36,6 +24,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import familyApi from '@/common/api/family.js'
+
+const familyCode = uni.getStorageSync('family_code')
 
 // 主题支持
 const themes = [
@@ -56,70 +47,74 @@ const themeStyle = computed(() => {
 })
 
 const memos = ref([])
-const showModal = ref(false)
-const currentMemo = ref({ id: '', content: '' })
 
 onShow(() => {
   currentTheme.value = uni.getStorageSync('current_theme') || 0
   loadMemos()
 })
 
-const loadMemos = () => {
-  memos.value = uni.getStorageSync('family_memos') || []
+// 监听跨页面全局刷新事件，实现多保险即时接口刷新
+uni.$on('refreshMemos', () => {
+  loadMemos()
+})
+
+import { onUnload } from '@dcloudio/uni-app'
+onUnload(() => {
+  uni.$off('refreshMemos')
+})
+
+const loadMemos = async () => {
+  try {
+    const res = await familyApi.getFamilyMemos(familyCode)
+    if (res && res.data) {
+      memos.value = res.data.memos || []
+    }
+  } catch (err) {
+    console.error('获取备忘录列表失败:', err)
+  }
 }
 
+// 剔除 HTML 标签提取纯文本
 const getFirstLine = (text) => {
   if (!text) return ''
-  const lines = text.split('\n')
-  return lines[0].length > 20 ? lines[0].substring(0, 20) + '...' : lines[0]
+  const plainText = text.replace(/<[^>]+>/g, '').trim()
+  return plainText.length > 20 ? plainText.substring(0, 20) + '...' : plainText
 }
 
 const addMemo = () => {
-  currentMemo.value = { id: '', content: '' }
-  showModal.value = true
+  uni.navigateTo({
+    url: '/pages/family/component/memo-edit'
+  })
 }
 
 const editMemo = (item) => {
-  currentMemo.value = { ...item }
-  showModal.value = true
+  uni.navigateTo({
+    url: `/pages/family/component/memo-edit?id=${item.id}`
+  })
 }
 
-const deleteMemo = (index) => {
+const deleteMemo = (item, index) => {
   uni.showModal({
     title: '确认删除',
     content: '删除后无法恢复，确定删除吗？',
     confirmColor: '#FF4D4F',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        memos.value.splice(index, 1)
-        uni.setStorageSync('family_memos', memos.value)
-        uni.showToast({ title: '已删除', icon: 'success' })
+        uni.showLoading({ title: '删除中...' })
+        try {
+          await familyApi.deleteFamilyMemo(familyCode, item.id)
+          memos.value.splice(index, 1)
+          uni.setStorageSync('family_memos', memos.value)
+          uni.showToast({ title: '已删除', icon: 'success' })
+        } catch (err) {
+          console.error('删除备忘录失败:', err)
+          uni.showToast({ title: '删除失败，请重试', icon: 'none' })
+        } finally {
+          uni.hideLoading()
+        }
       }
     }
   })
-}
-
-const saveMemo = () => {
-  if (!currentMemo.value.content.trim()) {
-    return uni.showToast({ title: '内容不能为空', icon: 'none' })
-  }
-  
-  if (currentMemo.value.id) {
-    const idx = memos.value.findIndex(m => m.id === currentMemo.value.id)
-    if (idx !== -1) {
-      memos.value[idx].content = currentMemo.value.content
-    }
-  } else {
-    memos.value.unshift({
-      id: Date.now().toString(),
-      content: currentMemo.value.content,
-      time: new Date().getTime()
-    })
-  }
-  
-  uni.setStorageSync('family_memos', memos.value)
-  showModal.value = false
-  uni.showToast({ title: '保存成功', icon: 'success' })
 }
 </script>
 
@@ -127,7 +122,7 @@ const saveMemo = () => {
 .page {
   background: #FAFAFA;
   min-height: 100vh;
-  padding-bottom: 180rpx;
+  padding-bottom: 220rpx;
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }
 
@@ -202,73 +197,5 @@ const saveMemo = () => {
   box-shadow: 0 8rpx 24rpx var(--primary-shadow);
   border: none;
   &::after { border: none; }
-}
-
-.modal-mask {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
-}
-
-.modal-content {
-  width: 620rpx;
-  background: #fff;
-  border-radius: 40rpx;
-  padding: 50rpx 40rpx;
-  box-shadow: 0 20rpx 50rpx rgba(0, 0, 0, 0.1);
-}
-
-.modal-title {
-  display: block;
-  text-align: center;
-  font-size: 36rpx;
-  font-weight: 800;
-  color: #333;
-  margin-bottom: 40rpx;
-}
-
-.memo-input {
-  width: 100%;
-  min-height: 200rpx;
-  background: #F8F9FA;
-  border-radius: 24rpx;
-  padding: 30rpx;
-  font-size: 30rpx;
-  color: #2C3E50;
-  line-height: 1.5;
-  margin-bottom: 40rpx;
-  box-sizing: border-box;
-}
-
-.modal-btns {
-  display: flex;
-  gap: 30rpx;
-}
-
-.cancel-btn, .confirm-btn {
-  flex: 1;
-  height: 90rpx;
-  line-height: 90rpx;
-  border-radius: 100rpx;
-  font-size: 30rpx;
-  font-weight: bold;
-  margin: 0;
-  &::after { border: none; }
-}
-
-.cancel-btn {
-  background: #F5F5F5;
-  color: #666;
-}
-
-.confirm-btn {
-  background: var(--primary-grad);
-  color: #fff;
-  box-shadow: 0 8rpx 20rpx var(--primary-shadow);
 }
 </style>
