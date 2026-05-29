@@ -114,7 +114,6 @@
         </view>
       </view>
 
-
       <!-- 3. 今日三餐 -->
       <view class="section meals-section">
         <view class="section-title with-bar">
@@ -201,24 +200,6 @@
         </view>
       </view>
 
-      <!-- 添加口味弹窗 -->
-      <add-taste-popup
-        :show="showAddTasteModal"
-        :family-code="familyCode"
-        :taste-options="tasteOptions"
-        @close="showAddTasteModal = false"
-        @saved="loadDietPreferences"
-      />
-
-      <!-- 添加忌口弹窗 -->
-      <add-avoid-popup
-        :show="showAddAvoidModal"
-        :family-code="familyCode"
-        :avoid-options="avoidOptions"
-        @close="showAddAvoidModal = false"
-        @saved="loadDietPreferences"
-      />
-
       <!-- 7. 消费趋势卡片 -->
       <view class="section trend-section">
         <view class="section-title"><text class="title-text">近7日开销</text></view>
@@ -295,68 +276,9 @@
           <text>家庭小厨房 • 用心记录每一餐</text>
         </view>
       </view>
-
-      <!-- 邀请弹窗 -->
-      <invite-family-popup
-        :show="showInviteModal"
-        :family-code="familyCode"
-        @close="showInviteModal = false"
-      />
-
-      <!-- 加入弹窗 -->
-      <join-family-popup
-        :show="showJoinModal"
-        @close="showJoinModal = false"
-        @joined="handleJoined"
-      />
-
-      <!-- 切换家庭弹窗 -->
-      <!-- 切换家庭组件 -->
-      <switch-family-popup
-        :show="showSwitchFamilyModal || !familyCode"
-        :family-code="familyCode"
-        :family-name="familyName"
-        :family-avatar="familyAvatar"
-        :family-role="familyRole"
-        @close="showSwitchFamilyModal = false"
-        @join="showJoinModal = true"
-      />
-      <!-- 修改家庭名称弹窗 -->
-      <edit-family-popup
-        :show="showFamilyNameModal"
-        :family-code="familyCode"
-        :family-name="familyName"
-        :family-avatar="familyAvatar"
-        @close="showFamilyNameModal = false"
-        @saved="handleFamilySaved"
-        @preview="previewImage"
-      />
-
-      <!-- 修改昵称弹窗 -->
-      <edit-member-popup
-        :show="showNickModal"
-        :family-code="familyCode"
-        :member="activeMember"
-        @close="showNickModal = false"
-        @saved="loadFamilyMembers"
-        @preview="previewImage"
-      />
-
-      <!-- 随机推荐管理弹窗 -->
-      <random-menu-popup
-        :show="showRandomMenuModal"
-        :family-code="familyCode"
-        @close="showRandomMenuModal = false"
-      />
-
-      <!-- 分类管理弹窗 -->
-      <manage-categories-popup
-        :show="showCatModal"
-        @close="showCatModal = false"
-      />
-
       <view class="footer-safe"></view>
     </view>
+      
     <!-- 天气组件 -->
     <weather-popup 
       :show="showWeatherPopup" 
@@ -374,7 +296,58 @@
       @close="showCompassPopup = false"
     />
 
+    <!-- 邀请弹窗 -->
+    <invite-family-popup
+      :show="showInviteModal"
+      :family-code="familyCode"
+      @close="showInviteModal = false"
+    />
 
+    <!-- 加入弹窗 -->
+    <join-family-popup
+      :show="showJoinModal"
+      @close="showJoinModal = false"
+      @joined="handleJoined"
+    />
+
+    <!-- 切换家庭弹窗 -->
+    <switch-family-popup
+      :show="showSwitchFamilyModal || !familyCode"
+      :family-code="familyCode"
+      :family-name="familyName"
+      :family-avatar="familyAvatar"
+      :family-role="familyRole"
+      @close="showSwitchFamilyModal = false"
+      @join="showJoinModal = true"
+    />
+    <!-- 修改家庭名称弹窗 -->
+    <edit-family-popup
+      :show="showFamilyNameModal"
+      :family-code="familyCode"
+      :family-name="familyName"
+      :family-avatar="familyAvatar"
+      @close="showFamilyNameModal = false"
+      @saved="handleFamilySaved"
+      @preview="previewImage"
+    />
+
+    <!-- 修改昵称弹窗 -->
+    <edit-member-popup
+      :show="showNickModal"
+      :family-code="familyCode"
+      :member="activeMember"
+      @close="showNickModal = false"
+      @saved="loadFamilyMembers"
+      @preview="previewImage"
+    />
+
+    <!-- 随机推荐管理弹窗 -->
+    <random-menu-popup
+      :show="showRandomMenuModal"
+      :family-code="familyCode"
+      @close="showRandomMenuModal = false"
+    />
+    
     <!-- 选菜组件 -->
     <meal-picker-popup
       :show="showMealPopup"
@@ -390,13 +363,23 @@
       @close="showReminderModal = false"
     />
 
-    <!-- 查看大图蒙版 -->
-    <view class="big-image-mask" v-if="showBigImage" @click="closeBigImage">
-      <view class="big-image-content" @click.stop>
-        <image class="big-image" :src="bigImageUrl" mode="aspectFit" />
-        <view class="close-big-btn" @click="closeBigImage">✕</view>
-      </view>
-    </view>
+    <!-- 添加口味弹窗 -->
+    <add-taste-popup
+      :show="showAddTasteModal"
+      :family-code="familyCode"
+      :taste-options="tasteOptions"
+      @close="showAddTasteModal = false"
+      @saved="loadDietPreferences"
+    />
+
+    <!-- 添加忌口弹窗 -->
+    <add-avoid-popup
+      :show="showAddAvoidModal"
+      :family-code="familyCode"
+      :avoid-options="avoidOptions"
+      @close="showAddAvoidModal = false"
+      @saved="loadDietPreferences"
+    />
 
     <!-- 12. 新增：家庭编码复制弹窗 -->
     <family-code-popup
@@ -412,6 +395,13 @@
       @close="showSecuritySettingModal = false"
       @saved="loadFamily"
     />
+    
+    <!-- 查看大图蒙版 -->
+    <big-image-popup
+      :show="showBigImage"
+      :image-url="bigImageUrl"
+      @close="closeBigImage"
+    />
   </view>
 </template>
 
@@ -419,7 +409,6 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import familyApi from '@/common/api/family.js'
-import recipeApi from '@/common/api/recipe.js'
 import weatherPopup from '@/components/weather-popup/weather-popup.vue' // 天气预警弹窗
 import calendarPopup from '@/components/calendar-popup/calendar-popup.vue' // 万年历弹窗
 import compassPopup from '@/components/compass-popup/compass-popup.vue' // 指南针弹窗
@@ -428,7 +417,6 @@ import switchFamilyPopup from './component/switch-family-popup.vue' // 切换家
 import securitySettingPopup from './component/security-setting-popup.vue' // 密保找回设置弹窗
 import familyCodePopup from './component/family-code-popup.vue' // 家庭安全编码弹窗
 import randomMenuPopup from './component/random-menu-popup.vue' // 随机抽菜池管理弹窗
-import manageCategoriesPopup from './component/manage-categories-popup.vue' // 分类管理弹窗
 import remindersPopup from './component/reminders-popup.vue' // 智能管家提醒详情弹窗
 import addTastePopup from './component/add-taste-popup.vue' // 添加口味弹窗
 import addAvoidPopup from './component/add-avoid-popup.vue' // 添加忌口弹窗
@@ -436,6 +424,7 @@ import inviteFamilyPopup from './component/invite-family-popup.vue' // 邀请家
 import joinFamilyPopup from './component/join-family-popup.vue' // 加入新家庭弹窗
 import editFamilyPopup from './component/edit-family-popup.vue' // 修改家庭名称弹窗
 import editMemberPopup from './component/edit-member-popup.vue' // 修改我的昵称/角色弹窗
+import bigImagePopup from './component/big-image-popup.vue' // 查看大图弹窗
 import config from '@/common/config'
 import request from '@/common/request.js'
 
@@ -640,7 +629,6 @@ const leaveFamily = () => {
               
               // 打开切换弹窗引导用户创建或加入
               showSwitchFamilyModal.value = true
-              await loadMyFamilies()
             }
           } else {
             uni.showToast({ title: resLeave.message || '退出家庭失败,请稍后重试', icon: 'none' })
@@ -713,7 +701,6 @@ const disbandFamily = () => {
               
               // 打开切换弹窗引导用户创建或加入
               showSwitchFamilyModal.value = true
-              await loadMyFamilies()
             }
           } else {
             uni.showToast({ title: resDelete.message || '注销家庭失败,请稍后重试', icon: 'none' })
@@ -761,18 +748,6 @@ const themeStyle = computed(() => {
   `
 })
 
-// 数据统计
-const stats = ref([
-  { icon: '🍅', num: '0', label: '食材总数' },
-  { icon: '🛒', num: '0', label: '待采购' },
-  { icon: '💰', num: '0', label: '本月花费' },
-  { icon: '❤️', num: '0', label: '收藏菜谱' },
-  { icon: '🛍️', num: '0', label: '买菜次数' },
-  { icon: '🥚', num: '-', label: '常用食材' }
-])
-
-// 预算
-const budget = ref({ total: 3000, spent: 0 })
 
 let lastUpdateDate = ''
 onShow(() => {
@@ -890,14 +865,6 @@ const reminders = ref([
 const meals = ref([])
 const showMealPopup = ref(false)
 const currentMeal = ref(null)
-const customMealName = ref('')
-const saveToCommon = ref(true)
-
-const commonMenus = ref(uni.getStorageSync('common_menus') || {
-  '早餐': ['燕麦牛奶', '包子豆浆', '葱香煎蛋', '三明治'],
-  '午餐': ['番茄炒蛋', '红烧肉', '青椒肉丝', '紫菜蛋花汤'],
-  '晚餐': ['清炒时蔬', '小米粥', '蔬菜沙拉', '煎鸡胸肉']
-})
 
 // 三餐选择弹窗所用状态 (交由子组件自给自足)
 
@@ -1199,11 +1166,6 @@ const trends = ref({
   '一': 120, '二': 45, '三': 180, '四': 0, '五': 80, '六': 150, '日': 110
 })
 
-// 偏好
-const prefs = ref({
-  taste: [],
-  avoid: []
-})
 const tasteOptions = ref([])
 const avoidOptions = ref([])
 const isEditingPrefs = ref(false)
@@ -1332,8 +1294,6 @@ const removeAvoid = async (a) => {
 const showRandomMenuModal = ref(false)
 // ===========================================
 
-// 分类管理
-const showCatModal = ref(false)
 
 
 const handleSetting = (name) => {
@@ -1408,16 +1368,6 @@ const concatenatedReminders = computed(() => {
   return reminders.value.map(r => `${r.icon} ${r.text}`).join(' 　　 ')
 })
 
-const handleReminderAction = (r) => {
-  showReminderModal.value = false
-  if (r.text.includes('鸡蛋') || r.text.includes('牛奶')) {
-    uni.navigateTo({ url: '/pages/index/index' })
-  } else if (r.text.includes('冬瓜')) {
-    uni.switchTab({ url: '/pages/recipe/recipe' })
-  } else {
-    uni.showToast({ title: `正在处理：${r.text}`, icon: 'none' })
-  }
-}
 </script>
 
 <style lang="less" scoped>
@@ -1672,188 +1622,6 @@ const handleReminderAction = (r) => {
   box-shadow: 0 8rpx 30rpx rgba(0,0,0,0.02);
 }
 
-/* 弹窗通用样式 */
-.modal-mask {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-  backdrop-filter: blur(5px);
-}
-.modal-content {
-  width: 600rpx;
-  background: #fff;
-  border-radius: 40rpx;
-  padding: 40rpx;
-
-  .avatar-box {
-    width: 120rpx;
-    height: 120rpx;
-    border-radius: 50%;
-    background: #F0F0F0;
-    position: relative;
-    margin: 0 auto 20rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    .avatar {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    
-    .camera-icon {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 40rpx;
-      height: 40rpx;
-      background: #FF4D4F;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24rpx;
-      color: #fff;
-    }
-  }
-  
-  .modal-title {
-    display: block;
-    text-align: center;
-    font-size: 34rpx;
-    font-weight: 800;
-    color: #2C3E50;
-    margin-bottom: 40rpx;
-  }
-}
-
-/* 提醒详情弹窗样式 */
-.reminder-modal {
-  width: 650rpx !important;
-  padding: 40rpx !important;
-  
-  .modal-header {
-    text-align: center;
-    margin-bottom: 40rpx;
-    .modal-title { font-size: 36rpx; margin-bottom: 8rpx; display: block; margin-top: 20rpx; }
-    .modal-subtitle { font-size: 24rpx; color: #9E9E9E; }
-  }
-  
-  .reminder-detail-list {
-    max-height: 600rpx;
-    margin-bottom: 40rpx;
-    
-    .detail-item {
-      display: flex; align-items: flex-start; justify-content: space-between;
-      padding: 30rpx; border-radius: 36rpx; margin-bottom: 20rpx;
-      transition: all 0.2s;
-      gap: 20rpx;
-      
-      &.warning { background: #FFF9F0; .d-action-btn { background: #F2A13B; } }
-      &.danger { background: #FFF5F5; .d-action-btn { background: #FF6B8B; } }
-      &.info { background: #F0F9F4; .d-action-btn { background: #4DB88F; } }
-      
-      .d-left {
-        flex: 1;
-        display: flex; align-items: flex-start; gap: 24rpx;
-        
-        .d-icon { font-size: 44rpx; flex-shrink: 0; margin-top: 4rpx; }
-        .d-info {
-          flex: 1;
-          display: flex; flex-direction: column; gap: 8rpx;
-          
-          .d-text { 
-            font-size: 28rpx; font-weight: 800; color: #2C3E50; 
-            line-height: 1.4;
-            word-break: break-all;
-          }
-          .d-type-name { font-size: 20rpx; color: #9E9E9E; }
-        }
-      }
-      
-      .d-action-btn {
-        flex-shrink: 0;
-        padding: 10rpx 28rpx; border-radius: 100rpx; color: #fff; font-size: 22rpx; font-weight: 900;
-        box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
-      }
-    }
-  }
-  
-  .close-reminder-btn {
-    width: 100%; height: 90rpx; line-height: 90rpx;
-    background: #F8F9FA; color: #9E9E9E; border-radius: 100rpx;
-    font-size: 28rpx; font-weight: 800; border: none;
-    margin-top: 10rpx;
-    &::after { border: none; }
-  }
-}
-
-.cat-manage-list {
-  max-height: 400rpx;
-  overflow-y: auto;
-  margin-bottom: 30rpx;
-  
-  .cat-manage-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 24rpx 0;
-    border-bottom: 2rpx solid #F8F9FA;
-    font-size: 28rpx;
-    color: #2C3E50;
-    
-    .del-cat {
-      color: #FF4757;
-      font-size: 24rpx;
-      font-weight: bold;
-    }
-  }
-}
-
-.add-cat-box {
-  display: flex;
-  gap: 20rpx;
-  margin-bottom: 40rpx;
-  
-  .add-cat-input {
-    flex: 1;
-    background: #F8F9FA;
-    height: 80rpx;
-    border-radius: 20rpx;
-    padding: 0 30rpx;
-    font-size: 26rpx;
-  }
-  
-  .add-cat-btn {
-    background: var(--primary);
-    color: #fff;
-    height: 80rpx;
-    line-height: 80rpx;
-    padding: 0 30rpx;
-    border-radius: 20rpx;
-    font-size: 26rpx;
-    font-weight: bold;
-  }
-}
-
-.close-modal-btn {
-  width: 100%;
-  height: 90rpx;
-  line-height: 90rpx;
-  background: #F8F9FA;
-  color: #2C3E50;
-  border-radius: 100rpx;
-  font-size: 30rpx;
-  font-weight: bold;
-  border: none;
-  &::after { border: none; }
-}
 
 .section-title {
   display: flex;
@@ -2048,143 +1816,6 @@ const handleReminderAction = (r) => {
   }
 }
 
-/* 2. 数据统计区 */
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30rpx 20rpx;
-}
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16rpx;
-  
-  .stat-icon-wrap {
-    width: 88rpx;
-    height: 88rpx;
-    border-radius: 30rpx;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    
-    &.bg-0 { background: #FFF5F7; color: #FF8DA1; }
-    &.bg-1 { background: #F2FBF7; color: #68CBA6; }
-    &.bg-2 { background: #F3F7FE; color: #7AA3ED; }
-    &.bg-3 { background: #FEFAF3; color: #F5B96B; }
-    
-    .stat-icon {
-      font-size: 40rpx;
-    }
-  }
-  
-  .stat-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    
-    .stat-num {
-      font-size: 34rpx;
-      font-weight: 900;
-      color: #2C3E50;
-      margin-bottom: 4rpx;
-    }
-    .stat-label {
-      font-size: 22rpx;
-      color: #95A5A6;
-    }
-  }
-}
-
-/* 10. 家庭消费目标 */
-.budget-card {
-  background: var(--primary-light);
-  border-radius: 30rpx;
-  padding: 40rpx 30rpx;
-  transition: background 0.5s ease;
-  
-  .budget-info {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 24rpx;
-    
-    .b-item {
-      display: flex;
-      flex-direction: column;
-      gap: 8rpx;
-      
-      &.right { align-items: flex-end; }
-      
-      .b-label { font-size: 24rpx; color: #7F8C8D; }
-      .b-val { 
-        font-size: 40rpx; 
-        font-weight: 900; 
-        
-        &.spent { color: var(--primary); }
-        &.remain { color: #2C3E50; }
-      }
-    }
-  }
-  
-  .progress-bar {
-    height: 16rpx;
-    background: #EAECEF;
-    border-radius: 100rpx;
-    overflow: hidden;
-    
-    .progress-inner {
-      height: 100%;
-      background: var(--primary-grad);
-      border-radius: 100rpx;
-      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s ease;
-    }
-  }
-}
-
-/* 7. 智能提醒 */
-.reminders-section {
-  .reminder-list {
-    display: flex;
-    flex-direction: column;
-    gap: 20rpx;
-  }
-  .reminder-item {
-    display: flex;
-    align-items: center;
-    padding: 24rpx;
-    border-radius: 24rpx;
-    background: #F8F9FA;
-    gap: 20rpx;
-    
-    &.warning { background: #FFF9E6; .r-icon { color: #FFAA00; } }
-    &.danger { background: #FFEEEE; .r-icon { color: #FF4D4F; } }
-    &.info { background: var(--primary-light); .r-icon { color: var(--primary); } }
-    
-    .r-icon-box {
-      width: 50rpx;
-      display: flex;
-      justify-content: center;
-    }
-    
-    .r-text {
-      flex: 1;
-      font-size: 26rpx;
-      color: #34495E;
-      font-weight: 500;
-    }
-    
-    .r-btn {
-      font-size: 24rpx;
-      color: #fff;
-      background: var(--primary);
-      padding: 8rpx 24rpx;
-      border-radius: 100rpx;
-      font-weight: bold;
-      transition: background 0.5s ease;
-    }
-  }
-}
-
 /* 3. 今日三餐计划 */
 .meals-section {
   margin-top: 30rpx;
@@ -2205,130 +1836,6 @@ const handleReminderAction = (r) => {
   gap: 24rpx;
 }
 
-.fancy-meal-card {
-  background: #ffffff;
-  border-radius: 36rpx;
-  padding: 30rpx 24rpx;
-  position: relative;
-  box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.03);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  border: 2rpx solid transparent;
-  
-  &.is-active {
-    background: linear-gradient(145deg, #ffffff 0%, #fafafa 100%);
-  }
-  &.is-done {
-    background: #fbfcfb;
-  }
-  &:active {
-    transform: scale(0.99);
-  }
-
-  .card-edit-corner {
-    position: absolute;
-    top: 16rpx; right: 16rpx;
-    background: rgba(0,0,0,0.03);
-    width: 48rpx; height: 48rpx;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    z-index: 5;
-    .edit-pencil { font-size: 22rpx; color: #999; }
-  }
-
-  .card-row {
-    display: flex;
-    align-items: center;
-    gap: 20rpx;
-  }
-
-  .c-header-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 90rpx;
-    flex-shrink: 0;
-    
-    .c-ico-bg {
-      width: 80rpx; height: 80rpx;
-      background: #F8F9FA;
-      border-radius: 28rpx;
-      display: flex; justify-content: center; align-items: center;
-      font-size: 40rpx;
-      margin-bottom: 8rpx;
-      box-shadow: inset 0 2rpx 8rpx rgba(0,0,0,0.02);
-    }
-    
-    .c-card-title {
-      font-size: 24rpx; font-weight: bold; color: #34495E;
-    }
-  }
-
-  .c-body-content {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-  }
-  
-  .c-tag-scroll {
-    width: 100%;
-    white-space: nowrap;
-    .c-tag-strip {
-      display: inline-flex;
-      align-items: center;
-      gap: 16rpx;
-      padding: 10rpx 0;
-    }
-  }
-
-  .fancy-recipe-tag {
-    display: inline-block;
-    background: #F0F2F5;
-    color: #4A4A4A;
-    padding: 12rpx 26rpx;
-    border-radius: 30rpx;
-    font-size: 24rpx;
-    font-weight: 600;
-    flex-shrink: 0;
-    box-shadow: 0 4rpx 8rpx rgba(0,0,0,0.02);
-    
-    &.done {
-      background: #EBFDF2;
-      color: #2ECC71;
-    }
-  }
-
-  .c-empty-spot {
-    .spot-text { font-size: 24rpx; color: #BDC3C7; font-weight: 500; }
-  }
-
-  .c-action-area {
-    flex-shrink: 0;
-    margin-left: 10rpx;
-  }
-
-  .fancy-pill-btn {
-    height: 64rpx;
-    padding: 0 28rpx;
-    border-radius: 100rpx;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 24rpx; font-weight: bold;
-    transition: all 0.2s ease;
-    
-    &.st-add {
-      background: rgba(0,0,0,0.04);
-      color: var(--primary);
-    }
-    &.st-working {
-      background: var(--primary-grad);
-      color: #fff;
-      box-shadow: 0 6rpx 16rpx var(--primary-shadow);
-    }
-    &.st-done {
-      background: #F2F2F2;
-      color: #B0B0B0;
-    }
-  }
-}
 
 /* 8. 快捷功能宫格 */
 .quick-grid {
@@ -2452,126 +1959,6 @@ const handleReminderAction = (r) => {
   }
 }
 
-/* 邀请弹窗特有样式 */
-.invite-modal {
-  .invite-info {
-    text-align: center;
-    padding: 20rpx 0;
-    
-    .invite-desc {
-      font-size: 26rpx;
-      color: #7F8C8D;
-      display: block;
-      margin-bottom: 40rpx;
-    }
-    
-    .invite-code-box {
-      background: #F8F9FA;
-      padding: 30rpx;
-      border-radius: 24rpx;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20rpx;
-      border: 2rpx dashed var(--primary);
-      
-      .code-val {
-        font-size: 48rpx;
-        font-weight: 900;
-        color: var(--primary);
-        letter-spacing: 4rpx;
-      }
-      
-      .copy-btn {
-        font-size: 24rpx;
-        color: #fff;
-        background: var(--primary);
-        padding: 10rpx 24rpx;
-        border-radius: 100rpx;
-        font-weight: bold;
-      }
-    }
-    
-    .invite-expire-tip {
-      margin-bottom: 30rpx;
-      color: #ccc;
-      .expire-countdown {
-        margin-left: 18rpx;
-      }
-    }
-    
-    .qr-placeholder {
-      width: 280rpx;
-      height: 280rpx;
-      background: #fff;
-      border: 2rpx solid #F0F2F5;
-      border-radius: 30rpx;
-      margin: 0 auto 30rpx;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 16rpx;
-      color: #BDC3C7;
-      font-size: 22rpx;
-      
-      .qr-icon { font-size: 80rpx; }
-    }
-  }
-  
-  .close-modal-btn.prim {
-    background: var(--primary);
-    color: #fff;
-  }
-}
-
-.input-box {
-  margin: 20rpx 0 40rpx;
-  .join-input {
-    background: #F8F9FA;
-    height: 100rpx;
-    border-radius: 24rpx;
-    padding: 0 40rpx;
-    font-size: 32rpx;
-    font-weight: bold;
-    color: #2C3E50;
-    text-align: center;
-  }
-}
-
-.modal-tips {
-  font-size: 24rpx;
-  color: #BDC3C7;
-  text-align: center;
-  margin-bottom: 40rpx;
-}
-
-.modal-btns {
-  display: flex;
-  gap: 30rpx;
-  
-  button {
-    flex: 1;
-    height: 90rpx;
-    line-height: 90rpx;
-    border-radius: 100rpx;
-    font-size: 28rpx;
-    font-weight: bold;
-    border: none;
-    &::after { border: none; }
-  }
-  
-  .m-btn-sub {
-    background: #F8F9FA;
-    color: #7F8C8D;
-  }
-  
-  .m-btn-main {
-    background: var(--primary);
-    color: #fff;
-    box-shadow: 0 8rpx 20rpx var(--primary-shadow);
-  }
-}
 
 /* 9. 消费趋势卡片 */
 .trend-section {
@@ -2812,207 +2199,5 @@ const handleReminderAction = (r) => {
 .footer-safe {
   height: 40rpx;
 }
-/* 底部点菜弹窗 */
-.bottom-modal-mask {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  animation: fadeIn 0.3s ease;
-}
-.bottom-modal-content {
-  background: #fff;
-  border-radius: 40rpx 40rpx 0 0;
-  padding: 40rpx;
-  min-height: 50vh;
-  box-sizing: border-box;
-  animation: slideUp 0.3s ease;
-}
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-/* ============ 重构版点菜弹窗 ============ */
 
-
-.big-image-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
-  background: rgba(0, 0, 0, 0.65); /* 调浅背景以获得更通透的透光质感 */
-  backdrop-filter: blur(15px); /* 加强毛玻璃，背景更加高级细腻 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.3s ease-out;
-  
-  .big-image-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40rpx;
-    
-    .big-image {
-      max-width: 80vw; /* 限制视口宽度，绝不顶头 */
-      max-height: 60vh; /* 限制视口高度，绝不顶头 */
-      border-radius: 32rpx; /* 高级优雅微圆角 */
-      box-shadow: 0 24rpx 72rpx rgba(0, 0, 0, 0.35); /* 质感立体悬浮阴影 */
-      border: 4rpx solid rgba(255, 255, 255, 0.15); /* 精致透亮白边框 */
-    }
-    
-    .close-big-btn {
-      margin-top: 48rpx; /* 布局在大图下方，防止顶到头，也更符合单手点击习惯 */
-      width: 100rpx;
-      height: 100rpx;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.15);
-      border: 2rpx solid rgba(255, 255, 255, 0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      font-size: 40rpx;
-      backdrop-filter: blur(5px);
-      transition: all 0.2s;
-      
-      &:active {
-        transform: scale(0.9);
-        background: rgba(255, 255, 255, 0.35);
-      }
-    }
-  }
-}
-
-
-
-/* --- 新增：密保找回设置表单样式 --- */
-.security-form {
-  margin-top: 10rpx;
-  .sec-label {
-    font-size: 26rpx;
-    color: #888;
-    margin-bottom: 12rpx;
-  }
-  .picker-value-box {
-    background: #fff;
-    border: 2rpx solid #EFEFEF;
-    border-radius: 12rpx;
-    height: 80rpx;
-    padding: 0 20rpx;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 28rpx;
-    color: #333;
-    transition: all 0.3s ease;
-    
-    &:active {
-      background: #FAFAFA;
-      border-color: var(--primary);
-    }
-  }
-  .sec-input {
-    background: #fff;
-    border: 2rpx solid #EFEFEF;
-    border-radius: 12rpx;
-    height: 80rpx;
-    padding: 0 20rpx;
-    font-size: 28rpx;
-    color: #333;
-    transition: all 0.3s ease;
-    
-    &:focus {
-      border-color: var(--primary);
-      background: #FFFBFB;
-    }
-  }
-}
-
-/* --- 新增：开屏全屏数据找回页 SCSS 样式 --- */
-.restore-splash-fullscreen {
-  animation: splashFadeIn 0.4s ease-out both;
-  
-  .splash-step-container {
-    animation: slideUpIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-  
-  .splash-btn-primary {
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    &:active {
-      transform: scale(0.97);
-      opacity: 0.9;
-    }
-    
-    &.disabled {
-      background: #E2E8F0 !important;
-      color: #A0AEC0 !important;
-      box-shadow: none !important;
-    }
-  }
-  
-  .splash-btn-secondary {
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    &:active {
-      transform: scale(0.97);
-      background: #F8F9FA;
-    }
-  }
-  
-  .abandon-btn {
-    transition: opacity 0.3s;
-    &:active {
-      opacity: 0.6;
-    }
-  }
-  
-  .picker-value-box {
-    transition: all 0.3s ease;
-    &.disabled {
-      background: #F5F5F5 !important;
-      border-color: #E2E8F0 !important;
-      color: #CBD5E0 !important;
-    }
-    &:active:not(.disabled) {
-      background: #F0F4FA;
-      border-color: var(--primary);
-    }
-  }
-  
-  .form-input {
-    transition: all 0.3s ease;
-    &:focus:not(:disabled) {
-      border-color: var(--primary);
-      background: #FFFBFB;
-      box-shadow: 0 0 12rpx var(--primary-shadow);
-    }
-    &:disabled {
-      background: #F5F5F5 !important;
-      border-color: #E2E8F0 !important;
-      color: #CBD5E0 !important;
-    }
-  }
-}
-
-@keyframes splashFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUpIn {
-  from {
-    opacity: 0;
-    transform: translateY(40rpx);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 </style>
