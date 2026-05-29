@@ -3,6 +3,7 @@
   <welcome-ad :show="showWelcomeAd" @close="closeWelcomeAd" />
 
   <view class="page" :style="themeStyle" v-if="hasFamily">
+    <gourmet-refresher :refreshing="refreshing" type="index" :theme="currentTheme" />
     <!-- 顶部标题 -->
     <view class="header">
       <view class="title-wrap">
@@ -52,12 +53,30 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import familyApi from '@/common/api/family.js'
 import welcomeAd from '@/pages/welcome/welcome-ad.vue'
 
 const familyCode = ref(uni.getStorageSync('family_code') || 'default_family')
 const hasFamily = ref(!!uni.getStorageSync('family_code'))
+
+const refreshing = ref(false)
+
+onPullDownRefresh(async () => {
+  refreshing.value = true
+  familyCode.value = uni.getStorageSync('family_code') || 'default_family'
+  try {
+    await Promise.all([
+      loadRandomMenuPool(),
+      new Promise(resolve => setTimeout(resolve, 1500)) // 魔法煎蛋锅动画时间
+    ])
+  } catch (e) {
+    console.error(e)
+  } finally {
+    refreshing.value = false
+    uni.stopPullDownRefresh()
+  }
+})
 
 // 老用户冷启动开屏广告/欢迎页
 const showWelcomeAd = ref(false)

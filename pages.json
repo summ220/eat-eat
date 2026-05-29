@@ -18,20 +18,23 @@
 			"style": {
 				"navigationBarTitleText": "吃什么",
 				"navigationBarBackgroundColor": "#FFF5F7",
-				"navigationBarTextStyle": "black"
+				"navigationBarTextStyle": "black",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
 			"path": "pages/stock/stock",
 			"style": {
 				"navigationBarTitleText": "食材库存",
-				"navigationBarBackgroundColor": "#FFF5F7"
+				"navigationBarBackgroundColor": "#FFF5F7",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
 			"path": "pages/recipe/recipe",
 			"style": {
-				"navigationBarTitleText": "菜谱"
+				"navigationBarTitleText": "菜谱",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
@@ -52,14 +55,16 @@
 			"path": "pages/shop/shop",
 			"style": {
 				"navigationBarTitleText": "购物清单",
-				"navigationBarBackgroundColor": "#FFF5F7"
+				"navigationBarBackgroundColor": "#FFF5F7",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
 			"path": "pages/family/family",
 			"style": {
 				"navigationBarTitleText": "家庭",
-				"navigationBarBackgroundColor": "#FFF5F7"
+				"navigationBarBackgroundColor": "#FFF5F7",
+				"enablePullDownRefresh": true
 			}
 		},
 		{

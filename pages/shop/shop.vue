@@ -1,5 +1,6 @@
 <template>
   <custom-header title="购物清单" icon="🛒" />
+  <gourmet-refresher :refreshing="refreshing" type="shop" />
   <view class="page" :style="themeStyle">
     <view class="top-actions-bar">
       <button class="action-btn-top clear" @click="clearDone">清空已购</button>
@@ -133,19 +134,37 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import shopApi from '@/common/api/shop.js'
 import stockApi from '@/common/api/stock.js'
 import costApi from '@/common/api/cost.js'
 
 let familyCode = uni.getStorageSync('family_code') || 'default_family';
 
+const refreshing = ref(false)
 const list = ref([])
 const isStatExpanded = ref(false)
 
 // ========================分类管理========================
 const categories = ref([])
 const currentCategory = ref('全部')
+
+onPullDownRefresh(async () => {
+  refreshing.value = true
+  familyCode = uni.getStorageSync('family_code') || 'default_family'
+  try {
+    await Promise.all([
+      loadCategories(),
+      load(),
+      new Promise(resolve => setTimeout(resolve, 1500)) // 漂移动画手推车时间
+    ])
+  } catch (e) {
+    console.error(e)
+  } finally {
+    refreshing.value = false
+    uni.stopPullDownRefresh()
+  }
+})
 
 const showCatModal = ref(false)
 const newCat = ref('')

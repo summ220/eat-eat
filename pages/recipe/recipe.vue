@@ -1,5 +1,6 @@
 <template>
   <custom-header title="菜谱" icon="🍳" />
+  <gourmet-refresher :refreshing="refreshing" type="recipe" />
   <view class="page" @click="exitEditMode" :style="themeStyle">
     <view class="search-panel">
       <view class="search-box">
@@ -101,12 +102,13 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { onShow, onReachBottom } from '@dcloudio/uni-app'
+import { onShow, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
 import recipeApi from '@/common/api/recipe.js'
 import config from '@/common/config'
 
 let familyCode = uni.getStorageSync('family_code') || 'default_family';
 
+const refreshing = ref(false)
 const searchText = ref('')
 const page = ref(1)
 const pageSize = ref(6)
@@ -116,6 +118,23 @@ watch(searchText, () => {
   page.value = 1
 })
 const recipes = ref([])
+
+onPullDownRefresh(async () => {
+  refreshing.value = true
+  familyCode = uni.getStorageSync('family_code') || 'default_family'
+  try {
+    await Promise.all([
+      loadCategories(),
+      loadRecipes(),
+      new Promise(resolve => setTimeout(resolve, 1500)) // 确保治愈平底锅多快乐弹跳一会
+    ])
+  } catch (e) {
+    console.error(e)
+  } finally {
+    refreshing.value = false
+    uni.stopPullDownRefresh()
+  }
+})
 
 // =========================分类管理=========================
 const currentCategory = ref('全部')

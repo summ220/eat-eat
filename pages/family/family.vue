@@ -1,5 +1,6 @@
 <template>
   <view class="page-container" :style="themeStyle" @click="dietPreferencesRef?.cancelEdit()">
+    <gourmet-refresher :refreshing="refreshing" type="family" :theme="currentTheme" />
     <!-- 1. 顶部大卡片 -->
     <view class="top-card">
       <!-- 智能提醒跑马灯 (移至最顶部) -->
@@ -270,7 +271,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import familyApi from '@/common/api/family.js'
 import weatherPopup from '@/components/weather-popup/weather-popup.vue' // 天气预警弹窗
 import calendarPopup from '@/components/calendar-popup/calendar-popup.vue' // 万年历弹窗
@@ -292,6 +293,54 @@ import editFamilyPopup from './component/alert/edit-family-popup.vue' // 修改�
 
 import config from '@/common/config'
 import request from '@/common/request.js'
+
+const refreshing = ref(false)
+
+const refreshAllData = async () => {
+  try {
+    const promises = [
+      loadFamily(),
+      refreshWeatherAndLocation(),
+      loadReminders()
+    ]
+    if (mealsPlanRef.value && typeof mealsPlanRef.value.loadMeals === 'function') {
+      promises.push(mealsPlanRef.value.loadMeals())
+    }
+    if (familyMembersRef.value && typeof familyMembersRef.value.loadFamilyMembers === 'function') {
+      promises.push(familyMembersRef.value.loadFamilyMembers())
+    }
+    if (healthCardRef.value && typeof healthCardRef.value.loadHealthSummary === 'function') {
+      promises.push(healthCardRef.value.loadHealthSummary())
+    }
+    if (memoCardRef.value && typeof memoCardRef.value.loadMemoPreview === 'function') {
+      promises.push(memoCardRef.value.loadMemoPreview())
+    }
+    if (dietPreferencesRef.value && typeof dietPreferencesRef.value.loadDietPreferences === 'function') {
+      promises.push(dietPreferencesRef.value.loadDietPreferences())
+    }
+    if (spendingTrendRef.value && typeof spendingTrendRef.value.loadSpendingTrends === 'function') {
+      promises.push(spendingTrendRef.value.loadSpendingTrends())
+    }
+    await Promise.all(promises)
+  } catch (e) {
+    console.error('刷新家庭数据失败:', e)
+  }
+}
+
+onPullDownRefresh(async () => {
+  refreshing.value = true
+  try {
+    await Promise.all([
+      refreshAllData(),
+      new Promise(resolve => setTimeout(resolve, 1500)) // 温馨小屋爱心飘浮动画时间
+    ])
+  } catch (e) {
+    console.error('家庭下拉刷新出错:', e)
+  } finally {
+    refreshing.value = false
+    uni.stopPullDownRefresh()
+  }
+})
 
 // --- 一体化三餐/成员/健康组件引用 ---
 const mealsPlanRef = ref(null)

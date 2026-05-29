@@ -1,5 +1,6 @@
 <template>
   <custom-header title="家里食材" icon="🍅" />
+  <gourmet-refresher :refreshing="refreshing" type="stock" />
   <view class="page" :style="themeStyle">
     <view class="top-actions-bar">
       <button class="action-btn-top clear" @click="clearExpired">清除过期</button>
@@ -125,12 +126,14 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import stockApi from '@/common/api/stock.js'
 import shopApi from '@/common/api/shop.js'
 import { formatDate } from '@/uni_modules/uni-dateformat/components/uni-dateformat/date-format'
 
 let familyCode = uni.getStorageSync('family_code') || ''
+
+const refreshing = ref(false)
 
 // =============================== 分类管理 =============================
 const showCatModal = ref(false)
@@ -138,6 +141,23 @@ const categories = ref([])
 const currentCategory = ref('全部')
 const newCat = ref('')
 const syncToShop = ref(false)
+
+onPullDownRefresh(async () => {
+  refreshing.value = true
+  familyCode = uni.getStorageSync('family_code') || ''
+  try {
+    await Promise.all([
+      loadCategories(),
+      load(),
+      new Promise(resolve => setTimeout(resolve, 1500)) // 魔法胡萝卜跳舞时间
+    ])
+  } catch (e) {
+    console.error(e)
+  } finally {
+    refreshing.value = false
+    uni.stopPullDownRefresh()
+  }
+})
 
 const loadCategories = async () => {
   const res = await stockApi.getFamilyIngredientCategories(familyCode)
