@@ -441,15 +441,14 @@ const abandonFamily = () => {
   }
   
   .action-btn-secondary {
-    background: #FAFAFA;
+    background: #fff;
     color: #2C3E50;
     font-size: 28rpx;
     font-weight: bold;
     height: 80rpx;
     line-height: 80rpx;
     border-radius: 40rpx;
-    border: 2rpx solid #EFEFEF;
-    &::after { border: none; }
+    border: 2rpx solid var(--primary);
   }
 }
 

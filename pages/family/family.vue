@@ -202,32 +202,22 @@
       </view>
 
       <!-- 添加口味弹窗 -->
-      <view class="modal-mask" v-if="showAddTasteModal" @click="showAddTasteModal = false">
-        <view class="modal-content" @click.stop>
-          <text class="modal-title">添加口味偏好</text>
-          <view class="input-box">
-            <input class="join-input" v-model="newTaste" placeholder="输入口味名称，如：麻辣" focus />
-          </view>
-          <view class="modal-btns">
-            <button class="m-btn-sub" @click="showAddTasteModal = false">取消</button>
-            <button class="m-btn-main" @click="confirmAddTaste">添加</button>
-          </view>
-        </view>
-      </view>
+      <add-taste-popup
+        :show="showAddTasteModal"
+        :family-code="familyCode"
+        :taste-options="tasteOptions"
+        @close="showAddTasteModal = false"
+        @saved="loadDietPreferences"
+      />
 
       <!-- 添加忌口弹窗 -->
-      <view class="modal-mask" v-if="showAddAvoidModal" @click="showAddAvoidModal = false">
-        <view class="modal-content" @click.stop>
-          <text class="modal-title">添加忌口食材</text>
-          <view class="input-box">
-            <input class="join-input" v-model="newAvoid" placeholder="输入食材名称，如：生姜" focus />
-          </view>
-          <view class="modal-btns">
-            <button class="m-btn-sub" @click="showAddAvoidModal = false">取消</button>
-            <button class="m-btn-main" @click="confirmAddAvoid">添加</button>
-          </view>
-        </view>
-      </view>
+      <add-avoid-popup
+        :show="showAddAvoidModal"
+        :family-code="familyCode"
+        :avoid-options="avoidOptions"
+        @close="showAddAvoidModal = false"
+        @saved="loadDietPreferences"
+      />
 
       <!-- 7. 消费趋势卡片 -->
       <view class="section trend-section">
@@ -307,43 +297,18 @@
       </view>
 
       <!-- 邀请弹窗 -->
-      <view class="modal-mask" v-if="showInviteModal" @click="showInviteModal = false">
-        <view class="modal-content invite-modal" @click.stop>
-          <text class="modal-title">邀请家人加入</text>
-          <view class="invite-info">
-            <text class="invite-desc">让家人扫描二维码或输入邀请码</text>
-            <view class="invite-code-box">
-              <text class="code-val">{{ inviteCode }}</text>
-              <text class="copy-btn" @click="copyCode">复制</text>
-            </view>
-            <view class="invite-expire-tip">
-              <text class="expire-icon">⏱️</text>
-              <text class="expire-text">邀请码有效期5分钟</text>
-              <text class="expire-countdown">{{ formattedCountdown }}</text>
-            </view>
-            <view class="qr-placeholder">
-              <text class="qr-icon">📱</text>
-              <text>扫码加入家庭</text>
-            </view>
-          </view>
-          <button class="close-modal-btn prim" @click="showInviteModal = false">完成</button>
-        </view>
-      </view>
+      <invite-family-popup
+        :show="showInviteModal"
+        :family-code="familyCode"
+        @close="showInviteModal = false"
+      />
 
       <!-- 加入弹窗 -->
-      <view class="modal-mask" v-if="showJoinModal" @click="showJoinModal = false">
-        <view class="modal-content" @click.stop>
-          <text class="modal-title">加入新家庭</text>
-          <view class="input-box">
-            <input class="join-input" v-model="joinCode" placeholder="请输入邀请码" />
-          </view>
-          <view class="modal-tips">加入后将同步该家庭的所有数据</view>
-          <view class="modal-btns">
-            <button class="m-btn-sub" @click="showJoinModal = false">取消</button>
-            <button class="m-btn-main" @click="confirmJoin">加入</button>
-          </view>
-        </view>
-      </view>
+      <join-family-popup
+        :show="showJoinModal"
+        @close="showJoinModal = false"
+        @joined="handleJoined"
+      />
 
       <!-- 切换家庭弹窗 -->
       <!-- 切换家庭组件 -->
@@ -357,84 +322,38 @@
         @join="showJoinModal = true"
       />
       <!-- 修改家庭名称弹窗 -->
-      <view class="modal-mask" v-if="showFamilyNameModal" @click="showFamilyNameModal = false">
-        <view class="modal-content" @click.stop>
-          <view class="avatar-box">
-            <image class="avatar" :src="tempAvatar ? (tempAvatar.startsWith('http') ? tempAvatar : config.imgBaseUrl + tempAvatar) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'" mode="aspectFill" @click.stop="previewImage(tempAvatar || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg')" />
-            <view class="camera-icon" @click.stop="changeAv">📷</view>
-          </view>
-          <!-- <text class="modal-title">修改家庭名称</text> -->
-          <view class="input-box">
-            <input class="join-input" v-model="tempFamilyName" placeholder="请输入新名称" maxlength="15" />
-          </view>
-          <view class="modal-btns">
-            <button class="m-btn-sub" @click="showFamilyNameModal = false">取消</button>
-            <button class="m-btn-main" @click="saveFamilyName">保存</button>
-          </view>
-        </view>
-      </view>
+      <edit-family-popup
+        :show="showFamilyNameModal"
+        :family-code="familyCode"
+        :family-name="familyName"
+        :family-avatar="familyAvatar"
+        @close="showFamilyNameModal = false"
+        @saved="handleFamilySaved"
+        @preview="previewImage"
+      />
 
       <!-- 修改昵称弹窗 -->
-      <view class="modal-mask" v-if="showNickModal" @click="showNickModal = false">
-        <view class="modal-content" @click.stop>
-          <view class="avatar-box">
-            <image class="avatar" :src="tempAvatarUrl ? (tempAvatarUrl.startsWith('http') ? tempAvatarUrl : config.imgBaseUrl + tempAvatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(tempAvatarUrl || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg')"></image>
-            <view class="camera-icon" @click.stop="chooseAvatar">📷</view>
-          </view>
-          <!-- <text class="modal-title">修改我的昵称</text> -->
-          <view class="input-box">
-            <input class="join-input" v-model="tempNick" placeholder="请输入新昵称" />
-          </view>
-          <view class="input-box">
-            <input class="join-input" v-model="tempTitle" placeholder="请输入新角色" />
-          </view>
-          <view class="modal-btns">
-            <button class="m-btn-sub" @click="showNickModal = false">取消</button>
-            <button class="m-btn-main" @click="confirmNick">保存</button>
-          </view>
-        </view>
-      </view>
+      <edit-member-popup
+        :show="showNickModal"
+        :family-code="familyCode"
+        :member="activeMember"
+        @close="showNickModal = false"
+        @saved="loadFamilyMembers"
+        @preview="previewImage"
+      />
 
       <!-- 随机推荐管理弹窗 -->
-      <view class="modal-mask" v-if="showRandomMenuModal" @click="showRandomMenuModal = false">
-        <view class="modal-content" @click.stop>
-          <text class="modal-title">随机抽菜池管理</text>
-          <scroll-view scroll-y style="max-height: 500rpx; margin-top: 20rpx; margin-bottom: 20rpx;">
-            <view class="cat-manage-list">
-              <view class="cat-manage-item" v-for="(dish, idx) in randomMenu" :key="idx">
-                <text>{{ dish.name || dish }}</text>
-                <text class="del-cat" @click="removeRandomDish(idx)">删除</text>
-              </view>
-              <view class="cat-manage-item empty-tip" v-if="randomMenu.length === 0" style="justify-content: center; color: #999; font-size: 24rpx; border-bottom: none;">
-                <text>空空如也，快去添加菜品吧~</text>
-              </view>
-            </view>
-          </scroll-view>
-          <view class="add-cat-box">
-            <input class="add-cat-input" v-model="newRandomDish" placeholder="新推荐菜名称" />
-            <view class="add-cat-btn" @click="addRandomDish">添加</view>
-          </view>
-          <button class="close-modal-btn" @click="showRandomMenuModal = false">完成</button>
-        </view>
-      </view>
+      <random-menu-popup
+        :show="showRandomMenuModal"
+        :family-code="familyCode"
+        @close="showRandomMenuModal = false"
+      />
 
       <!-- 分类管理弹窗 -->
-      <view class="modal-mask" v-if="showCatModal" @click="showCatModal = false">
-        <view class="modal-content" @click.stop>
-          <text class="modal-title">管理分类</text>
-          <view class="cat-manage-list">
-            <view class="cat-manage-item" v-for="(cat, idx) in categories" :key="idx">
-              <text>{{ cat }}</text>
-              <text class="del-cat" @click="removeCategory(idx)">删除</text>
-            </view>
-          </view>
-          <view class="add-cat-box">
-            <input class="add-cat-input" v-model="newCat" placeholder="新分类名称" />
-            <view class="add-cat-btn" @click="addCategory">添加</view>
-          </view>
-          <button class="close-modal-btn" @click="showCatModal = false">完成</button>
-        </view>
-      </view>
+      <manage-categories-popup
+        :show="showCatModal"
+        @close="showCatModal = false"
+      />
 
       <view class="footer-safe"></view>
     </view>
@@ -465,29 +384,11 @@
     />
 
     <!-- 智能管家提醒详情弹窗 -->
-    <view class="modal-mask" v-if="showReminderModal" @click="showReminderModal = false">
-      <view class="modal-content reminder-modal" @click.stop>
-        <view class="modal-header">
-          <text class="modal-title">🤖 智能管家提醒</text>
-          <text class="modal-subtitle">为您整理了 {{ reminders.length }} 条待办事项</text>
-        </view>
-        
-        <scroll-view scroll-y class="reminder-detail-list">
-          <view class="detail-item" v-for="(r, i) in reminders" :key="i" :class="r.type">
-            <view class="d-left">
-              <view class="d-icon">{{ r.icon }}</view>
-              <view class="d-info">
-                <text class="d-text">{{ r.text }}</text>
-                <text class="d-type-name">{{ r.type === 'warning' ? '库存预警' : (r.type === 'danger' ? '过期提醒' : '健康建议') }}</text>
-              </view>
-            </view>
-            <view class="d-action-btn" @click="handleReminderAction(r)">{{ r.action }}</view>
-          </view>
-        </scroll-view>
-        
-        <button class="close-reminder-btn" @click="showReminderModal = false">我知道了</button>
-      </view>
-    </view>
+    <reminders-popup
+      :show="showReminderModal"
+      :reminders="reminders"
+      @close="showReminderModal = false"
+    />
 
     <!-- 查看大图蒙版 -->
     <view class="big-image-mask" v-if="showBigImage" @click="closeBigImage">
@@ -498,51 +399,20 @@
     </view>
 
     <!-- 12. 新增：家庭编码复制弹窗 -->
-    <view class="modal-mask" v-if="showFamilyCodeModal" @click="showFamilyCodeModal = false">
-      <view class="modal-content" @click.stop>
-        <text class="modal-title">🔑 家庭安全编码</text>
-        <view class="invite-info" style="margin: 20rpx 0;">
-          <text class="invite-desc" style="color: #666; font-size: 26rpx; line-height: 1.5; margin-bottom: 20rpx; display: block; text-align: center;">家庭编码是数据丢失后找回的唯一凭证，请务必截图或保存至安全位置！</text>
-          <view class="invite-code-box" style="background: #FAFAFA; border: 2rpx dashed var(--primary); padding: 24rpx; border-radius: 16rpx; display: flex; justify-content: space-between; align-items: center;">
-            <text class="code-val" style="font-size: 32rpx; font-weight: bold; color: #333; letter-spacing: 1rpx;">{{ familyCode }}</text>
-            <text class="copy-btn" style="background: var(--primary); color: #fff; padding: 10rpx 24rpx; border-radius: 12rpx; font-size: 24rpx; font-weight: bold;" @click="copyFamilyCode">复制</text>
-          </view>
-        </view>
-        <button class="close-modal-btn prim" style="margin-top: 20rpx;" @click="showFamilyCodeModal = false">关闭</button>
-      </view>
-    </view>
+    <family-code-popup
+      :show="showFamilyCodeModal"
+      :family-code="familyCode"
+      @close="showFamilyCodeModal = false"
+    />
 
     <!-- 13. 新增：密保找回设置弹窗 -->
-    <view class="modal-mask" v-if="showSecuritySettingModal" @click="showSecuritySettingModal = false">
-      <view class="modal-content" @click.stop>
-        <text class="modal-title">🛡️ 数据找回密保设置</text>
-        <view class="invite-info" style="text-align: left; width: 100%; margin: 20rpx 0;">
-          <text class="invite-desc" style="color: #666; font-size: 26rpx; line-height: 1.5; text-align: center; margin-bottom: 30rpx; display: block;">设置密保答案，若未来发生小程序误删或缓存清空，可通过密保安全找回数据。</text>
-          
-          <view class="security-form" style="background: #FAFAFA; padding: 30rpx; border-radius: 20rpx;">
-            <view class="sec-label" style="font-size: 26rpx; color: #888; margin-bottom: 12rpx;">选择密保问题：</view>
-            <picker mode="selector" :range="securityQuestions" @change="onSecurityQuestionChange">
-              <view class="picker-value-box" style="background: #fff; border: 2rpx solid #EFEFEF; border-radius: 12rpx; height: 80rpx; padding: 0 20rpx; display: flex; justify-content: space-between; align-items: center; font-size: 28rpx; color: #333; margin-bottom: 24rpx;">
-                <text>{{ securityForm.question || '请选择密保问题' }}</text>
-                <text class="down-arrow" style="font-size: 20rpx; color: #bbb;">▼</text>
-              </view>
-            </picker>
-
-            <view class="sec-label" style="font-size: 26rpx; color: #888; margin-bottom: 12rpx; margin-top: 10rpx;">密保问题答案：</view>
-            <input 
-              class="sec-input" 
-              style="background: #fff; border: 2rpx solid #EFEFEF; border-radius: 12rpx; height: 80rpx; padding: 0 20rpx; font-size: 28rpx; color: #333;"
-              v-model="securityForm.answer" 
-              placeholder="请输入您的密保答案" 
-            />
-          </view>
-        </view>
-        <view class="modal-btns" style="margin-top: 30rpx; display: flex; gap: 20rpx; width: 100%;">
-          <button class="m-btn-sub" style="flex: 1; border-radius: 40rpx; font-size: 28rpx; height: 80rpx; line-height: 80rpx; background: #F5F5F5; color: #666; margin:0;" @click="showSecuritySettingModal = false">取消</button>
-          <button class="m-btn-main" style="flex: 1; border-radius: 40rpx; font-size: 28rpx; height: 80rpx; line-height: 80rpx; background: var(--primary-grad); color: #fff; box-shadow: 0 8rpx 16rpx var(--primary-shadow); margin:0;" @click="saveSecurityQuestion">保存</button>
-        </view>
-      </view>
-    </view>  </view>
+    <security-setting-popup
+      :show="showSecuritySettingModal"
+      :family-code="familyCode"
+      @close="showSecuritySettingModal = false"
+      @saved="loadFamily"
+    />
+  </view>
 </template>
 
 <script setup>
@@ -555,62 +425,30 @@ import calendarPopup from '@/components/calendar-popup/calendar-popup.vue' // �
 import compassPopup from '@/components/compass-popup/compass-popup.vue' // 指南针弹窗
 import mealPickerPopup from './component/meal-picker-popup.vue' // 吃饭选择弹窗
 import switchFamilyPopup from './component/switch-family-popup.vue' // 切换家庭弹窗
+import securitySettingPopup from './component/security-setting-popup.vue' // 密保找回设置弹窗
+import familyCodePopup from './component/family-code-popup.vue' // 家庭安全编码弹窗
+import randomMenuPopup from './component/random-menu-popup.vue' // 随机抽菜池管理弹窗
+import manageCategoriesPopup from './component/manage-categories-popup.vue' // 分类管理弹窗
+import remindersPopup from './component/reminders-popup.vue' // 智能管家提醒详情弹窗
+import addTastePopup from './component/add-taste-popup.vue' // 添加口味弹窗
+import addAvoidPopup from './component/add-avoid-popup.vue' // 添加忌口弹窗
+import inviteFamilyPopup from './component/invite-family-popup.vue' // 邀请家人加入弹窗
+import joinFamilyPopup from './component/join-family-popup.vue' // 加入新家庭弹窗
+import editFamilyPopup from './component/edit-family-popup.vue' // 修改家庭名称弹窗
+import editMemberPopup from './component/edit-member-popup.vue' // 修改我的昵称/角色弹窗
 import config from '@/common/config'
 import request from '@/common/request.js'
 
 // --- 数据找回与密保双重验证系统 ---
 const showFamilyCodeModal = ref(false)
 const showSecuritySettingModal = ref(false)
-const securityQuestions = ['我的家庭名称是？', '家中常吃的一道菜是？', '自定义家庭备注是？']
-const securityForm = ref({ question: '我的家庭名称是？', answer: '' })
 
 const openShowFamilyCodeModal = () => {
   showFamilyCodeModal.value = true
 }
 
-const copyFamilyCode = () => {
-  if (!familyCode.value) return
-  uni.setClipboardData({
-    data: familyCode.value,
-    success: () => {
-      uni.showToast({ title: '复制成功', icon: 'success' })
-    }
-  })
-}
-
 const openSetSecurityModal = () => {
-  securityForm.value = {
-    question: '我的家庭名称是？',
-    answer: ''
-  }
   showSecuritySettingModal.value = true
-}
-
-const onSecurityQuestionChange = (e) => {
-  const index = e.detail.value
-  securityForm.value.question = securityQuestions[index]
-}
-
-const saveSecurityQuestion = async () => {
-  if (!securityForm.value.answer.trim()) {
-    return uni.showToast({ title: '请输入密保答案', icon: 'none' })
-  }
-  
-  uni.showLoading({ title: '正在云端保存...', mask: true })
-  try {
-    await familyApi.setFamilySecurityQuestion(
-      familyCode.value,
-      securityForm.value.question,
-      securityForm.value.answer.trim()
-    )
-    uni.showToast({ title: '密保设置成功', icon: 'success' })
-    showSecuritySettingModal.value = false
-  } catch (e) {
-    console.error('设置密保失败', e)
-    uni.showToast({ title: '设置密保失败，请重试', icon: 'none' })
-  } finally {
-    uni.hideLoading()
-  }
 }
 const showCompassPopup = ref(false)
 const showBigImage = ref(false)
@@ -647,80 +485,19 @@ const showReminderModal = ref(false)
 
 // 家庭名称修改
 const showFamilyNameModal = ref(false)
-const tempFamilyName = ref('')
 
 const openEditFamilyName = () => {
-  tempFamilyName.value = familyName.value
-  tempAvatar.value = familyAvatar.value
   showFamilyNameModal.value = true
 }
 
-const tempAvatar = ref('')
-const changeAv = () => {
-  uni.chooseImage({
-    count: 1,
-    success: async (res) => {
-      const tempFilePath = res.tempFilePaths[0]
-      uni.showLoading({ title: '上传中...' })
-      try {
-        const fileManager = uni.getFileSystemManager()
-        const base64 = fileManager.readFileSync(tempFilePath, 'base64')
-        const imageData = 'data:image/jpeg;base64,' + base64
-        
-        const response = await recipeApi.uploadFamilyRecipeCover(familyCode.value || 'default_family', imageData)
-        if (response && response.data && response.data.coverUrl) {
-          tempAvatar.value = response.data.coverUrl
-          uni.showToast({ title: '上传成功', icon: 'success' })
-        } else {
-          uni.showToast({ title: '上传失败', icon: 'none' })
-        }
-      } catch (e) {
-        uni.showToast({ title: '上传失败', icon: 'none' })
-      } finally {
-        uni.hideLoading()
-      }
-    }
-  })
-}
-
-const saveFamilyName = async () => {
-  const newName = tempFamilyName.value.trim()
-  const avatar = tempAvatar.value
-  if (!newName) {
-    return uni.showToast({ title: '名称不能为空', icon: 'none' })
-  }
-  try {
-    const res = await familyApi.updateFamily(familyCode.value, newName, avatar)
-    if (res && res.data) {
-      familyName.value = res.data.familyName
-      uni.setStorageSync('family_name', familyName.value)
-      familyAvatar.value = res.data.avatarUrl
-      uni.setStorageSync('family_avatar', res.data.avatarUrl)
-      loadFamily(familyCode.value)
-      showFamilyNameModal.value = false
-      uni.showToast({ title: '修改成功' })
-    } else {
-      uni.showToast({
-        title: res.message || '修改失败',
-        icon: 'none'
-      })
-    }
-  } catch (err) {
-    uni.showToast({ title: '网络错误', icon: 'none' })
-  } finally {
-    uni.hideLoading()
-  }
+const handleFamilySaved = ({ familyName: name, avatarUrl: avatar }) => {
+  familyName.value = name
+  familyAvatar.value = avatar
 }
 
 // 家庭成员功能
 const showInviteModal = ref(false)
 const showJoinModal = ref(false)
-const inviteCode = ref('')
-const joinCode = ref('')
-// 邀请码有效期相关
-const inviteCodeExpireTime = ref(0) // 邀请码过期时间戳
-const countdownSeconds = ref(0) // 倒计时剩余秒数
-let countdownTimer = null // 倒计时定时器
 
 const openInvite = async () => {
   console.log(familyCode.value, familyRole.value, members.value,'--------------')
@@ -731,18 +508,7 @@ const openInvite = async () => {
     if (!ok) return // 创建失败中止
   }
 
-  // 2、检查邀请码是否有效（5分钟内有效）
-  if (!isInviteCodeExpired()) {
-    // 邀请码还在有效期内，直接显示
-    startCountdown() // 重新开始倒计时
-    showInviteModal.value = true
-  } else {
-    // 邀请码已过期，重新获取
-    const ok = await getInviteCode()
-    if (ok) {
-      showInviteModal.value = true
-    }
-  }
+  showInviteModal.value = true
 }
 
 const createFamily = async () => {
@@ -773,84 +539,11 @@ const createFamily = async () => {
   return false
 } 
 
-const getInviteCode = async () => {
-  const res = await familyApi.createFamilyInvite(familyCode.value, 300) // 改为5分钟有效期
-  if (res && res.data) {
-    inviteCode.value = res.data.inviteCode
-    // 设置过期时间为当前时间 + 5分钟（300秒）
-    inviteCodeExpireTime.value = Date.now() + 5 * 60 * 1000
-    // 开始倒计时
-    startCountdown()
-    return true
-  }
-  uni.showToast({ title: '获取验证码失败', icon: 'none' })
-  return false
-}
-
-// 检查邀请码是否过期
-const isInviteCodeExpired = () => {
-  if (!inviteCode.value) return true
-  return Date.now() > inviteCodeExpireTime.value
-}
-
-// 开始倒计时
-const startCountdown = () => {
-  // 清除之前的定时器
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-    countdownTimer = null
-  }
-  
-  // 计算剩余秒数
-  const updateCountdown = () => {
-    const remaining = Math.max(0, Math.ceil((inviteCodeExpireTime.value - Date.now()) / 1000))
-    countdownSeconds.value = remaining
-    
-    if (remaining <= 0) {
-      if (countdownTimer) {
-        clearInterval(countdownTimer)
-        countdownTimer = null
-      }
-    }
-  }
-  
-  updateCountdown()
-  countdownTimer = setInterval(updateCountdown, 1000)
-}
-
-// 格式化倒计时显示
-const formattedCountdown = computed(() => {
-  const minutes = Math.floor(countdownSeconds.value / 60)
-  const seconds = countdownSeconds.value % 60
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-})
-
-const copyCode = () => {
-  uni.setClipboardData({
-    data: inviteCode.value,
-    success: () => uni.showToast({ title: '复制成功' })
-  })
-}
-
-const confirmJoin = async () => {
-  if (!joinCode.value) return uni.showToast({ title: '请输入邀请码', icon: 'none' })
-  const res = await familyApi.joinFamily(joinCode.value)
-  if (res && res.data) {
-    familyCode.value = res.data.member.familyCode
-    familyRole.value = res.data.member.role // 更新当前响应式状态
-    uni.setStorageSync('family_code', familyCode.value)
-    uni.setStorageSync('family_role', familyRole.value)
-    uni.showToast({ title: '成功加入家庭' })
-    showJoinModal.value = false
-    // 查询家庭信息
-    await loadFamily()
-    // 查询家庭成员
-    await loadFamilyMembers()
-
-    // refreshStats()
-  } else {
-    uni.showToast({ title: res.message || '加入家庭失败', icon: 'none' })
-  }
+const handleJoined = async ({ code, role }) => {
+  familyCode.value = code
+  familyRole.value = role
+  await loadFamily()
+  await loadFamilyMembers()
 }
 
 // 家庭信息
@@ -893,57 +586,12 @@ const loadFamilyMembers = async () => {
   }
 }
 
-const tempAvatarUrl = ref('')
-const tempNick = ref('')
-const tempTitle = ref('')
+const activeMember = ref({})
 const showNickModal = ref(false)
 
 const handleMemberClick = (m) => {
-  tempAvatarUrl.value = m.avatarUrl ? m.avatarUrl : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'
-  tempNick.value = m.name || '干饭人'
-  tempTitle.value = m.title || '大主厨'
+  activeMember.value = m
   showNickModal.value = true
-}
-
-const chooseAvatar = () => {
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
-    success: async (res) => {
-      const tempFilePath = res.tempFilePaths[0]
-      uni.showLoading({ title: '上传中...' })
-      try {
-        const fileManager = uni.getFileSystemManager()
-        const base64 = fileManager.readFileSync(tempFilePath, 'base64')
-        const imageData = 'data:image/jpeg;base64,' + base64
-        
-        const response = await recipeApi.uploadFamilyRecipeCover(familyCode.value || 'default_family', imageData)
-        if (response && response.data && response.data.coverUrl) {
-          tempAvatarUrl.value = response.data.coverUrl
-          uni.showToast({ title: '上传成功', icon: 'success' })
-        } else {
-          uni.showToast({ title: '上传失败', icon: 'none' })
-        }
-      } catch (e) {
-        uni.showToast({ title: '上传失败', icon: 'none' })
-      } finally {
-        uni.hideLoading()
-      }
-    }
-  })
-}
-
-const confirmNick = async () => {
-  const res = await familyApi.updateMyFamilyMemberProfile(familyCode.value, tempNick.value, tempTitle.value, tempAvatarUrl.value)
-  if (res && res.data) {
-    uni.showToast({ title: '更新成功' })
-    // 查询家庭成员
-    await loadFamilyMembers()
-  } else {
-    uni.showToast({ title: res.message || '更新失败,请稍后重试', icon: 'none' })
-  }
-  showNickModal.value = false
 }
 
 const leaveFamily = () => {
@@ -1562,8 +1210,6 @@ const isEditingPrefs = ref(false)
 const isEditingTaste = ref(false)
 const showAddAvoidModal = ref(false)
 const showAddTasteModal = ref(false)
-const newAvoid = ref('')
-const newTaste = ref('')
 
 const loadDietPreferences = async () => {
   try {
@@ -1616,34 +1262,7 @@ const selectTaste = (t) => {
 }
 
 const openAddTasteModal = () => {
-  newTaste.value = ''
   showAddTasteModal.value = true
-}
-
-const confirmAddTaste = async () => {
-  const val = newTaste.value.trim()
-  if (!val) return
-  if (tasteOptions.value.some(x => x.title === val)) {
-    return uni.showToast({ title: '已在列表中', icon: 'none' })
-  }
-  
-  uni.showLoading({ title: '正在添加...', mask: true })
-  try {
-    await familyApi.saveFamilyDietPreference(familyCode.value, JSON.stringify({
-      title: val,
-      type: 'family_taste'
-    }))
-    uni.showToast({ title: '添加成功', icon: 'success' })
-    showAddTasteModal.value = false
-    
-    const resTaste = await familyApi.getFamilyDietPreferences(familyCode.value, 'family_taste')
-    tasteOptions.value = resTaste.data?.preferences || []
-  } catch (e) {
-    console.error('添加口味失败', e)
-    uni.showToast({ title: '添加失败', icon: 'none' })
-  } finally {
-    uni.hideLoading()
-  }
 }
 
 const removeTaste = async (t) => {
@@ -1679,34 +1298,7 @@ const toggleAvoid = (a) => {
 }
 
 const openAddAvoidModal = () => {
-  newAvoid.value = ''
   showAddAvoidModal.value = true
-}
-
-const confirmAddAvoid = async () => {
-  const val = newAvoid.value.trim()
-  if (!val) return
-  if (avoidOptions.value.some(x => x.title === val)) {
-    return uni.showToast({ title: '已在列表中', icon: 'none' })
-  }
-  
-  uni.showLoading({ title: '正在添加...', mask: true })
-  try {
-    await familyApi.saveFamilyDietPreference(familyCode.value, JSON.stringify({
-      title: val,
-      type: 'avoid_food'
-    }))
-    uni.showToast({ title: '添加成功', icon: 'success' })
-    showAddAvoidModal.value = false
-    
-    const resAvoid = await familyApi.getFamilyDietPreferences(familyCode.value, 'avoid_food')
-    avoidOptions.value = resAvoid.data?.preferences || []
-  } catch (e) {
-    console.error('添加忌口失败', e)
-    uni.showToast({ title: '添加失败', icon: 'none' })
-  } finally {
-    uni.hideLoading()
-  }
 }
 
 const removeAvoid = async (a) => {
@@ -1738,67 +1330,15 @@ const removeAvoid = async (a) => {
 
 // 随机抽菜菜单配置===========================
 const showRandomMenuModal = ref(false)
-const randomMenu = ref([])
-const newRandomDish = ref('')
-
-const loadRandomMenu = async () => {
-  const res = await familyApi.getFamilyRecipePoolItems(familyCode.value)
-  randomMenu.value = res.data.dishes || []
-  showRandomMenuModal.value = true
-}
-
-const addRandomDish = async () => {
-  const val = newRandomDish.value.trim()
-  if (!val) return
-  const dishJson = { name: val, type: "manual" } // type: manual 手动添加
-  const res = await familyApi.saveFamilyRecipePoolItem(familyCode.value, dishJson)
-  uni.showToast({ title: '添加成功', icon: 'none' })
-  newRandomDish.value = ''
-  loadRandomMenu()
-}
-
-const removeRandomDish = async (idx) => {
-  // 弹框确认
-  uni.showModal({
-    title: '确认删除',
-    content: '确定要删除该抽菜项吗？',
-    successText: '确认删除',
-    successColor: '#FF4444',
-    success: async (res) => {
-      if (res.confirm) {
-        // 执行删除
-        const res = await familyApi.deleteFamilyRecipePoolItem(randomMenu.value[idx].id)
-        uni.showToast({ title: '已删除', icon: 'none' })
-        loadRandomMenu()
-      }
-    }
-  })
-}
 // ===========================================
 
 // 分类管理
 const showCatModal = ref(false)
-const categories = ref([])
-const newCat = ref('')
 
-const addCategory = () => {
-  if (!newCat.value.trim()) return
-  if (categories.value.includes(newCat.value.trim())) {
-    return uni.showToast({ title: '分类已存在', icon: 'none' })
-  }
-  categories.value.push(newCat.value.trim())
-  newCat.value = ''
-  uni.setStorageSync('ingredient_categories', categories.value)
-}
-
-const removeCategory = (idx) => {
-  categories.value.splice(idx, 1)
-  uni.setStorageSync('ingredient_categories', categories.value)
-}
 
 const handleSetting = (name) => {
   if (name === '抽菜配置') {
-    loadRandomMenu()
+    showRandomMenuModal.value = true
   } else if (name === '随手记') {
     uni.navigateTo({
       url: '/pages/family/component/memo?type=personal'
