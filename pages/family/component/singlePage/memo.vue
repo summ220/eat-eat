@@ -94,13 +94,13 @@ const getFirstLine = (text) => {
 
 const addMemo = () => {
   uni.navigateTo({
-    url: `/pages/family/component/memo-edit?type=${memoType.value}`
+    url: `/pages/family/component/singlePage/memo-edit?type=${memoType.value}`
   })
 }
 
 const editMemo = (item) => {
   uni.navigateTo({
-    url: `/pages/family/component/memo-edit?id=${item.id}&type=${memoType.value}`
+    url: `/pages/family/component/singlePage/memo-edit?id=${item.id}&type=${memoType.value}`
   })
 }
 

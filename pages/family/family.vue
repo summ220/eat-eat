@@ -1,5 +1,5 @@
 <template>
-  <view class="page-container" :style="themeStyle" @click="isEditingPrefs = isEditingTaste = false">
+  <view class="page-container" :style="themeStyle" @click="dietPreferencesRef?.cancelEdit()">
     <!-- 1. 顶部大卡片 -->
     <view class="top-card">
       <!-- 智能提醒跑马灯 (移至最顶部) -->
@@ -275,20 +275,20 @@ import familyApi from '@/common/api/family.js'
 import weatherPopup from '@/components/weather-popup/weather-popup.vue' // 天气预警弹窗
 import calendarPopup from '@/components/calendar-popup/calendar-popup.vue' // 万年历弹窗
 import compassPopup from '@/components/compass-popup/compass-popup.vue' // 指南针弹窗
-import mealsPlan from './component/meals-plan.vue' // 一体化自治三餐组件
-import familyMembers from './component/family-members.vue' // 家庭成员自治组件
-import healthCard from './component/health-card.vue' // 家庭健康简报卡片自治组件
-import memoCard from './component/memo-card.vue' // 家庭备忘录简报卡片自治组件
-import quickFeatures from './component/quick-features.vue' // 快捷功能及抽菜自治组件
-import switchFamilyPopup from './component/switch-family-popup.vue' // 切换家庭弹窗
-import securitySettingPopup from './component/security-setting-popup.vue' // 密保找回设置弹窗
-import familyCodePopup from './component/family-code-popup.vue' // 家庭安全编码弹窗
-import dietPreferences from './component/diet-preferences.vue' // 饮食偏好自治组件
-import spendingTrend from './component/spending-trend.vue' // 消费趋势卡片自治组件
-import themePicker from './component/theme-picker.vue' // 个性主题选择自治组件
+import mealsPlan from './component/content/meals-plan.vue' // 一体化自治三餐组件
+import familyMembers from './component/content/family-members.vue' // 家庭成员自治组件
+import healthCard from './component/content/health-card.vue' // 家庭健康简报卡片自治组件
+import memoCard from './component/content/memo-card.vue' // 家庭备忘录简报卡片自治组件
+import quickFeatures from './component/content/quick-features.vue' // 快捷功能及抽菜自治组件
+import switchFamilyPopup from './component/alert/switch-family-popup.vue' // 切换家庭弹窗
+import securitySettingPopup from './component/alert/security-setting-popup.vue' // 密保找回设置弹窗
+import familyCodePopup from './component/alert/family-code-popup.vue' // 家庭安全编码弹窗
+import dietPreferences from './component/content/diet-preferences.vue' // 饮食偏好自治组件
+import spendingTrend from './component/content/spending-trend.vue' // 消费趋势卡片自治组件
+import themePicker from './component/content/theme-picker.vue' // 个性主题选择自治组件
 
-import joinFamilyPopup from './component/join-family-popup.vue' // 加入新家庭弹窗
-import editFamilyPopup from './component/edit-family-popup.vue' // 修改家庭名称弹窗
+import joinFamilyPopup from './component/alert/join-family-popup.vue' // 加入新家庭弹窗
+import editFamilyPopup from './component/alert/edit-family-popup.vue' // 修改家庭名称弹窗
 
 import config from '@/common/config'
 import request from '@/common/request.js'
@@ -580,13 +580,13 @@ const handleClearCache = () => {
 }
 
 const goToMemo = () => {
-  uni.navigateTo({ url: '/pages/family/component/memo' })
+  uni.navigateTo({ url: '/pages/family/component/singlePage/memo' })
 }
 
 const goToHealth = () => {
   console.log('Attempting to navigate to health page...')
   uni.navigateTo({ 
-    url: '/pages/family/component/health',
+    url: '/pages/family/component/singlePage/health',
     success: () => console.log('Navigation success'),
     fail: (err) => {
       console.error('Navigation to health page failed:', err)
@@ -944,40 +944,12 @@ const concatenatedReminders = computed(() => {
 }
 
 
-/* 3. 今日三餐计划 */
-.meals-section {
-  margin-top: 30rpx;
-  .section-title {
-    .subtle-link {
-      background: rgba(0,0,0,0.04);
-      padding: 8rpx 20rpx;
-      border-radius: 50rpx;
-      color: #7F8C8D;
-      font-weight: 500;
-    }
-  }
-}
-
-
-/* 5. 饮食偏好设置 */
-
-@keyframes shake {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(1.5deg); }
-  75% { transform: rotate(-1.5deg); }
-  100% { transform: rotate(0deg); }
-}
-
-/* 12. 家庭备忘录入口 */
-.health-section {
-  background: #fff;
-  border-radius: 48rpx;
-  padding: 30rpx;
-  
-  .section-title {
-    margin-bottom: 24rpx;
-  }
-  
+.subtle-link {
+  background: rgba(0,0,0,0.04);
+  padding: 8rpx 20rpx;
+  border-radius: 50rpx;
+  color: #7F8C8D;
+  font-weight: 500;
 }
 
 

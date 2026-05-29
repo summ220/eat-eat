@@ -1,3 +1,4 @@
+<!-- 健康管理组件 -->
 <template>
   <custom-header title="健康管理" icon="🍳" :back="true" />
   <view class="health-page" :style="themeStyle" v-if="currentMember">
@@ -15,8 +16,8 @@
             :class="{ active: currentMemberIdx === idx }"
             @click="currentMemberIdx = idx"
           >
-            <image class="m-avatar" :src="m.avatar" mode="aspectFill" />
-            <text class="m-name">{{ m.nick }}</text>
+            <image class="m-avatar" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" />
+            <text class="m-name">{{ m.name }}</text>
           </view>
         </view>
       </scroll-view>
@@ -186,6 +187,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import familyApi from '@/common/api/family.js'
+import { onShow } from '@dcloudio/uni-app'
+import config from '@/common/config'
+
+const familyCode = uni.getStorageSync('family_code')
 
 const currentMemberIdx = ref(0)
 const themeStyle = ref('')
@@ -193,31 +199,47 @@ const themeStyle = ref('')
 const members = ref([
   { 
     nick: '爸爸', 
-    avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png',
+    avatar: config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg',
     height: 175, weight: 75.5, age: 35, gender: '男',
     bmi: 24.7, targetWeight: 70, startWeight: 78,
     goalType: '健康减脂',
     history: [78, 77.5, 77, 76.5, 76, 75.8, 75.5]
-  },
-  { 
-    nick: '妈妈', 
-    avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png',
-    height: 162, weight: 52, age: 32, gender: '女',
-    bmi: 19.8, targetWeight: 50, startWeight: 54,
-    goalType: '维持体态',
-    history: [54, 53.5, 53, 52.8, 52.5, 52.2, 52]
-  },
-  { 
-    nick: '宝宝', 
-    avatar: 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png',
-    height: 110, weight: 18, age: 5, gender: '男',
-    bmi: 14.9, targetWeight: 20, startWeight: 17,
-    goalType: '均衡成长',
-    history: [17, 17.2, 17.5, 17.6, 17.8, 17.9, 18]
   }
 ])
 
-console.log('Health.vue script initialized. members count:', members.value.length)
+onShow(() => {
+  console.log('familyCode', familyCode)
+  loadFamilyMembers()
+})
+
+const loadFamilyMembers = async () => {
+  try {
+    const res = await familyApi.getFamilyMembers(familyCode)
+    if (res && res.data) {
+      members.value = res.data || []
+      // 找出自己
+      members.value.forEach(m => {
+        if (m.deviceId === uni.getStorageSync('device_id')) {
+          m.isSelf = true
+        } else {
+          m.isSelf = false
+        }
+      })
+      // 自己排到第一位，管理员第二，其他按加入时间倒序
+      members.value.sort((a, b) => {
+        if (a.isSelf) return -1
+        if (b.isSelf) return 1
+        if (a.role === 'owner') return -1
+        if (b.role === 'owner') return 1
+        return 1
+      })
+
+      console.log('members', members.value)
+    }
+  } catch (err) {
+    console.error('获取家庭成员失败:', err)
+  }
+}
 
 const currentMember = computed(() => {
   if (currentMemberIdx.value < 0 || currentMemberIdx.value >= members.value.length) return null
@@ -234,9 +256,9 @@ const goalProgress = computed(() => {
 })
 
 const recommendedRecipes = ref([
-  { name: '西蓝花虾仁炒蛋', kcal: 320, type: '减脂/高蛋白', image: 'https://img-blog.csdnimg.cn/20240110133807328.png' },
-  { name: '清蒸柠檬鱼', kcal: 280, type: '低卡/清淡', image: 'https://img-blog.csdnimg.cn/20240110133807328.png' },
-  { name: '五谷糙米饭', kcal: 150, type: '优质碳水', image: 'https://img-blog.csdnimg.cn/20240110133807328.png' }
+  { name: '西蓝花虾仁炒蛋', kcal: 320, type: '减脂/高蛋白', image: config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg' },
+  { name: '清蒸柠檬鱼', kcal: 280, type: '低卡/清淡', image: config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg' },
+  { name: '五谷糙米饭', kcal: 150, type: '优质碳水', image: config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg' }
 ])
 
 const getBmiStatus = (bmi) => {
@@ -282,7 +304,7 @@ const tempGoalType = ref('')
 
 const displayedHistory = computed(() => {
   const history = currentMember.value.history
-  if (trendType.value === 'week') return history.slice(-7)
+  // if (trendType.value === 'week') return history.slice(-7)
   return history // 演示用，全量展示
 })
 

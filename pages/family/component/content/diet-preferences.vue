@@ -263,8 +263,14 @@ watch(() => props.familyCode, (newVal) => {
   }
 }, { immediate: true })
 
+const cancelEdit = () => {
+  isEditingTaste.value = false
+  isEditingPrefs.value = false
+}
+
 defineExpose({
-  loadDietPreferences
+  loadDietPreferences,
+  cancelEdit
 })
 </script>
 

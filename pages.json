@@ -84,21 +84,21 @@
 			}
 		},
 		{
-			"path": "pages/family/component/memo",
+			"path": "pages/family/component/singlePage/memo",
 			"style": {
 				"navigationBarTitleText": "家庭备忘录",
 				"navigationBarBackgroundColor": "#FFF5F7"
 			}
 		},
 		{
-			"path": "pages/family/component/health",
+			"path": "pages/family/component/singlePage/health",
 			"style": {
 				"navigationBarTitleText": "家庭健康管理",
 				"navigationBarBackgroundColor": "#FFF5F7"
 			}
 		},
 		{
-			"path": "pages/family/component/memo-edit",
+			"path": "pages/family/component/singlePage/memo-edit",
 			"style": {
 				"navigationBarTitleText": "编辑备忘录",
 				"navigationBarBackgroundColor": "#FFF5F7"

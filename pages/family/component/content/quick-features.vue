@@ -111,7 +111,7 @@ const handleSetting = (name) => {
     showRandomMenuModal.value = true
   } else if (name === '随手记') {
     uni.navigateTo({
-      url: '/pages/family/component/memo?type=personal'
+      url: '/pages/family/component/singlePage/memo?type=personal'
     })
   } else {
     uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
