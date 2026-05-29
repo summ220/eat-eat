@@ -54,7 +54,7 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import familyApi from '@/common/api/family.js'
-import welcomeAd from './component/welcome-ad.vue'
+import welcomeAd from '@/pages/welcome/welcome-ad.vue'
 
 const familyCode = ref(uni.getStorageSync('family_code') || 'default_family')
 const hasFamily = ref(!!uni.getStorageSync('family_code'))

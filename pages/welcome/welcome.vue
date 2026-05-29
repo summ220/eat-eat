@@ -74,8 +74,11 @@
         </button>
       </view>
 
-      <view class="abandon-btn" style="margin-top: 40rpx; padding: 10rpx 40rpx; cursor: pointer;" @click="restoreStep = 0">
-        <text class="abandon-text" style="font-size: 26rpx; color: #999; font-weight: 500; text-decoration: underline;">返回欢迎页</text>
+      <view class="abandon-btn-wrapper" @click="restoreStep = 0">
+        <view class="abandon-btn-inner">
+          <text class="abandon-icon">←</text>
+          <!-- <text class="abandon-text">返回欢迎页</text> -->
+        </view>
       </view>
     </view>
     
@@ -491,5 +494,64 @@ onUnmounted(() => {
 @keyframes adFadeOut {
   0%   { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.05); }
+}
+
+.abandon-btn-wrapper {
+  margin-top: 40rpx;
+  padding: 12rpx 40rpx;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  
+  &:active {
+    transform: scale(0.96) translateX(-4rpx);
+    opacity: 0.8;
+  }
+}
+
+.abandon-btn-inner {
+  background-color: var(--primary);
+  border-radius: 50%;
+  padding: 8rpx 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 8rpx;
+  
+  .abandon-icon {
+    font-size: 32rpx;
+    color: #fff;
+    font-weight: bold;
+    display: inline-block;
+    animation: slideLeft 1.6s infinite ease-in-out;
+  }
+  
+  .abandon-text {
+    font-size: 26rpx;
+    color: #fff;
+    font-weight: 500;
+    letter-spacing: 1rpx;
+    transition: color 0.3s ease;
+  }
+  
+  &:hover {
+    .abandon-text {
+      color: var(--primary, #FF6B8B);
+    }
+    .abandon-icon {
+      color: var(--primary, #FF6B8B);
+    }
+  }
+}
+
+@keyframes slideLeft {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-8rpx);
+  }
 }
 </style>

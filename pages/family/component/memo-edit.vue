@@ -1,3 +1,4 @@
+<!-- 编辑备忘录、随手记 -->
 <template>
   <custom-header :title="memoType === 'personal' ? '随手记' : '备忘录'" icon="📝" back />
   <view class="page" :style="themeStyle">

@@ -56,22 +56,17 @@
     </view>
 
     <view class="main-content">
-      <!-- 4. 家庭成员 (挪到最上方) -->
+      <!-- 1. 家庭成员 -->
       <view class="section members-section">
         <view class="section-title">
           <text class="title-text">家庭成员</text>
           <view class="title-actions">
-            <!-- <text class="action-text secondary" @click="showJoinModal = true">加入</text> -->
             <text class="action-text" @click="openInvite">邀请</text>
           </view>
         </view>
         <scroll-view scroll-x class="member-scroll" :show-scrollbar="false">
           <view class="member-list">
-            <view 
-              class="member-card" 
-              v-for="(m, idx) in members" 
-              :key="idx"
-            >
+            <view class="member-card" v-for="(m, idx) in members" :key="idx" >
               <view class="avatar-wrap">
                 <image class="m-avatar" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(m.avatarUrl || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg')" />
                 <view class="edit-tag" v-if="m.isSelf" @click="handleMemberClick(m)">✏️</view>
@@ -89,7 +84,7 @@
         </view>
       </view>
 
-      <!-- 13. 家庭健康管理入口 -->
+      <!-- 2. 家庭健康管理入口 -->
       <view class="section health-section" @click="goToHealth">
         <view class="section-title">
           <text class="title-text">家庭健康管理</text>
@@ -120,7 +115,7 @@
       </view>
 
 
-      <!-- 3. 今日三餐精致卡片区 -->
+      <!-- 3. 今日三餐 -->
       <view class="section meals-section">
         <view class="section-title with-bar">
           <text class="title-text">今日三餐</text>
@@ -138,7 +133,7 @@
             </view>
             <view class="sc-right-btn" @click.stop="(!m.recipes || m.recipes.length === 0) ? openMealSelector(m) : handleMakeMeal(m)">
                <block v-if="!m.recipes || m.recipes.length === 0">
-                  <view class="sc-circle-add"><text>+</text></view>
+                  <view class="sc-circle-add">+</view>
                </block>
                <block v-else>
                   <view class="sc-pill-go" :class="{ 'is-done': m.done }">
@@ -150,7 +145,7 @@
         </view>
       </view>
 
-      <!-- 12. 家庭备忘录入口 -->
+      <!-- 4. 家庭备忘录入口 -->
       <view class="section memo-section" @click="goToMemo">
         <view class="section-title">
           <text class="title-text">家庭备忘录</text>
@@ -161,7 +156,7 @@
         </view>
       </view>
 
-      <!-- 8. 快捷功能宫格 -->
+      <!-- 5. 快捷功能宫格 -->
       <view class="section quick-section">
         <view class="quick-grid">
           <view class="quick-item" v-for="(q, i) in quickFuncs" :key="i" @click="handleSetting(q.name)">
@@ -171,17 +166,13 @@
         </view>
       </view>
 
-      <!-- 5. 饮食偏好设置 -->
+      <!-- 6. 饮食偏好设置 -->
       <view class="section prefs-section">
         <view class="section-title"><text class="title-text">饮食偏好</text></view>
         <view class="pref-group">
           <text class="p-label">全家口味 (长按管理)</text>
           <view class="p-options">
-            <view 
-              class="p-tag" 
-              :class="{ active: true, editing: isEditingTaste }" 
-              v-for="t in tasteOptions" 
-              :key="t.id" 
+            <view class="p-tag" :class="{ active: true, editing: isEditingTaste }" v-for="t in tasteOptions" :key="t.id" 
               @click.stop="selectTaste(t)"
               @longpress.stop="isEditingTaste = !isEditingTaste"
             >
@@ -196,12 +187,7 @@
         <view class="pref-group">
           <text class="p-label">忌口不吃 (长按管理)</text>
           <view class="p-options">
-            <view 
-              class="p-tag" 
-              :class="{ active: true, editing: isEditingPrefs }" 
-              v-for="a in avoidOptions" 
-              :key="a.id" 
-              @click.stop="toggleAvoid(a)"
+            <view class="p-tag" :class="{ active: true, editing: isEditingPrefs }" v-for="a in avoidOptions" :key="a.id" @click.stop="toggleAvoid(a)"
               @longpress.stop="isEditingPrefs = !isEditingPrefs"
             >
               <text>{{ a.title }}</text>
@@ -243,7 +229,7 @@
         </view>
       </view>
 
-      <!-- 9. 消费趋势卡片 -->
+      <!-- 7. 消费趋势卡片 -->
       <view class="section trend-section">
         <view class="section-title"><text class="title-text">近7日开销</text></view>
         <view class="chart-box">
@@ -260,7 +246,7 @@
         </view>
       </view>
 
-      <!-- 6. 主题切换 -->
+      <!-- 8. 主题切换 -->
       <view class="section theme-section">
         <view class="section-title">
           <text class="title-text">个性主题</text>
@@ -279,7 +265,7 @@
         </view>
       </view>
 
-      <!-- 11. 底部设置模块 -->
+      <!-- 9. 底部设置模块 -->
       <view class="bottom-settings">
         <view class="set-list">
           <view class="set-item" @click="openShowFamilyCodeModal" v-if="familyCode && familyRole === 'owner'">
@@ -294,11 +280,6 @@
             <text class="set-desc" style="margin-right:16rpx; color: #999;">保障历史数据</text>
             <text class="set-arrow">👉</text>
           </view>
-          <!-- <view class="set-item" @click="handleSetting('分类设置')">
-            <text class="set-icon">🏷️</text>
-            <text class="set-text">分类设置</text>
-            <text class="set-arrow">></text>
-          </view> -->
           <view class="set-item">
             <text class="set-icon" @click="handleClearCache">🧹</text>
             <text class="set-text">清除缓存</text>
@@ -515,106 +496,31 @@
 
       <view class="footer-safe"></view>
     </view>
-    <!-- 天气详情弹窗 -->
+    <!-- 天气组件 -->
     <weather-popup 
       :show="showWeatherPopup" 
       :location="weatherLocation" 
       @close="showWeatherPopup = false" 
     />
+    <!-- 日历组件 -->
     <calendar-popup 
       :show="showCalendarPopup" 
       @close="showCalendarPopup = false"
     />
+    <!-- 指南针组件 -->
     <compass-popup 
       :show="showCompassPopup" 
       @close="showCompassPopup = false"
     />
 
 
-    <!-- 重构版选菜弹窗 -->
-    <view class="bottom-modal-mask" v-if="showMealPopup" @click="closeMealPopup">
-      <view class="meal-picker-modal" @click.stop>
-        <view class="mp-head">
-          <text class="mp-t1">安排{{ currentMeal?.name }}</text>
-          <view class="mp-close-x" @click="closeMealPopup">✕</view>
-        </view>
-        
-        <scroll-view scroll-y class="mp-scroll-body">
-          
-          <!-- 我的收藏快捷入口 -->
-          <view class="mp-group" v-if="favoriteRecipes.length > 0">
-            <view class="mp-group-title">❤️ 我的收藏菜谱 <text class="sub">(点击快速安排)</text></view>
-            <view class="mp-grid-tags">
-              <view class="mp-grid-tag" 
-                    v-for="item in favoriteRecipes" :key="item" 
-                    :class="{ selected: tempSelectedRecipes.includes(item) }"
-                    @click="toggleRecipeSelection(item)">
-                <text class="txt">{{ item }}</text>
-                <view class="checker">
-                  <text v-if="tempSelectedRecipes.includes(item)">✓</text>
-                </view>
-              </view>
-            </view>
-          </view>
-          
-          <!-- 当前餐次常用菜单 -->
-          <view class="mp-group">
-            <view class="mp-group-title">💡 常用{{ currentMeal?.name }}菜单 <text class="sub">(可多选，长按删除)</text></view>
-            <view class="mp-grid-tags">
-              <view class="mp-grid-tag" 
-                    v-for="item in currentCommonList" :key="item" 
-                    :class="{ selected: tempSelectedRecipes.includes(item) }"
-                    @click="toggleRecipeSelection(item)"
-                    @longpress.stop="deleteRecipeFromList(item, 'common')">
-                <text class="txt">{{ item }}</text>
-                <view class="checker">
-                  <text v-if="tempSelectedRecipes.includes(item)">✓</text>
-                </view>
-              </view>
-              <view class="mp-none-tip" v-if="!currentCommonList.length">暂无常用菜，去添加吧~</view>
-            </view>
-          </view>
-          <!-- 新增临时安排的菜品展现 -->
-          <view class="mp-group" v-if="currentTempPool.length > 0">
-            <view class="mp-group-title">📋 本次临时安排 <text class="sub">(长按可删除)</text></view>
-            <view class="mp-grid-tags">
-              <view class="mp-grid-tag" 
-                    v-for="item in currentTempPool" :key="item" 
-                    :class="{ selected: tempSelectedRecipes.includes(item) }"
-                    @click="toggleRecipeSelection(item)"
-                    @longpress.stop="deleteRecipeFromList(item, 'temp')">
-                <text class="txt">{{ item }}</text>
-                <view class="checker">
-                  <text v-if="tempSelectedRecipes.includes(item)">✓</text>
-                </view>
-              </view>
-            </view>
-          </view>
-          
-          <!-- 底部新增区 -->
-          <view class="mp-add-block">
-             <view class="mp-group-title">✨ 添加新菜品</view>
-             <view class="mp-add-bar">
-               <input class="mp-input-box" v-model="customMealName" placeholder="请输入菜品名称" />
-               <view class="mp-trigger-btn" @click="addCustomToSelection">添加</view>
-             </view>
-             <view class="mp-opt-row">
-               <view class="mp-checkbox-line" @click="saveToCommon = !saveToCommon">
-                 <checkbox :checked="saveToCommon" color="#FF7DA8" style="transform:scale(0.7)" />
-                 <text class="line-label">同时保存到常用菜单</text>
-               </view>
-             </view>
-          </view>
-        </scroll-view>
-        
-        <!-- 悬浮确定的底部 -->
-        <view class="mp-bottom-bar">
-          <button class="mp-action-btn" @click="confirmMealSelection">
-            确定 <text class="cnt" v-if="tempSelectedRecipes.length">({{ tempSelectedRecipes.length }} 道)</text>
-          </button>
-        </view>
-      </view>
-    </view>
+    <!-- 选菜组件 -->
+    <meal-picker-popup
+      :show="showMealPopup"
+      :meal="currentMeal"
+      @close="closeMealPopup"
+      @confirm="confirmMealSelection"
+    />
 
     <!-- 智能管家提醒详情弹窗 -->
     <view class="modal-mask" v-if="showReminderModal" @click="showReminderModal = false">
@@ -702,9 +608,10 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import familyApi from '@/common/api/family.js'
 import recipeApi from '@/common/api/recipe.js'
-import weatherPopup from '@/components/weather-popup/weather-popup.vue'
-import calendarPopup from '@/components/calendar-popup/calendar-popup.vue'
-import compassPopup from '@/components/compass-popup/compass-popup.vue'
+import weatherPopup from '@/components/weather-popup/weather-popup.vue' // 天气预警弹窗
+import calendarPopup from '@/components/calendar-popup/calendar-popup.vue' // 万年历弹窗
+import compassPopup from '@/components/compass-popup/compass-popup.vue' // 指南针弹窗
+import mealPickerPopup from './component/meal-picker-popup.vue' // 吃饭选择弹窗
 import config from '@/common/config'
 import request from '@/common/request.js'
 
@@ -1385,42 +1292,6 @@ const stats = ref([
 // 预算
 const budget = ref({ total: 3000, spent: 0 })
 
-const refreshStats = async () => {
-  try {
-    const fId = familyCode.value
-    const [stocks, shops, costs, recipes] = await Promise.all([
-      eatCo.getStockList(fId),
-      eatCo.getShopList(fId),
-      eatCo.getCostList(fId),
-      eatCo.getRecipeList(fId)
-    ])
-
-    // 1. 食材总数
-    stats.value[0].num = stocks.length
-    
-    // 2. 待采购
-    stats.value[1].num = shops.filter(s => !s.done).length
-    
-    // 3. 本月花费
-    const now = new Date()
-    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    const monthCosts = costs.filter(c => c.date && c.date.startsWith(monthKey))
-    const totalSpent = monthCosts.reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0)
-    stats.value[2].num = Math.round(totalSpent)
-    budget.value.spent = Math.round(totalSpent)
-
-    // 4. 收藏菜谱
-    stats.value[3].num = recipes.filter(r => r.favorite).length
-
-    // 5. 自动算一些趣味数据 (如常吃食材)
-    if (stocks.length > 0) {
-      stats.value[5].num = stocks[0].name
-    }
-  } catch (e) {
-    console.error('统计加载失败', e)
-  }
-}
-
 let lastUpdateDate = ''
 onShow(() => {
   const code = uni.getStorageSync('family_code')
@@ -1546,20 +1417,7 @@ const commonMenus = ref(uni.getStorageSync('common_menus') || {
   '晚餐': ['清炒时蔬', '小米粥', '蔬菜沙拉', '煎鸡胸肉']
 })
 
-const tempSelectedRecipes = ref([])
-const favoriteRecipes = ref([])
-const recipeStatusMap = ref({}) // 暂时保留变量声明以免意外报错，但逻辑清空，也可删除。实际上我们直接删掉好了。
-// 为了彻底，我还是连带着上面的变量声明直接删了这一行。
-const currentCommonList = computed(() => {
-  if (!currentMeal.value) return []
-  return commonMenus.value[currentMeal.value.name] || []
-})
-
-const todayTempMenuAll = ref({ '早餐': [], '午餐': [], '晚餐': [] })
-const currentTempPool = computed(() => {
-  if (!currentMeal.value) return []
-  return todayTempMenuAll.value[currentMeal.value.name] || []
-})
+// 三餐选择弹窗所用状态 (交由子组件自给自足)
 
 const initEmptyMeals = () => [
   { name: '早餐', icon: '🥛', recipes: [], done: false },
@@ -1567,8 +1425,10 @@ const initEmptyMeals = () => [
   { name: '晚餐', icon: '🥗', recipes: [], done: false }
 ]
 
-const loadMeals = () => {
+const loadMeals = async () => {
   const today = new Date().toISOString().split('T')[0]
+  
+  // 1. 首屏优先展示本地缓存数据，极速响应防止渲染空白
   let todayData = uni.getStorageSync('daily_meals_' + today)
   if (todayData) {
     meals.value = todayData
@@ -1579,36 +1439,149 @@ const loadMeals = () => {
       uni.setStorageSync('daily_meals_' + today, stored.data)
     } else {
       meals.value = initEmptyMeals()
-      saveMeals()
     }
   }
-  // 加载今天的全天临时菜池，随日期变动自动重置
-  const tempStore = uni.getStorageSync('daily_temp_pool_' + today)
-  todayTempMenuAll.value = tempStore || { '早餐': [], '午餐': [], '晚餐': [] }
+
+  // 2. 发起云端 API 请求以获取及校准最新三餐数据
+  if (!familyCode.value) return
+  try {
+    const res = await familyApi.getDailyMeals(familyCode.value, today)
+    if (res && res.data) {
+      const serverMeals = res.data.meals || res.data || []
+      if (serverMeals.length > 0) {
+        const localMeals = initEmptyMeals()
+        localMeals.forEach(lm => {
+          const match = serverMeals.find(sm => (sm.mealName || sm.meal_name || sm.name) === lm.name)
+          if (match) {
+            lm.recipes = match.recipes || []
+            lm.done = match.done === true || match.done === 1 || match.done === '1'
+          }
+        })
+        meals.value = localMeals
+        // 更新本地缓存
+        uni.setStorageSync('daily_meals_' + today, meals.value)
+        uni.setStorageSync('daily_meals', { date: today, data: meals.value })
+      }
+    }
+  } catch (e) {
+    console.error('从云端加载三餐数据失败', e)
+  }
 }
 
-const saveMeals = () => {
+const saveMeals = async () => {
   const today = new Date().toISOString().split('T')[0]
   uni.setStorageSync('daily_meals_' + today, meals.value)
   uni.setStorageSync('daily_meals', { date: today, data: meals.value }) // 兼容老数据
+
+  // 同步保存至云端服务器
+  if (!familyCode.value) return
+  try {
+    const formattedMeals = meals.value.map(m => ({
+      meal_name: m.name,
+      done: m.done ? 1 : 0,
+      recipes: m.recipes || []
+    }))
+    await familyApi.saveDailyMeals(familyCode.value, today, formattedMeals)
+  } catch (e) {
+    console.error('同步保存三餐至云端出错', e)
+  }
 }
 
 const copyMealsToTomorrow = () => {
   uni.showModal({
     title: '复制到明天',
-    content: '将把今天的三餐计划复制到明天，并在明日生效，是否确认？',
-    success: (res) => {
+    content: '将把今天云端的三餐计划和临时安排菜品复制到明天，并在明日生效，是否确认？',
+    success: async (res) => {
       if (res.confirm) {
+        if (!familyCode.value) {
+          return uni.showToast({ title: '未关联家庭，无法同步', icon: 'none' })
+        }
+        
+        const today = new Date().toISOString().split('T')[0]
         const tomorrow = new Date()
         tomorrow.setDate(tomorrow.getDate() + 1)
         const tomorrowStr = tomorrow.toISOString().split('T')[0]
         
-        const tomorrowMeals = meals.value.map(m => ({
-          ...m,
-          done: false
-        }))
-        uni.setStorageSync('daily_meals_' + tomorrowStr, tomorrowMeals)
-        uni.showToast({ title: '已复制到明天', icon: 'success' })
+        uni.showLoading({ title: '正在复制...', mask: true })
+        try {
+          // 1. 从云端拉取今日的最真实的三餐安排数据
+          let todayMeals = []
+          try {
+            const resDaily = await familyApi.getDailyMeals(familyCode.value, today)
+            const list = resDaily.data?.meals || resDaily.data || []
+            if (list.length > 0) {
+              const localMeals = initEmptyMeals()
+              localMeals.forEach(lm => {
+                const match = list.find(sm => (sm.mealName || sm.meal_name || sm.name) === lm.name)
+                if (match) {
+                  lm.recipes = match.recipes || []
+                  lm.done = false // 复制到明天一律初始化为未完成
+                }
+              })
+              todayMeals = localMeals
+            } else {
+              todayMeals = meals.value.map(m => ({ ...m, done: false }))
+            }
+          } catch (err) {
+            console.error('云端获取今日三餐出错，降级使用当前本地数据', err)
+            todayMeals = meals.value.map(m => ({ ...m, done: false }))
+          }
+
+          // (a) 同步正式三餐计划到明天云端
+          const formattedMeals = todayMeals.map(m => ({
+            meal_name: m.name,
+            done: 0,
+            recipes: m.recipes || []
+          }))
+          await familyApi.saveDailyMeals(familyCode.value, tomorrowStr, formattedMeals)
+          
+          // (b) 更新明天的三餐计划本地缓存
+          uni.setStorageSync('daily_meals_' + tomorrowStr, todayMeals)
+          
+          // 2. 从云端拉取今日最真实的临时安排池数据
+          let todayTempPool = {}
+          try {
+            const resTemp = await familyApi.getDailyTempPool(familyCode.value, today)
+            if (resTemp && resTemp.data.plan) {
+              if (Array.isArray(resTemp.data.plan)) {
+                const listObj = {}
+                resTemp.data.plan.forEach(item => {
+                  const tabName = item.mealName || item.meal_name || '早餐'
+                  if (!listObj[tabName]) listObj[tabName] = []
+                  listObj[tabName].push(item.recipeName || item.recipe_name)
+                })
+                todayTempPool = listObj
+              } else {
+                todayTempPool = resTemp.data.plan || {}
+              }
+            }
+          } catch (err) {
+            console.error('云端获取今日临时安排出错，降级使用当前本地数据', err)
+            todayTempPool = uni.getStorageSync('daily_temp_pool_' + today) || {}
+          }
+          
+          // (c) 遍历并同步所有临时菜品安排到明天云端临时池中
+          for (const mealName in todayTempPool) {
+            const list = todayTempPool[mealName] || []
+            for (const recipeName of list) {
+              try {
+                await familyApi.addDailyTempRecipe(familyCode.value, tomorrowStr, mealName, recipeName)
+              } catch (err) {
+                console.error('云端同步明天临时安排出错', err)
+              }
+            }
+          }
+          
+          // (d) 更新明天的本地缓存临时安排池
+          uni.setStorageSync('daily_temp_pool_' + tomorrowStr, todayTempPool)
+          
+          uni.showToast({ title: '已成功复制', icon: 'success' })
+        } catch (e) {
+          console.error('同步复制到明天出错', e)
+          uni.showToast({ title: '同步失败，请重试', icon: 'none' })
+        } finally {
+          uni.hideLoading()
+        }
       }
     }
   })
@@ -1622,202 +1595,80 @@ const openMealSelector = async (m) => {
     return
   }
   currentMeal.value = m
-  tempSelectedRecipes.value = [...(m.recipes || [])]
-  customMealName.value = ''
-  
   showMealPopup.value = true
-  
-  try {
-    const rList = await eatCo.getRecipeList(familyCode.value)
-    favoriteRecipes.value = rList.filter(r => r.favorite).map(r => r.name)
-    
-    // 扫一遍当前已勾选项，确保其中所有野生菜谱都在今日持久池里
-    const tab = m.name
-    if (!todayTempMenuAll.value[tab]) todayTempMenuAll.value[tab] = []
-    const curPool = todayTempMenuAll.value[tab]
-    
-    tempSelectedRecipes.value.forEach(r => {
-       if (!curPool.includes(r) && !(commonMenus.value[tab]||[]).includes(r) && !favoriteRecipes.value.includes(r)) {
-          todayTempMenuAll.value[tab].push(r)
-       }
-    })
-    // 同步写入缓存以防万一
-    const tdy = new Date().toISOString().split('T')[0]
-    uni.setStorageSync('daily_temp_pool_' + tdy, todayTempMenuAll.value)
-  } catch(e){}
 }
 
 const closeMealPopup = () => {
   showMealPopup.value = false
   currentMeal.value = null
-  tempSelectedRecipes.value = []
 }
 
-const toggleRecipeSelection = (recipe) => {
-  const idx = tempSelectedRecipes.value.indexOf(recipe)
-  if (idx === -1) {
-    tempSelectedRecipes.value.push(recipe)
-  } else {
-    tempSelectedRecipes.value.splice(idx, 1)
-  }
-  // 用户每次点击勾选或反选，都应当在毫秒级锁定状态，赋予卡片实时生命力，杜绝由于任何形式退出引发的重置
-  if (currentMeal.value) {
-    currentMeal.value.recipes = [...tempSelectedRecipes.value]
-    saveMeals()
-  }
-}
-
-const deleteRecipeFromList = (recipeName, type) => {
-  const modeTitle = type === 'temp' ? '临时池' : '常用菜单库'
-  uni.showModal({
-    title: '确认删除',
-    content: `确定从【${modeTitle}】中彻底移除“${recipeName}”吗？`,
-    confirmColor: '#FF5A79',
-    success: (res) => {
-      if (res.confirm) {
-        const tab = currentMeal.value.name
-        if (type === 'temp') {
-          // 1. 从今日临时池移除
-          const idx = todayTempMenuAll.value[tab].indexOf(recipeName)
-          if (idx > -1) {
-            todayTempMenuAll.value[tab].splice(idx, 1)
-            const tdy = new Date().toISOString().split('T')[0]
-            uni.setStorageSync('daily_temp_pool_' + tdy, todayTempMenuAll.value)
-          }
-        } else {
-          // 2. 从通用数据库中彻底除名
-          const idx = commonMenus.value[tab].indexOf(recipeName)
-          if (idx > -1) {
-            commonMenus.value[tab].splice(idx, 1)
-            uni.setStorageSync('common_menus', commonMenus.value)
-          }
-        }
-        
-        // 3. 关键连锁机制：若该菜当下正被选入菜篮中，执行连坐强力反选
-        const sIdx = tempSelectedRecipes.value.indexOf(recipeName)
-        if (sIdx > -1) {
-          tempSelectedRecipes.value.splice(sIdx, 1)
-          // 并联触发“绝对防御实时回流网”
-          if (currentMeal.value) {
-            currentMeal.value.recipes = [...tempSelectedRecipes.value]
-            saveMeals()
-          }
-        }
-        
-        uni.showToast({ title: '已彻底移除', icon: 'none' })
-      }
-    }
-  })
-}
-
-const addCustomToSelection = () => {
-  const name = customMealName.value.trim()
-  if (!name) return uni.showToast({ title: '请输入菜名', icon: 'none' })
-  
-  if (saveToCommon.value && currentMeal.value) {
-    const tabName = currentMeal.value.name
-    if (!commonMenus.value[tabName]) commonMenus.value[tabName] = []
-    if (!commonMenus.value[tabName].includes(name)) {
-      commonMenus.value[tabName].push(name)
-      uni.setStorageSync('common_menus', commonMenus.value)
-    }
-  } else {
-    // 没保存入库的纯临时菜，写入今天的全天候持久池，反选不消失，次日自动清
-    const tab = currentMeal.value.name
-    if (!todayTempMenuAll.value[tab]) todayTempMenuAll.value[tab] = []
-    if (!todayTempMenuAll.value[tab].includes(name)) {
-      todayTempMenuAll.value[tab].push(name)
-      const tdy = new Date().toISOString().split('T')[0]
-      uni.setStorageSync('daily_temp_pool_' + tdy, todayTempMenuAll.value)
-    }
-  }
-  
-  if (!tempSelectedRecipes.value.includes(name)) {
-    tempSelectedRecipes.value.push(name)
-  }
-  customMealName.value = ''
-  
-  // 实时倒灌入卡片状态引用中并同步落盘
-  if (currentMeal.value) {
-    currentMeal.value.recipes = [...tempSelectedRecipes.value]
-    saveMeals()
-  }
-}
-
-const checkAndAddMissingIngredients = async (recipesList) => {
-  try {
-    const fId = familyCode.value || 'default_family'
-    const allRecipes = await eatCo.getRecipeList(fId)
-    const currentStocks = await eatCo.getStockList(fId)
-    const currentShops = await eatCo.getShopList(fId)
+// const checkAndAddMissingIngredients = async (recipesList) => {
+//   try {
+//     const fId = familyCode.value || 'default_family'
+//     const allRecipes = await eatCo.getRecipeList(fId)
+//     const currentStocks = await eatCo.getStockList(fId)
+//     const currentShops = await eatCo.getShopList(fId)
     
-    let addedToShopCount = 0
-    for (let rName of recipesList) {
-      const matchR = allRecipes.find(r => r.name === rName)
-      if (matchR && matchR.ingredients && matchR.ingredients.length > 0) {
-        for (let ing of matchR.ingredients) {
-          const hasInStock = currentStocks.some(s => s.name === ing.name && s.has)
-          if (!hasInStock) {
-            const inShop = currentShops.some(s => s.name === ing.name && !s.done)
-            if (!inShop) {
-              await eatCo.addShop({
-                name: ing.name,
-                num: ing.num || '1',
-                category: '食材',
-                done: false,
-                price: '',
-                family_code: fId
-              })
-              addedToShopCount++
-              currentShops.push({ name: ing.name, done: false })
-            }
-          }
-        }
-      }
-    }
-    if (addedToShopCount > 0) {
-      uni.showToast({ title: `已自动加入 ${addedToShopCount} 项缺失食材到清单`, icon: 'none', duration: 3000 })
-    }
-  } catch (e) {
-    console.error('检查食材异常', e)
-  }
-}
+//     let addedToShopCount = 0
+//     for (let rName of recipesList) {
+//       const matchR = allRecipes.find(r => r.name === rName)
+//       if (matchR && matchR.ingredients && matchR.ingredients.length > 0) {
+//         for (let ing of matchR.ingredients) {
+//           const hasInStock = currentStocks.some(s => s.name === ing.name && s.has)
+//           if (!hasInStock) {
+//             const inShop = currentShops.some(s => s.name === ing.name && !s.done)
+//             if (!inShop) {
+//               await eatCo.addShop({
+//                 name: ing.name,
+//                 num: ing.num || '1',
+//                 category: '食材',
+//                 done: false,
+//                 price: '',
+//                 family_code: fId
+//               })
+//               addedToShopCount++
+//               currentShops.push({ name: ing.name, done: false })
+//             }
+//           }
+//         }
+//       }
+//     }
+//     if (addedToShopCount > 0) {
+//       uni.showToast({ title: `已自动加入 ${addedToShopCount} 项缺失食材到清单`, icon: 'none', duration: 3000 })
+//     }
+//   } catch (e) {
+//     console.error('检查食材异常', e)
+//   }
+// }
 
-const confirmMealSelection = async () => {
+const confirmMealSelection = async (selectedRecipes) => {
   if (currentMeal.value) {
-    const newlyAdded = tempSelectedRecipes.value.filter(r => !(currentMeal.value.recipes || []).includes(r))
-    currentMeal.value.recipes = [...tempSelectedRecipes.value]
+    // const newlyAdded = selectedRecipes.filter(r => !(currentMeal.value.recipes || []).includes(r))
+    currentMeal.value.recipes = [...selectedRecipes]
     currentMeal.value.done = false
     saveMeals()
     
-    if (newlyAdded.length > 0) {
-      checkAndAddMissingIngredients(newlyAdded)
-    }
+    // if (newlyAdded.length > 0) {
+    //   checkAndAddMissingIngredients(newlyAdded)
+    // }
     closeMealPopup()
   }
 }
 
-const removeRecipe = (m, idx) => {
-  uni.showModal({
-    title: '移除菜品',
-    content: '确认从此餐次中移除该菜品？',
-    success: (res) => {
-      if (res.confirm) {
-        m.recipes.splice(idx, 1)
-        saveMeals()
-      }
-    }
-  })
-}
-
-const markMealDone = (m) => {
+const markMealDone = async (m) => {
   m.done = true
   saveMeals()
-  uni.showToast({ title: '已打卡', icon: 'success' })
-}
-
-const goRecipe = (recipeName) => {
-  uni.navigateTo({ url: `/pages/recipe/recipe?keyword=${encodeURIComponent(recipeName)}` })
+  
+  // 额外专门上报打卡状态 API 确保即使总体保存遇到波动，核心打卡操作依然上报成功
+  if (!familyCode.value) return
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    await familyApi.updateMealStatus(familyCode.value, today, m.name, 1)
+    uni.showToast({ title: '已打卡', icon: 'success' })
+  } catch (e) {
+    console.error('同步打卡状态至云端失败', e)
+  }
 }
 
 const handleMakeMeal = (m) => {
@@ -2096,10 +1947,6 @@ const showCatModal = ref(false)
 const categories = ref([])
 const newCat = ref('')
 
-const loadCategories = () => {
-  categories.value = uni.getStorageSync('ingredient_categories') || ['蔬菜', '水果', '肉蛋', '水产', '调料', '其他']
-}
-
 const addCategory = () => {
   if (!newCat.value.trim()) return
   if (categories.value.includes(newCat.value.trim())) {
@@ -2125,10 +1972,6 @@ const handleSetting = (name) => {
   } else {
     uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })
   }
-}
-
-const handleRandomRecommend = () => {
-  
 }
 
 const handleClearCache = () => {
@@ -2190,10 +2033,6 @@ const concatenatedReminders = computed(() => {
   // return reminders.value.map(r => `${r.icon} ${r.text} [${r.action}]`).join(' 　　 ')
   return reminders.value.map(r => `${r.icon} ${r.text}`).join(' 　　 ')
 })
-
-const handleReminderClick = () => {
-  showReminderModal.value = true
-}
 
 const handleReminderAction = (r) => {
   showReminderModal.value = false
@@ -2325,22 +2164,6 @@ const handleReminderAction = (r) => {
 }
 
 .weather-icon {
-  // display: flex;
-  // flex-direction: column;
-  // align-items: center;
-  // background: rgba(255,255,255,0.2);
-  // padding: 16rpx 20rpx;
-  // border-radius: 30rpx;
-  // backdrop-filter: blur(10px);
-  
-  // .emoji {
-  //   font-size: 40rpx;
-  //   margin-bottom: 4rpx;
-  // }
-  // .tip {
-  //   font-size: 18rpx;
-  //   font-weight: bold;
-  // }
   width: 32rpx;
   height: 32rpx;
   filter: brightness(0) invert(1);
@@ -2989,7 +2812,6 @@ const handleReminderAction = (r) => {
 }
 
 /* 3. 今日三餐计划 */
-/* 3. 今日三餐精致卡片区 */
 .meals-section {
   margin-top: 30rpx;
   .section-title {
@@ -3512,15 +3334,12 @@ const handleReminderAction = (r) => {
 
 /* 12. 家庭备忘录入口 */
 .health-section {
-  // background: #F0F9F4; // 浅绿色背景
   background: #fff;
   border-radius: 48rpx;
   padding: 30rpx;
   
   .section-title {
     margin-bottom: 24rpx;
-    // .title-text { color: #2E7D32; }
-    // .action-text { color: #4CAF50; }
   }
   
   .health-card-body {
@@ -3643,173 +3462,7 @@ const handleReminderAction = (r) => {
   to { transform: translateY(0); }
 }
 /* ============ 重构版点菜弹窗 ============ */
-.meal-picker-modal {
-  background: #fff;
-  border-top-left-radius: 48rpx;
-  border-top-right-radius: 48rpx;
-  width: 100%;
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  animation: slideUp 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-  padding-bottom: env(safe-area-inset-bottom);
-}
 
-.mp-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 40rpx 40rpx 30rpx;
-  .mp-t1 { font-size: 36rpx; font-weight: 900; color: #2C3E50; }
-  .mp-close-x { font-size: 32rpx; color: #95A5A6; padding: 10rpx; }
-}
-
-.mp-tabs-row {
-  white-space: nowrap;
-  padding: 0 40rpx;
-  margin-bottom: 20rpx;
-  .mp-tab-item {
-    display: inline-block;
-    margin-right: 40rpx;
-    padding: 10rpx 4rpx;
-    font-size: 28rpx;
-    color: #7F8C8D;
-    font-weight: 600;
-    position: relative;
-    &.active {
-      color: var(--primary);
-      font-size: 30rpx;
-      &::after {
-        content: ""; position: absolute; bottom: -4rpx; left: 20%; right: 20%; height: 6rpx; background: var(--primary); border-radius: 20rpx;
-      }
-    }
-  }
-}
-
-.mp-scroll-body {
-  flex: 1;
-  padding: 20rpx 40rpx 160rpx;
-  overflow: hidden;
-}
-
-.mp-group {
-  margin-bottom: 50rpx;
-  width: calc(100% - 80rpx);
-}
-.mp-group-title {
-  font-size: 28rpx; font-weight: 800; color: #34495E; margin-bottom: 24rpx;
-  .sub { font-size: 22rpx; color: #999; font-weight: normal; margin-left: 8rpx; }
-}
-
-.mp-grid-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20rpx;
-}
-
-.mp-grid-tag {
-  background: #F7F8FA;
-  padding: 16rpx 32rpx;
-  border-radius: 30rpx;
-  display: flex; align-items: center; gap: 12rpx;
-  transition: all 0.2s ease;
-  border: 2rpx solid transparent;
-  position: relative;
-  
-  .txt { font-size: 26rpx; font-weight: 600; color: #4A5568; }
-  
-  .checker { 
-    font-size: 22rpx; 
-    color: #fff; 
-    width: 32rpx; 
-    height: 32rpx; 
-    border-radius: 50%; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    font-weight: bold; 
-    border: 2rpx solid #D1D8E0; 
-    box-sizing: border-box;
-    transition: all 0.2s ease;
-  }
-  
-  &.selected {
-    background: var(--primary-light);
-    border-color: var(--primary);
-    .txt { color: var(--primary); }
-    .checker {
-      background: var(--primary);
-      border-color: var(--primary);
-    }
-  }
-}
-.mp-none-tip { font-size: 24rpx; color: #B0BEC5; padding: 20rpx 0; }
-
-.mp-add-block {
-  background: #FBFBFD;
-  border-radius: 36rpx;
-  padding: 30rpx;
-  width: calc(100% - 140rpx);
-}
-
-.mp-add-bar {
-  display: flex;
-  background: #fff;
-  border-radius: 24rpx;
-  padding: 10rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.02);
-  margin-bottom: 20rpx;
-  
-  .mp-input-box {
-    flex: 1; height: 80rpx; padding-left: 20rpx; font-size: 28rpx;
-  }
-  .mp-trigger-btn {
-    background: var(--primary);
-    color: #fff;
-    border-radius: 70rpx;
-    width: 120rpx;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 26rpx; font-weight: bold;
-  }
-}
-
-.mp-opt-row {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-.mp-checkbox-line {
-  display: flex; align-items: center;
-  .line-label { font-size: 24rpx; color: #7F8C8D; }
-}
-.mp-target-tags {
-  display: flex; gap: 16rpx; margin-left: 46rpx;
-  .target-tag {
-    padding: 6rpx 20rpx; border-radius: 30rpx; background: #EEF0F2; font-size: 22rpx; color: #7F8C8D;
-    &.active { background: var(--primary); color: #fff; }
-  }
-}
-
-.mp-bottom-bar {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  background: linear-gradient(to top, #fff 80%, rgba(255,255,255,0) 100%);
-  padding: 40rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));
-  z-index: 10;
-  
-  .mp-action-btn {
-    background: var(--primary-grad);
-    color: #fff;
-    height: 96rpx;
-    border-radius: 100rpx;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 32rpx; font-weight: 800;
-    box-shadow: 0 12rpx 32rpx var(--primary-shadow);
-    border: none;
-    &::after { border: none; }
-    .cnt { margin-left: 10rpx; font-size: 26rpx; font-weight: normal; opacity: 0.9; }
-  }
-}
 
 .big-image-mask {
   position: fixed;

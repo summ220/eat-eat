@@ -7,6 +7,7 @@ export default {
   registerDevice() {
     return request('/registerDevice', 'POST', {})
   },
+
   /**
    * 创建家庭
    * @param {string} familyName 
@@ -29,6 +30,7 @@ export default {
       ttlMinutes
     })
   },
+
   /**
    * 加入家庭
    * @param {string} inviteCode 邀请码
@@ -38,6 +40,7 @@ export default {
       inviteCode
     })
   },
+
   /**
    * 获取家庭成员
    * @param {string} familyCode 家庭码/ID
@@ -47,6 +50,7 @@ export default {
       familyCode
     })
   },
+
   /**
    * 更新成员信息
    */
@@ -88,6 +92,7 @@ export default {
       familyCode
     })
   },
+
   /**
    * 更新家庭名称
    * @param {string} familyCode 家庭码/ID
@@ -168,7 +173,6 @@ export default {
     })
   },
 
-
   // 饮食偏好
   /**
    * 保存家庭饮食偏好
@@ -222,7 +226,6 @@ export default {
   },
 
   // 家庭备忘录
-
   /**
    * 创建备忘录
    * @param {string} familyCode 家庭码/ID
@@ -284,7 +287,6 @@ export default {
   },
 
   // 个人随手记
-
   /**
    * 创建备忘录
    * @param {string} noteJson 备忘录JSON
@@ -335,4 +337,49 @@ export default {
       id
     })
   },
+
+
+  // 三餐
+  // --- 1. 正式三餐安排 ---
+  // 获取三餐数据
+  getDailyMeals(familyCode, date) {
+    return request('/family/meal/plan', 'GET', { family_code: familyCode, date })
+  },
+  // 保存三餐数据
+  // meals： meal_name(早餐、午餐、晚餐)、done（0,1）、recipes（['','']）
+  saveDailyMeals(familyCode, date, meals) {
+    return request('/family/meal/plan/save', 'POST', { family_code: familyCode, date, meals })
+  },
+  // 更新三餐状态
+  updateMealStatus(familyCode, date, mealName, done) {
+    return request('/family/meal/plan/status', 'PUT', { family_code: familyCode, date, meal_name: mealName, done })
+  },
+
+  // --- 2. 常用菜单库 ---
+  // 获取常用菜单列表
+  getCommonMenus(familyCode) {
+    return request('/family/meal/common/list', 'GET', { family_code: familyCode })
+  },
+  // 添加常用菜单
+  addCommonMenuRecipe(familyCode, mealName, recipeName) {
+    return request('/family/meal/common/add', 'POST', { family_code: familyCode, meal_name: mealName, recipe_name: recipeName })
+  },
+  // 删除常用菜单
+  removeCommonMenuRecipe(familyCode, mealName, recipeName) {
+    return request('/family/meal/common/remove', 'DELETE', { family_code: familyCode, meal_name: mealName, recipe_name: recipeName })
+  },
+
+  // --- 3. 今日临时安排池 ---
+  // 获取今日临时安排池
+  getDailyTempPool(familyCode, date) {
+    return request('/family/meal/temp/list', 'GET', { family_code: familyCode, date })
+  },
+  // 添加今日临时安排
+  addDailyTempRecipe(familyCode, date, mealName, recipeName) {
+    return request('/family/meal/temp/add', 'POST', { family_code: familyCode, date, meal_name: mealName, recipe_name: recipeName })
+  },
+  // 删除今日临时安排
+  removeDailyTempRecipe(familyCode, date, mealName, recipeName) {
+    return request('/family/meal/temp/remove', 'DELETE', { family_code: familyCode, date, meal_name: mealName, recipe_name: recipeName })
+  }
 }

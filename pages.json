@@ -91,20 +91,6 @@
 			}
 		},
 		{
-			"path": "pages/family/weather",
-			"style": {
-				"navigationBarTitleText": "天气详情",
-				"navigationBarBackgroundColor": "#F6F7F9"
-			}
-		},
-		{
-			"path": "pages/family/calendar",
-			"style": {
-				"navigationBarTitleText": "万年历",
-				"navigationBarBackgroundColor": "#FFF5F7"
-			}
-		},
-		{
 			"path": "pages/family/component/health",
 			"style": {
 				"navigationBarTitleText": "家庭健康管理",
