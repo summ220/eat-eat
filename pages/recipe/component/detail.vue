@@ -1,7 +1,7 @@
 <template>
   <custom-header title="菜谱详情" back />
   <view class="page" v-if="recipe" :style="themeStyle">
-    <image class="cover-img" :src=" recipe.cover.startsWith('http') ? recipe.cover : config.imgBaseUrl + recipe.cover || defaultCover" mode="aspectFill" style="background-color: #FFF5F7;" />
+    <image class="cover-img" :src=" recipe.cover.startsWith('http') ? recipe.cover : config.imgBaseUrl + recipe.cover || defaultCover" mode="aspectFill" />
     
     <view class="content">
       <view class="header-card">
@@ -84,6 +84,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import eatCo from '@/common/localDB.js'
 import recipeApi from '@/common/api/recipe.js'
 import config from '@/common/config.js'
+import shopApi from '@/common/api/shop.js'
 
 const familyCode = uni.getStorageSync('family_code') || 'default_family';
 const defaultCover = ref(config.imgBaseUrl + '/uploads/recipe-covers/fam_230122da8f990571/mpqporl6_477ca5c44ac3.jpg')
@@ -186,18 +187,22 @@ const toggleFavorite = async () => {
 // 供一键加入和单点加入调用
 const pushToShop = async (ing) => {
   const familyCode = uni.getStorageSync('family_code') || 'default_family';
-  const shopList = await eatCo.getShopList(familyCode)
-  const alreadyInShop = shopList.some(s => !s.done && s.name.includes(ing.name))
-  if (!alreadyInShop) {
-    await eatCo.addShop({
-      name: ing.name,
-      num: ing.amount,
-      price: '',
-      category: '其他',
-      done: false,
-      family_code: familyCode
-    })
-    return true
+  try {
+    const shopListRes = await shopApi.getFamilyShoppingItems(familyCode)
+    const shopList = shopListRes.data.shoppingItems || []
+    
+    const alreadyInShop = shopList.some(s => !s.done && (s.name.includes(ing.name) || ing.name.includes(s.name)))
+    if (!alreadyInShop) {
+      await shopApi.saveFamilyShoppingItem(familyCode, {
+        name: ing.name,
+        num: ing.amount,
+        price: '',
+        done: false
+      })
+      return true
+    }
+  } catch (e) {
+    console.error('真实接口加购失败:', e)
   }
   return false
 }
