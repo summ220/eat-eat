@@ -381,5 +381,36 @@ export default {
   // 删除今日临时安排
   removeDailyTempRecipe(familyCode, date, mealName, recipeName) {
     return request('/family/meal/temp/remove', 'DELETE', { family_code: familyCode, date, meal_name: mealName, recipe_name: recipeName })
-  }
-}
+  },
+
+  // 家庭健康管理
+  // 获取家庭成员
+  getHealthMembers(familyCode) {
+    return request('/family/health/members', 'GET', { family_code: familyCode })
+  },
+  // 获取家庭成员健康信息
+  getFamilyHealthMember(familyCode, memberId) {
+    return request(`/family/health/member/${memberId}`, 'GET', { family_code: familyCode })
+  },
+
+  // 记录家庭成员体重
+  recordFamilyHealthMemberWeight(familyCode, memberId, weight) {
+    return request(`/family/health/member/${memberId}/weight`, 'POST', { family_code: familyCode, weight })
+  },
+
+  // 更新家庭成员目标
+  updateFamilyHealthMemberGoal(familyCode, memberId, targetWeight, height, age, goalType) {
+    return request(`/family/health/member/${memberId}/goal`, 'PUT', { family_code: familyCode, targetWeight, height, age, goalType })
+  },
+
+  // 获取家庭成员体重趋势
+  getFamilyHealthMemberTrend(familyCode, memberId, type) {
+    return request(`/family/health/member/${memberId}/trend`, 'GET', { family_code: familyCode, type })
+  },
+
+  // 获取家庭成员食谱推荐
+  getFamilyHealthMemberRecommendations(familyCode, memberId, type) {
+    return request(`/family/health/member/${memberId}/recommendations`, 'GET', { family_code: familyCode, type })
+  },
+
+} 

@@ -167,6 +167,7 @@ const addCategory = async () => {
       }
       
       uni.showToast({ title: '分类添加成功', icon: 'success' })
+      showCatModal.value = false
       loadCategories()
       newCat.value = ''
     } catch (e) {

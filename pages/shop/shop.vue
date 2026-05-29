@@ -186,6 +186,7 @@ const addCategory = async () => {
     newCat.value = ''
     await loadCategories()
     uni.showToast({ title: '添加成功', icon: 'none' })
+    showCatModal.value = false
   } catch (e) {
     console.error('添加分类失败', e)
     uni.showToast({ title: '添加失败', icon: 'none' })

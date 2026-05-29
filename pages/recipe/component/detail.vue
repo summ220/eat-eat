@@ -1,7 +1,7 @@
 <template>
   <custom-header title="菜谱详情" back />
   <view class="page" v-if="recipe" :style="themeStyle">
-    <image class="cover-img" :src="config.imgBaseUrl + recipe.cover" mode="aspectFill" style="background-color: #FFF5F7;" />
+    <image class="cover-img" :src=" recipe.cover.startsWith('http') ? recipe.cover : config.imgBaseUrl + recipe.cover || defaultCover" mode="aspectFill" style="background-color: #FFF5F7;" />
     
     <view class="content">
       <view class="header-card">
@@ -86,6 +86,7 @@ import recipeApi from '@/common/api/recipe.js'
 import config from '@/common/config.js'
 
 const familyCode = uni.getStorageSync('family_code') || 'default_family';
+const defaultCover = ref(config.imgBaseUrl + '/uploads/recipe-covers/fam_230122da8f990571/mpqporl6_477ca5c44ac3.jpg')
 
 // 主题系统
 const themes = [
@@ -264,7 +265,6 @@ const deleteRecipe = () => {
 
 <style lang="less" scoped>
 .page {
-  background: #fdfdfd;
   min-height: 100vh;
   padding-bottom: 220rpx;
 }

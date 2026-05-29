@@ -8,7 +8,7 @@
           <text class="upload-text">点击上传封面图片</text>
         </view>
         <!-- 域名+路径 的格式不对,需要和后端统一 -->
-        <image class="cover-preview" v-if="form.cover" :src="form.cover.startsWith('http') ? form.cover : config.imgBaseUrl + form.cover" mode="heightFix" style="background-color: var(--primary-light);" />
+        <image class="cover-preview" v-if="form.cover" :src="form.cover.startsWith('http') ? form.cover : config.imgBaseUrl + form.cover || defaultCover" mode="heightFix" style="background-color: var(--primary-light);" />
       </view>
 
       <view class="input-group">

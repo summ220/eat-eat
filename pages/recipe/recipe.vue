@@ -195,7 +195,7 @@ const deleteCategory = async (cat) => {
 
 // ====================================分类管理====================================
 
-const defaultCover = 'https://pic.rmb.bdstatic.com/bjh/240813/dump/2f9e7e45efdb1b9134b9c9af309ffe33.png'
+const defaultCover = ref(config.imgBaseUrl + '/uploads/recipe-covers/fam_230122da8f990571/mpqporl6_477ca5c44ac3.jpg')
 
 const makeRecipe = (item, index) => {
   let recipeDetails = {}

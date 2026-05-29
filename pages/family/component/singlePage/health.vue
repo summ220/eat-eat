@@ -17,7 +17,7 @@
             @click="currentMemberIdx = idx"
           >
             <image class="m-avatar" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" />
-            <text class="m-name">{{ m.name }}</text>
+            <text class="m-name">{{ m.name || '干饭人' }}</text>
           </view>
         </view>
       </scroll-view>
@@ -30,7 +30,7 @@
           <view class="bmi-header">
             <view class="bmi-main">
               <text class="bmi-label">当前BMI</text>
-              <text class="bmi-val">{{ currentMember.bmi }}</text>
+              <text class="bmi-val">{{ currentMember.bmi || '21.0' }}</text>
             </view>
             <view class="bmi-tag" :class="getBmiStatusClass(currentMember.bmi)">
               {{ getBmiStatus(currentMember.bmi) }}
@@ -38,17 +38,17 @@
           </view>
           <view class="data-grid">
             <view class="data-item">
-              <text class="d-val">{{ currentMember.weight }}<text class="d-unit">kg</text></text>
+              <text class="d-val">{{ currentMember.weight || '--' }}<text class="d-unit">kg</text></text>
               <text class="d-label">当前体重</text>
             </view>
             <view class="d-sep"></view>
             <view class="data-item">
-              <text class="d-val">{{ currentMember.height }}<text class="d-unit">cm</text></text>
+              <text class="d-val">{{ currentMember.height || '--' }}<text class="d-unit">cm</text></text>
               <text class="d-label">身高</text>
             </view>
             <view class="d-sep"></view>
             <view class="data-item">
-              <text class="d-val">{{ currentMember.age }}<text class="d-unit">岁</text></text>
+              <text class="d-val">{{ currentMember.age || '--' }}<text class="d-unit">岁</text></text>
               <text class="d-label">年龄</text>
             </view>
           </view>
@@ -62,16 +62,16 @@
           </view>
           <view class="goal-card">
             <view class="goal-info">
-              <view class="goal-tag">{{ currentMember.goalType }}</view>
-              <text class="goal-desc">目标体重：{{ currentMember.targetWeight }}kg</text>
+              <view class="goal-tag">{{ currentMember.goalType || '维持体态' }}</view>
+              <text class="goal-desc">目标体重：{{ currentMember.targetWeight || '--' }}kg</text>
             </view>
             <view class="progress-container">
               <view class="progress-bar">
                 <view class="progress-fill" :style="{ width: goalProgress + '%' }"></view>
               </view>
               <view class="progress-labels">
-                <text>起始 {{ currentMember.startWeight }}kg</text>
-                <text>还差 {{ Math.max(0, currentMember.weight - currentMember.targetWeight).toFixed(1) }}kg</text>
+                <!-- <text>起始 {{ currentMember.startWeight || '--' }}kg</text> -->
+                <text>还差 {{ Math.max(0, (currentMember.weight || 0) - (currentMember.targetWeight || 0)).toFixed(1) }}kg</text>
               </view>
             </view>
           </view>
@@ -87,13 +87,16 @@
             </view>
           </view>
           <view class="trend-card">
-            <view class="chart-bars">
+            <view class="chart-bars" v-if="displayedHistory.length > 0">
               <view class="bar-col" v-for="(v, i) in displayedHistory" :key="i">
                 <view class="bar-track">
                   <view class="bar-fill" :style="{ height: getBarHeight(v) }"></view>
                 </view>
-                <text class="bar-label">{{ getBarLabel(i) }}</text>
+                <text class="bar-label">{{ v.label || getBarLabel(i) }}</text>
               </view>
+            </view>
+            <view class="trend-empty" v-else>
+              <text class="empty-tip">暂无体重统计趋势记录，去添加一条吧 🍏</text>
             </view>
           </view>
         </view>
@@ -102,7 +105,7 @@
         <view class="section-box">
           <view class="section-title">
             <text class="t-text">专属健康推荐</text>
-            <text class="t-action more-link" @click="goToRecipes">查看更多{{ currentMember.goalType.includes('减脂') ? '减脂餐' : '健康餐' }} →</text>
+            <text class="t-action more-link" @click="goToRecipes">查看更多 →</text>
           </view>
           <view class="recipe-grid">
             <view 
@@ -111,25 +114,25 @@
               :key="i"
               @click="viewRecipe(r)"
             >
-              <image class="r-img" :src="r.image" mode="aspectFill" />
+              <image class="r-img" :src="r.image || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'" mode="aspectFill" />
               <view class="r-content">
                 <view class="r-header">
                   <text class="r-name">{{ r.name }}</text>
                   <text class="r-fav">❤️</text>
                 </view>
                 <view class="r-tags">
-                  <text class="r-tag kcal-tag">🔥 {{ r.kcal }}kcal</text>
-                  <text class="r-tag type-tag">{{ r.type }}</text>
+                  <text class="r-tag kcal-tag">🔥 {{ r.kcal || '200' }}kcal</text>
+                  <text class="r-tag type-tag">{{ r.type || '营养均衡' }}</text>
                 </view>
                 <view class="r-footer">
-                  <text class="r-tip">适合您的{{ currentMember.goalType }}目标</text>
+                  <text class="r-tip">适合您的{{ currentMember.goalType || '健康' }}目标</text>
                 </view>
               </view>
             </view>
           </view>
         </view>
 
-    <view class="footer-safe"></view>
+        <view class="footer-safe"></view>
       </view>
     </scroll-view>
     
@@ -155,8 +158,9 @@
         <view class="picker-section">
           <text class="p-label">目标类型</text>
           <view class="type-tags">
+            <!-- '健康减脂', '维持体态', '增肌塑形', '均衡成长', '提升耐力', '健康饮食' -->
             <text 
-              v-for="t in ['健康减脂', '维持体态', '增肌塑形', '均衡成长']" 
+              v-for="t in ['健康减脂', '维持体态', '增肌塑形', '均衡成长', '提升耐力', '健康饮食']" 
               :key="t"
               class="type-tag"
               :class="{ active: tempGoalType === t }"
@@ -164,6 +168,7 @@
             >{{ t }}</text>
           </view>
         </view>
+        
         <view class="input-section">
           <text class="p-label">目标体重</text>
           <view class="input-group">
@@ -171,6 +176,23 @@
             <text class="input-unit">kg</text>
           </view>
         </view>
+
+        <view class="input-section" style="margin-top: 20rpx;">
+          <text class="p-label">身高</text>
+          <view class="input-group">
+            <input class="modal-input" type="digit" v-model="tempHeight" placeholder="输入当前身高" />
+            <text class="input-unit">cm</text>
+          </view>
+        </view>
+
+        <view class="input-section" style="margin-top: 20rpx;">
+          <text class="p-label">年龄</text>
+          <view class="input-group">
+            <input class="modal-input" type="number" v-model="tempAge" placeholder="输入当前年龄" />
+            <text class="input-unit">岁</text>
+          </view>
+        </view>
+
         <view class="modal-btns">
           <view class="m-btn cancel" @click="showGoalModal = false">取消</view>
           <view class="m-btn confirm" @click="saveGoal">保存修改</view>
@@ -186,7 +208,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import familyApi from '@/common/api/family.js'
 import { onShow } from '@dcloudio/uni-app'
 import config from '@/common/config'
@@ -196,25 +218,17 @@ const familyCode = uni.getStorageSync('family_code')
 const currentMemberIdx = ref(0)
 const themeStyle = ref('')
 
-const members = ref([
-  { 
-    nick: '爸爸', 
-    avatar: config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg',
-    height: 175, weight: 75.5, age: 35, gender: '男',
-    bmi: 24.7, targetWeight: 70, startWeight: 78,
-    goalType: '健康减脂',
-    history: [78, 77.5, 77, 76.5, 76, 75.8, 75.5]
-  }
-])
+const members = ref([])
+const trendHistory = ref([])
+const recommendedRecipes = ref([])
 
 onShow(() => {
-  console.log('familyCode', familyCode)
   loadFamilyMembers()
 })
 
 const loadFamilyMembers = async () => {
   try {
-    const res = await familyApi.getFamilyMembers(familyCode)
+    const res = await familyApi.getHealthMembers(familyCode)
     if (res && res.data) {
       members.value = res.data || []
       // 找出自己
@@ -231,13 +245,16 @@ const loadFamilyMembers = async () => {
         if (b.isSelf) return 1
         if (a.role === 'owner') return -1
         if (b.role === 'owner') return 1
-        return 1
+        return 0
       })
 
-      console.log('members', members.value)
+      // 默认加载第一个健康成员的详情
+      if (members.value.length > 0) {
+        await loadCurrentMemberDetail()
+      }
     }
   } catch (err) {
-    console.error('获取家庭成员失败:', err)
+    console.error('获取家庭健康成员列表失败:', err)
   }
 }
 
@@ -246,32 +263,102 @@ const currentMember = computed(() => {
   return members.value[currentMemberIdx.value]
 })
 
+// 监听当前选中的成员变化以刷新详情
+watch(currentMemberIdx, () => {
+  loadCurrentMemberDetail()
+})
+
+const loadCurrentMemberDetail = async () => {
+  const m = currentMember.value
+  if (!m) return
+  uni.showLoading({ title: '加载健康信息...', mask: true })
+  try {
+    const resDetail = await familyApi.getFamilyHealthMember(familyCode, m.memberId)
+    if (resDetail && resDetail.data) {
+      // 合并详细数据至当前选中成员对象中
+      Object.assign(m, {
+        height: resDetail.data.height || 170,
+        weight: resDetail.data.weight || 60,
+        age: resDetail.data.age || 25,
+        bmi: resDetail.data.bmi || '20.8',
+        targetWeight: resDetail.data.targetWeight || 55,
+        startWeight: resDetail.data.startWeight || 60,
+        goalType: resDetail.data.goalType || '维持体态'
+      })
+    }
+    
+    // 并行拉取体重趋势和食谱推荐
+    await Promise.all([
+      loadCurrentMemberTrend(),
+      loadCurrentMemberRecommendations()
+    ])
+  } catch (err) {
+    console.error('加载成员详细指标失败:', err)
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+const loadCurrentMemberTrend = async () => {
+  const m = currentMember.value
+  console.log('loadCurrentMemberTrend', m)
+  if (!m) return
+  try {
+    const resTrend = await familyApi.getFamilyHealthMemberTrend(familyCode, m.memberId, trendType.value)
+    if (resTrend && resTrend.data) {
+      trendHistory.value = resTrend.data.history || []
+    } else {
+      trendHistory.value = []
+    }
+  } catch (err) {
+    console.error('获取体重趋势失败:', err)
+    trendHistory.value = []
+  }
+}
+
+const loadCurrentMemberRecommendations = async () => {
+  const m = currentMember.value
+  if (!m) return
+  try {
+    const resRec = await familyApi.getFamilyHealthMemberRecommendations(familyCode, m.memberId, 'recommend')
+    if (resRec && resRec.data) {
+      recommendedRecipes.value = resRec.data.recommendations || []
+    } else {
+      recommendedRecipes.value = []
+    }
+  } catch (err) {
+    console.error('获取专属推荐失败:', err)
+    recommendedRecipes.value = []
+  }
+}
+
 const goalProgress = computed(() => {
   const m = currentMember.value
   if (!m) return 0
-  const total = Math.abs(m.startWeight - m.targetWeight)
+  const start = m.startWeight || 60
+  const target = m.targetWeight || 55
+  const current = m.weight || 60
+  const total = Math.abs(start - target)
   if (total === 0) return 100
-  const current = Math.abs(m.startWeight - m.weight)
-  return Math.min(100, Math.round((current / total) * 100))
+  const progressed = Math.abs(start - current)
+  return Math.min(100, Math.round((progressed / total) * 100))
 })
 
-const recommendedRecipes = ref([
-  { name: '西蓝花虾仁炒蛋', kcal: 320, type: '减脂/高蛋白', image: config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg' },
-  { name: '清蒸柠檬鱼', kcal: 280, type: '低卡/清淡', image: config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg' },
-  { name: '五谷糙米饭', kcal: 150, type: '优质碳水', image: config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg' }
-])
-
 const getBmiStatus = (bmi) => {
-  if (bmi < 18.5) return '偏轻'
-  if (bmi < 24) return '健康'
-  if (bmi < 28) return '超重'
+  const val = parseFloat(bmi)
+  if (isNaN(val)) return '健康'
+  if (val < 18.5) return '偏轻'
+  if (val < 24) return '健康'
+  if (val < 28) return '超重'
   return '肥胖'
 }
 
 const getBmiStatusClass = (bmi) => {
-  if (bmi < 18.5) return 'under'
-  if (bmi < 24) return 'normal'
-  if (bmi < 28) return 'over'
+  const val = parseFloat(bmi)
+  if (isNaN(val)) return 'normal'
+  if (val < 18.5) return 'under'
+  if (val < 24) return 'normal'
+  if (val < 28) return 'over'
   return 'obese'
 }
 
@@ -282,16 +369,24 @@ const applyTheme = () => {
     ]
     let idx = uni.getStorageSync('current_theme')
     idx = (idx === undefined || idx === null || idx >= themes.length) ? 0 : parseInt(idx)
-    themeStyle.value = `--primary: ${themes[idx].color};`
-    console.log('Health Page Theme Applied:', themes[idx].color)
+    const color = themes[idx].color
+    themeStyle.value = `
+      --primary: ${color};
+      --primary-grad: linear-gradient(135deg, ${color} 0%, ${color}ee 100%);
+      --primary-shadow: ${color}33;
+      --primary-light: ${color}14;
+    `
   } catch (e) {
-    console.error('Apply Theme Failed:', e)
-    themeStyle.value = '--primary: #FF6B8B;'
+    themeStyle.value = `
+      --primary: #FF6B8B;
+      --primary-grad: linear-gradient(135deg, #FF6B8B 0%, #FF6B8Bee 100%);
+      --primary-shadow: #FF6B8B33;
+      --primary-light: #FF6B8B14;
+    `
   }
 }
 
 onMounted(() => {
-  console.log('Health Page Mounted')
   applyTheme()
 })
 
@@ -301,59 +396,117 @@ const showGoalModal = ref(false)
 const tempWeight = ref('')
 const tempTargetWeight = ref('')
 const tempGoalType = ref('')
+const tempHeight = ref('')
+const tempAge = ref('')
+
+// 监听趋势统计类型变化
+watch(trendType, () => {
+  loadCurrentMemberTrend()
+})
 
 const displayedHistory = computed(() => {
-  const history = currentMember.value.history
-  // if (trendType.value === 'week') return history.slice(-7)
-  return history // 演示用，全量展示
+  return trendHistory.value
 })
 
 const getBarHeight = (v) => {
-  // 简单高度映射：假设 40-100kg
+  const val = typeof v === 'object' && v !== null ? v.weight : parseFloat(v)
+  if (isNaN(val) || val <= 0) return '0%'
   const min = 40, max = 100
-  const percent = ((v - min) / (max - min)) * 100
+  const percent = ((val - min) / (max - min)) * 100
   return Math.max(10, Math.min(100, percent)) + '%'
 }
 
 const getBarLabel = (idx) => {
-  if (trendType.value === 'week') return ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][idx]
+  if (trendType.value === 'week') return ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][idx] || `${idx + 1}`
   return `${idx + 1}日`
 }
 
 const openWeightModal = () => {
-  tempWeight.value = currentMember.value.weight
+  tempWeight.value = currentMember.value ? currentMember.value.weight : ''
   showWeightModal.value = true
 }
 
-const saveWeight = () => {
+const saveWeight = async () => {
   const val = parseFloat(tempWeight.value)
   if (isNaN(val) || val <= 0) return uni.showToast({ title: '请输入有效体重', icon: 'none' })
   
-  currentMember.value.weight = val
-  currentMember.value.history.push(val)
-  // 更新BMI
-  const h = currentMember.value.height / 100
-  currentMember.value.bmi = (val / (h * h)).toFixed(1)
+  const m = currentMember.value
+  if (!m) return
   
-  showWeightModal.value = false
-  uni.showToast({ title: '记录成功', icon: 'success' })
+  uni.showLoading({ title: '正在记录体重...', mask: true })
+  try {
+    await familyApi.recordFamilyHealthMemberWeight(familyCode, m.memberId, val)
+    uni.showToast({ title: '记录成功', icon: 'success' })
+    showWeightModal.value = false
+    await loadCurrentMemberDetail()
+  } catch (err) {
+    console.error('记录体重失败:', err)
+    uni.showToast({ title: '保存失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
 }
 
 const openGoalModal = () => {
-  tempTargetWeight.value = currentMember.value.targetWeight
-  tempGoalType.value = currentMember.value.goalType
+  const m = currentMember.value
+  if (!m) return
+  tempTargetWeight.value = m.targetWeight || ''
+  tempGoalType.value = m.goalType || '健康减脂'
+  tempHeight.value = m.height || ''
+  tempAge.value = m.age || ''
   showGoalModal.value = true
 }
 
-const saveGoal = () => {
+const saveGoal = async () => {
   const val = parseFloat(tempTargetWeight.value)
-  if (isNaN(val) || val <= 0) return uni.showToast({ title: '请输入有效目标', icon: 'none' })
+  if (isNaN(val) || val <= 0) return uni.showToast({ title: '请输入有效目标体重', icon: 'none' })
   
-  currentMember.value.targetWeight = val
-  currentMember.value.goalType = tempGoalType.value
+  const heightVal = parseFloat(tempHeight.value)
+  if (isNaN(heightVal) || heightVal <= 0) return uni.showToast({ title: '请输入有效身高', icon: 'none' })
   
-  showGoalModal.value = false
-  uni.showToast({ title: '目标已更新', icon: 'success' })
+  const ageVal = parseInt(tempAge.value)
+  if (isNaN(ageVal) || ageVal <= 0) return uni.showToast({ title: '请输入有效年龄', icon: 'none' })
+  
+  const m = currentMember.value
+  if (!m) return
+  
+  uni.showLoading({ title: '正在保存健康目标...', mask: true })
+  try {
+    await familyApi.updateFamilyHealthMemberGoal(
+      familyCode,
+      m.memberId,
+      val,
+      heightVal,
+      ageVal,
+      tempGoalType.value
+    )
+    uni.showToast({ title: '保存成功', icon: 'success' })
+    showGoalModal.value = false
+    await loadCurrentMemberDetail()
+  } catch (err) {
+    console.error('更新健康目标失败:', err)
+    uni.showToast({ title: '保存失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+const goToRecipes = () => {
+  uni.switchTab({
+    url: '/pages/recipe/recipe'
+  })
+}
+
+const viewRecipe = (r) => {
+  if (r.id) {
+    uni.navigateTo({
+      url: `/pages/recipe/detail?id=${r.id}`
+    })
+  } else {
+    uni.navigateTo({
+      url: `/pages/recipe/search?keyword=${encodeURIComponent(r.name)}`
+    })
+  }
 }
 </script>
 
@@ -362,8 +515,6 @@ const saveGoal = () => {
   background: #F8F9FB;
   min-height: 100vh;
 }
-
-// .status-bar-safe { height: env(safe-area-inset-top); padding-top: 40rpx; }
 
 /* 1. 成员导航 */
 .member-nav {
@@ -470,6 +621,17 @@ const saveGoal = () => {
       .bar-label { font-size: 20rpx; color: #BDC3C7; font-weight: 600; }
     }
   }
+  .trend-empty {
+    height: 240rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .empty-tip {
+      font-size: 24rpx;
+      color: #95A5A6;
+      font-style: italic;
+    }
+  }
 }
 
 /* 5. 推荐菜谱 */
@@ -540,14 +702,16 @@ const saveGoal = () => {
 .modal-content {
   width: 600rpx; background: #fff; border-radius: 56rpx; padding: 50rpx;
   box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.1);
+  max-height: 85vh;
+  overflow-y: auto;
   
   .modal-title { font-size: 34rpx; font-weight: 900; color: #2C3E50; margin-bottom: 40rpx; display: block; text-align: center; }
   
   .p-label { font-size: 24rpx; color: #95A5A6; font-weight: 800; margin-bottom: 20rpx; display: block; }
   
   .input-group {
-    display: flex; align-items: flex-end; gap: 10rpx; background: #F8F9FA; padding: 30rpx; border-radius: 32rpx; margin-bottom: 40rpx;
-    .modal-input { flex: 1; font-size: 48rpx; font-weight: 900; color: var(--primary); height: 60rpx; }
+    display: flex; align-items: flex-end; gap: 10rpx; background: #F8F9FA; padding: 20rpx 30rpx; border-radius: 32rpx; margin-bottom: 20rpx;
+    .modal-input { flex: 1; font-size: 40rpx; font-weight: 900; color: var(--primary); height: 60rpx; }
     .input-unit { font-size: 24rpx; color: #BDC3C7; font-weight: 800; margin-bottom: 8rpx; }
   }
   
@@ -560,7 +724,7 @@ const saveGoal = () => {
   }
   
   .modal-btns {
-    display: flex; gap: 20rpx; margin-top: 20rpx;
+    display: flex; gap: 20rpx; margin-top: 40rpx;
     .m-btn {
       flex: 1; height: 90rpx; display: flex; align-items: center; justify-content: center; border-radius: 100rpx; font-size: 28rpx; font-weight: 900;
       &.cancel { background: #F8F9FA; color: #BDC3C7; }
