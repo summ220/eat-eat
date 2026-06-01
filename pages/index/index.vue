@@ -14,7 +14,12 @@
     </view>
 
     <!-- 随机抽菜卡片模块 -->
-    <view class="random-card" :class="{ 'breathe-anim': !isRolling }">
+    <view class="random-card"
+      :class="{ 'breathe-anim': !isRolling }"
+      @touchstart="onTouchStart"
+      @touchmove.stop.prevent
+      @touchend="onTouchEnd"
+    >
       <view class="random-bg"></view>
       
       <!-- 庆祝小金币/花瓣/Emoji粒子飘落彩蛋 -->
@@ -24,13 +29,24 @@
         </view>
       </view>
 
+      <!-- 场景指示器 -->
+      <view class="scene-indicator">
+        <text class="scene-icon">{{ currentSceneObj.icon }}</text>
+        <text class="scene-label">{{ currentSceneObj.label }}</text>
+        <view class="scene-dots">
+          <view v-for="s in scenes" :key="s.type" class="scene-dot" :class="{ active: currentScene === s.type }"></view>
+        </view>
+      </view>
+
       <text class="dish-label">{{ rollTip }}</text>
       
       <view class="result-wrap">
         <text class="dish-text" :class="{ 'dish-big': result !== '点击开始抽菜～', 'bounce-anim': isCelebrating }">{{ result }}</text>
         <!-- 抽中后的温柔治愈文案 -->
-        <text v-if="result !== '点击开始抽菜～' && !isRolling" class="result-warm-tips">今天就吃它啦，简单又好吃～</text>
+        <text v-if="result !== '点击开始抽菜～' && !isRolling" class="result-warm-tips">今天就吃它啊，简单又好吃～</text>
       </view>
+
+      <text class="swipe-hint">← 滑动切换场景 →</text>
       
       <button class="btn-round" :class="{ 'btn-shake': isBtnShaking }" hover-class="btn-hover" @click="getRandomDish">
         🎲 帮我选一个！
@@ -95,10 +111,50 @@ const defaultMenu = [
 const result = ref('点击开始抽菜～')
 
 // 随机推荐池动态配置
-const randomMenuPool = ref([])
+const randomMenuPool = ref([]) // 存储完整 dish 对象 { name, type }
 const loadRandomMenuPool = async () => {
   const res = await familyApi.getFamilyRecipePoolItems(familyCode.value)
-  randomMenuPool.value = res?.data?.dishes.map(dish => dish.name) || defaultMenu
+  const dishes = res?.data?.dishes || []
+  randomMenuPool.value = dishes.length > 0
+    ? dishes
+    : defaultMenu.map(name => ({ name, type: '做饭' }))
+}
+
+// 场景配置
+const scenes = [
+  { type: '做饭', label: '自己做', icon: '🍳', tip: '亲手下厨真好吃' },
+  { type: '外卖', label: '叫外卖', icon: '🛫', tip: '躺平等外卖卷到家' },
+  { type: '堂食', label: '出去吃', icon: '🏪', tip: '出门觅吃一顿吧' },
+  { type: 'all',  label: '随机混合', icon: '🎲', tip: '天知道今天吃啥' }
+]
+const currentScene = ref('做饭')
+const currentSceneObj = computed(() => scenes.find(s => s.type === currentScene.value) || scenes[0])
+
+// 按场景过滤抽菜池
+const activePool = computed(() => {
+  if (currentScene.value === 'all') return randomMenuPool.value.map(d => d.name || d)
+  return randomMenuPool.value.filter(d => {
+    const t = d.type
+    if (currentScene.value === '做饭') return !t || t === '做饭' || t === 'manual'
+    return t === currentScene.value
+  }).map(d => d.name || d)
+})
+
+// 滑动切换场景
+let touchStartX = 0
+const onTouchStart = (e) => { touchStartX = e.touches[0].clientX }
+const onTouchEnd = (e) => {
+  if (isRolling.value) return
+  const dx = e.changedTouches[0].clientX - touchStartX
+  if (Math.abs(dx) < 40) return
+  const idx = scenes.findIndex(s => s.type === currentScene.value)
+  if (dx < 0 && idx < scenes.length - 1) {
+    currentScene.value = scenes[idx + 1].type
+    result.value = '点击开始抽菜～'
+  } else if (dx > 0 && idx > 0) {
+    currentScene.value = scenes[idx - 1].type
+    result.value = '点击开始抽菜～'
+  }
 }
 
 // 主题系统
@@ -200,11 +256,10 @@ onShow(() => {
 
 const getRandomDish = () => {
   if (isRolling.value) return
-  let pool = [...randomMenuPool.value]
-
-  if (pool.length === 0) {
-    return uni.showToast({ title: '抽菜池为空，请去设置添加', icon: 'none' })
-  }
+  // 现居场景的候选池，为空则 fallback 到 defaultMenu
+  const pool = activePool.value.length > 0
+    ? activePool.value
+    : defaultMenu
 
   isRolling.value = true
   isCelebrating.value = false
@@ -243,7 +298,7 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
 <style lang="less" scoped>
 .page {
   padding: 40rpx;
-  min-height: 100vh;
+  height: 100vh;
   box-sizing: border-box;
   background: linear-gradient(180deg, var(--primary-light) 0%, #FFFFFF 100%);
   transition: background 0.4s ease;
@@ -287,7 +342,7 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
   padding: 100rpx 40rpx;
   text-align: center;
   box-shadow: 0 16rpx 40rpx var(--primary-shadow);
-  margin-bottom: 80rpx;
+  margin-bottom: 40rpx;
   overflow: visible; /* 为了飘洒花瓣特效不被裁剪 */
   transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
   
@@ -433,7 +488,7 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
 
 /* 底部引导文案 / 小装饰 */
 .footer-decoration {
-  margin-top: 60rpx;
+  margin-top: 20rpx;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -479,5 +534,51 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
       }
     }
   }
+}
+/* 场景指示器 */
+.scene-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 20rpx;
+
+  .scene-icon { font-size: 40rpx; }
+
+  .scene-label {
+    font-size: 24rpx;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 700;
+    letter-spacing: 2rpx;
+  }
+
+  .scene-dots {
+    display: flex;
+    gap: 10rpx;
+    margin-top: 4rpx;
+
+    .scene-dot {
+      width: 10rpx;
+      height: 10rpx;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.35);
+      transition: all 0.3s;
+
+      &.active {
+        width: 28rpx;
+        border-radius: 10rpx;
+        background: rgba(255, 255, 255, 0.9);
+      }
+    }
+  }
+}
+
+/* 滑动切换提示 */
+.swipe-hint {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 1rpx;
+  margin-bottom: 20rpx;
+  display: block;
 }
 </style>

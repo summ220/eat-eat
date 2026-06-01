@@ -34,9 +34,9 @@
             <text class="greeting">{{ greeting }}</text>
           </view>
         </view>
-        <view class="refresh-weather-btn" :class="{ 'is-refreshing': isRefreshingWeather }" @click="refreshWeatherAndLocation">
+        <!-- <view class="refresh-weather-btn" :class="{ 'is-refreshing': isRefreshingWeather }" @click="refreshWeatherAndLocation">
           <text class="r-icon">🔄</text>
-        </view>
+        </view> -->
       </view>
 
       <!-- 日期与天气磨砂胶囊 (独立标签) -->
@@ -68,6 +68,7 @@
         <family-members
           ref="familyMembersRef"
           :family-code="familyCode"
+          :family-role="familyRole"
           @family-changed="handleFamilyMembersChanged"
           @show-switch-modal="showSwitchFamilyModal = true"
         />
@@ -544,9 +545,9 @@ const refreshWeatherAndLocation = async () => {
     dateInfo.value.weather = '刷新中...'
     dateInfo.value.temp = '--'
     await getWeather()
-    uni.showToast({ title: '天气已更新', icon: 'success' })
+    // uni.showToast({ title: '天气已更新', icon: 'success' })
   } catch (e) {
-    uni.showToast({ title: '刷新失败', icon: 'none' })
+    // uni.showToast({ title: '刷新失败', icon: 'none' })
   } finally {
     isRefreshingWeather.value = false
   }

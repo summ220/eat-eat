@@ -7,7 +7,6 @@
           <text class="upload-icon">📷</text>
           <text class="upload-text">点击上传封面图片</text>
         </view>
-        <!-- 域名+路径 的格式不对,需要和后端统一 -->
         <image class="cover-preview" v-if="form.cover" :src="form.cover.startsWith('http') ? form.cover : config.imgBaseUrl + form.cover || defaultCover" mode="heightFix" style="background-color: var(--primary-light);" />
       </view>
 
@@ -50,7 +49,10 @@
     <view class="form-card">
       <view class="section-header">
         <text class="label">所需主食材</text>
-        <text class="add-text" @click="addMainIng" style="color: var(--primary);">+ 添加食材</text>
+        <view class="header-actions">
+          <text class="add-text batch-btn" @click="showIngBatchModal = true">📋 批量录入</text>
+          <text class="add-text" @click="addMainIng" style="color: var(--primary);">+ 添加食材</text>
+        </view>
       </view>
       <view class="array-list">
         <view class="array-item" v-for="(ing, i) in mainIngs" :key="i">
@@ -80,7 +82,10 @@
     <view class="form-card">
       <view class="section-header">
         <text class="label">烹饪步骤</text>
-        <text class="add-text" @click="addStep" style="color: var(--primary);">+ 添加一步</text>
+        <view class="header-actions">
+          <text class="add-text batch-btn" @click="showStepBatchModal = true">📌 批量粘贴</text>
+          <text class="add-text" @click="addStep" style="color: var(--primary);">+ 添加一步</text>
+        </view>
       </view>
       <view class="array-list">
         <view class="array-item step-item" v-for="(step, i) in form.steps" :key="i">
@@ -93,6 +98,44 @@
     </view>
 
     <button class="save-btn" @click="save">保存菜谱</button>
+
+    <!-- 食材批量录入弹框 -->
+    <view class="modal-mask batch-mask" v-if="showIngBatchModal" @click="showIngBatchModal = false">
+      <view class="batch-modal" @click.stop>
+        <text class="modal-title">🌟 食材批量录入</text>
+        <text class="batch-hint">每行一个，格式：食材名 用量（如「西红柿 2个」）。调料会自动识别</text>
+        <textarea
+          class="batch-textarea"
+          v-model="ingBatchText"
+          placeholder="每行一个，格式：食材名 用量（如：西红柿 2个）"
+          :auto-height="false"
+          :focus="showIngBatchModal"
+        />
+        <view class="smart-btns">
+          <button class="cancel-btn" @click="showIngBatchModal = false">取消</button>
+          <button class="confirm-btn" @click="confirmIngBatch">确认导入</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 步骤批量粘贴弹框 -->
+    <view class="modal-mask batch-mask" v-if="showStepBatchModal" @click="showStepBatchModal = false">
+      <view class="batch-modal" @click.stop>
+        <text class="modal-title">🌟 步骤批量粘贴</text>
+        <text class="batch-hint">支持数字序号、退格分隔，直接粘贴其他平台的菜谱步骤</text>
+        <textarea
+          class="batch-textarea"
+          v-model="stepBatchText"
+          placeholder="每行一个步骤，支持 1. 2. 或第一步：等序号前缀自动去除"
+          :auto-height="false"
+          :focus="showStepBatchModal"
+        />
+        <view class="smart-btns">
+          <button class="cancel-btn" @click="showStepBatchModal = false">取消</button>
+          <button class="confirm-btn" @click="confirmStepBatch">确认导入</button>
+        </view>
+      </view>
+    </view>
 
     <!-- 菜谱模板弹窗 -->
     <view class="modal-mask" v-if="showTemplateModal" @click="showTemplateModal = false">
@@ -290,6 +333,60 @@ const removeSeasoning = (i) => seasoningIngs.value.splice(i, 1)
 
 const addStep = () => form.value.steps.push('')
 const removeStep = (i) => form.value.steps.splice(i, 1)
+
+// ======================== 食材批量录入 ========================
+const showIngBatchModal = ref(false)
+const ingBatchText = ref('')
+
+const confirmIngBatch = () => {
+  const lines = ingBatchText.value.split('\n').map(l => l.trim()).filter(Boolean)
+  if (lines.length === 0) return uni.showToast({ title: '请输入食材内容', icon: 'none' })
+
+  for (const line of lines) {
+    // 尝试用空格/制表符/中文空格拆分名称和用量
+    const parts = line.split(/[\s\t\u3000]+/)
+    const name = parts.length > 1 ? parts.slice(0, -1).join('') : parts[0]
+    const amount = parts.length > 1 ? parts[parts.length - 1] : ''
+    if (!name) continue
+    // 自动区分主食材 vs 调料
+    const isSeasoning = seasoningKeywords.some(k => name.includes(k))
+    if (isSeasoning) {
+      seasoningIngs.value.push({ name, amount })
+    } else {
+      mainIngs.value.push({ name, amount })
+    }
+  }
+
+  const total = lines.length
+  ingBatchText.value = ''
+  showIngBatchModal.value = false
+  uni.showToast({ title: `已导入 ${total} 个食材`, icon: 'success' })
+}
+
+// ======================== 步骤批量粘贴 ========================
+const showStepBatchModal = ref(false)
+const stepBatchText = ref('')
+
+const confirmStepBatch = () => {
+  const lines = stepBatchText.value.split('\n').map(l => l.trim()).filter(Boolean)
+  if (lines.length === 0) return uni.showToast({ title: '请输入步骤内容', icon: 'none' })
+
+  // 去掉常见序号前缀：1. 1、 ¹ 第一步： 步骤一： 等
+  const clean = lines.map(l =>
+    l.replace(/^(第?[\d\u4e00二三四五六七八九十]+[、。.\s：．]|步骤\s*[\d\u4e00二三四五六七八九十]+\s*[：:]\s*)/u, '').trim()
+  ).filter(Boolean)
+
+  // 追加模式：如果 form.steps 只有一个空项则替换，否则追加
+  if (form.value.steps.length === 1 && !form.value.steps[0].trim()) {
+    form.value.steps = clean
+  } else {
+    form.value.steps.push(...clean)
+  }
+
+  stepBatchText.value = ''
+  showStepBatchModal.value = false
+  uni.showToast({ title: `已导入 ${clean.length} 个步骤`, icon: 'success' })
+}
 
 const save = async () => {
   if (!form.value.name.trim()) return uni.showToast({ title: '菜名不能为空', icon: 'none' })
@@ -698,5 +795,109 @@ const save = async () => {
     opacity: 0.9;
     transform: translateY(4rpx);
   }
+}
+
+// ======================== 批量导入弹框 ========================
+
+// 居中覆盖层（区别于底部滑出的模板弹窗）
+.batch-mask {
+  align-items: center !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.batch-modal {
+  width: 680rpx;
+  background: #fff;
+  border-radius: 40rpx;
+  padding: 50rpx 30rpx 40rpx;
+  margin: 0 auto;
+  box-sizing: border-box;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+  animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(40rpx); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.batch-hint {
+  font-size: 24rpx;
+  color: #999;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.batch-textarea {
+  width: 100%;
+  height: 240rpx;
+  background: #F8F9FA;
+  border-radius: 20rpx;
+  padding: 24rpx 28rpx;
+  font-size: 28rpx;
+  color: #2C3E50;
+  box-sizing: border-box;
+  line-height: 1.7;
+  border: 2rpx solid transparent;
+  transition: border-color 0.2s;
+  &:focus { border-color: var(--primary); }
+}
+
+// 头部操作区（批量 + 添加并排）
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.batch-btn {
+  color: #888 !important;
+  background: #F0F0F0 !important;
+  font-size: 24rpx !important;
+}
+
+.smart-btns {
+  display: flex;
+  gap: 20rpx;
+}
+
+.cancel-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #F8F9FA;
+  color: #888;
+  border-radius: 100rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  border: none;
+  margin: 0;
+  &::after { border: none; }
+}
+
+.confirm-btn {
+  flex: 2;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: var(--primary-grad);
+  color: #fff;
+  border-radius: 100rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  border: none;
+  margin: 0;
+  box-shadow: 0 8rpx 20rpx var(--primary-shadow);
+  transition: opacity 0.2s;
+  &::after { border: none; }
+  &:active { opacity: 0.85; }
 }
 </style>

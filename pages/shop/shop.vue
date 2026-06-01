@@ -3,20 +3,32 @@
   <gourmet-refresher :refreshing="refreshing" type="shop" />
   <view class="page" :style="themeStyle">
     <view class="top-actions-bar">
+      <button class="action-btn-top add" @click="goSmartInput">+ 智能输入</button>
       <button class="action-btn-top clear" @click="clearDone">清空已购</button>
       <button class="action-btn-top add" @click="goAdd">+ 新增</button>
     </view>
 
     <view class="main-layout">
       <!-- 左侧分类侧边栏 -->
-      <view class="sidebar">
+      <view class="sidebar" @touchmove.stop>
         <view class="sidebar-list">
           <view class="nav-item" :class="{ active: currentCategory === '全部' }" @click="switchCategory('全部')">
             <text class="nav-text">全部</text>
           </view>
-          <view class="nav-item" v-for="cat in categories" :key="cat.id" :class="{ active: currentCategory === cat.id }" @click="switchCategory(cat.id)">
-            <text class="nav-text">{{ cat.name }}</text>
-          </view>
+          <zero-drag
+            v-model="categories"
+            mode="single"
+            :single-item-height="90"
+            :gap="0"
+            :long-press-duration="350"
+            @change="handleDragChange"
+          >
+            <template #default="{ item }">
+              <view class="nav-item-inner" :class="{ active: currentCategory === item.id }" @click="switchCategory(item.id)">
+                <text class="nav-text">{{ item.name }}</text>
+              </view>
+            </template>
+          </zero-drag>
         </view>
         <view class="nav-item add-cat-btn-side" @click="showCatModal = true">
           <text class="nav-text" style="color: var(--primary)">+ 添加分类</text>
@@ -110,6 +122,61 @@
       </view>
     </view>
 
+    <!-- 智能批量输入弹窗 -->
+    <view class="modal-mask" v-if="showSmartInput" @click="closeSmartInput">
+      <view class="smart-modal-content" @click.stop>
+        <text class="modal-title">🌟 智能批量录入</text>
+        <text class="smart-hint">每行一个物品，或用逗号、顿号分隔，一次性批量新增</text>
+
+        <textarea
+          class="smart-textarea"
+          v-model="smartInputText"
+          placeholder="例如：\n牛奶、鸡蛋\n苹果，香蕉\n洗洁精"
+          :auto-height="false"
+          @input="onSmartInput"
+        />
+
+        <!-- 解析预览 -->
+        <view class="smart-preview" v-if="parsedItems.length > 0">
+          <text class="preview-label">将新增 {{ parsedItems.length }} 个物品：</text>
+          <scroll-view scroll-y class="preview-list">
+            <view class="preview-tag" v-for="(item, idx) in parsedItems" :key="idx">
+              <text>{{ item }}</text>
+              <text class="preview-del" @click="removePreviewItem(idx)">×</text>
+            </view>
+          </scroll-view>
+        </view>
+
+        <!-- 分类选择 -->
+        <view class="smart-cat-row">
+          <text class="smart-cat-label">归属分类：</text>
+          <scroll-view scroll-x class="smart-cat-scroll">
+            <view
+              class="smart-cat-chip"
+              :class="{ active: smartCategoryId === '' }"
+              @click="smartCategoryId = ''"
+            >不选</view>
+            <view
+              class="smart-cat-chip"
+              v-for="cat in categories"
+              :key="cat.id"
+              :class="{ active: smartCategoryId === cat.id }"
+              @click="smartCategoryId = cat.id"
+            >{{ cat.name }}</view>
+          </scroll-view>
+        </view>
+
+        <view class="smart-btns">
+          <button class="cancel-btn" @click="closeSmartInput">取消</button>
+          <button
+            class="confirm-btn"
+            :disabled="parsedItems.length === 0 || smartSaving"
+            @click="submitSmartInput"
+          >{{ smartSaving ? `保存中 ${smartSavedCount}/${parsedItems.length}` : `确认新增 ${parsedItems.length} 个` }}</button>
+        </view>
+      </view>
+    </view>
+
     <!-- 底部悬浮统计区域 -->
     <view class="stat-wrapper" :class="{ 'is-expanded': isStatExpanded }">
       <view class="stat-card-anim" @click="!isStatExpanded ? (isStatExpanded = true) : (isStatExpanded = false)">
@@ -138,6 +205,7 @@ import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import shopApi from '@/common/api/shop.js'
 import stockApi from '@/common/api/stock.js'
 import costApi from '@/common/api/cost.js'
+import zeroDrag from '@/uni_modules/zero-drag/components/zero-drag/zero-drag.vue'
 
 let familyCode = uni.getStorageSync('family_code') || 'default_family';
 
@@ -188,14 +256,14 @@ const addCategory = async () => {
   }
   
   // API创建分类
-  let shoppingCategoryJson = {name: name, sortOrder: 60}
+  let shoppingCategoryJson = {name: name, sortOrder: categories.value.length + 1}
   try {
     await shopApi.saveFamilyShoppingCategory(familyCode, shoppingCategoryJson)
     
     // 如果勾选了“同时保存到食材分类”，同步添加
     if (syncToStock.value) {
       try {
-        let ingredientCategoryJson = {name: name, sortOrder: 70}
+        let ingredientCategoryJson = {name: name, sortOrder: categories.value.length + 1}
         await stockApi.saveFamilyIngredientCategory(familyCode, ingredientCategoryJson)
       } catch (err) {
         console.error('同步食材分类失败:', err)
@@ -229,6 +297,24 @@ const removeCategory = (cat) => {
       }
     }
   })
+}
+let dragTimer = null
+const handleDragChange = (newList) => {
+  categories.value = newList
+  if (dragTimer) {
+    clearTimeout(dragTimer)
+  }
+  dragTimer = setTimeout(async () => {
+    try {
+      const categoryIds = newList.map(cat => cat.id)
+      await shopApi.sortFamilyShoppingCategories(familyCode, categoryIds)
+      await loadCategories()
+      uni.showToast({ title: '分类排序已更新', icon: 'none' })
+    } catch (e) {
+      console.error('更新分类排序失败', e)
+      uni.showToast({ title: '排序更新失败', icon: 'none' })
+    }
+  }, 1000)
 }
 // ===================================分类管理=====================================
 
@@ -484,6 +570,85 @@ const openAddModal = () => {
 const goAdd = () => {
   uni.navigateTo({ url: '/pages/shop/component/addShop' })
 }
+
+// ======================== 智能批量输入 ========================
+const showSmartInput = ref(false)
+const smartInputText = ref('')
+const parsedItems = ref([])
+const smartCategoryId = ref('')
+const smartSaving = ref(false)
+const smartSavedCount = ref(0)
+
+const goSmartInput = () => {
+  smartInputText.value = ''
+  parsedItems.value = []
+  smartCategoryId.value = ''
+  smartSaving.value = false
+  smartSavedCount.value = 0
+  showSmartInput.value = true
+}
+
+const closeSmartInput = () => {
+  showSmartInput.value = false
+}
+
+const parseSmartInput = (text) => {
+  const raw = text.split(/[\n，,、；;]+/)
+  const result = []
+  const seen = new Set()
+  for (const item of raw) {
+    const name = item.trim()
+    if (name && !seen.has(name)) {
+      seen.add(name)
+      result.push(name)
+    }
+  }
+  return result
+}
+
+const onSmartInput = (e) => {
+  parsedItems.value = parseSmartInput(e.detail.value)
+}
+
+const removePreviewItem = (idx) => {
+  parsedItems.value.splice(idx, 1)
+}
+
+const submitSmartInput = async () => {
+  if (parsedItems.value.length === 0 || smartSaving.value) return
+  smartSaving.value = true
+  smartSavedCount.value = 0
+
+  const categoryObj = categories.value.find(c => c.id === smartCategoryId.value)
+  const categoryName = categoryObj ? categoryObj.name : '其他'
+
+  try {
+    const batchSize = 5
+    const items = [...parsedItems.value]
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize)
+      await Promise.all(batch.map(name => {
+        const shoppingItemJson = {
+          name,
+          categoryId: smartCategoryId.value || null,
+          categoryName,
+          done: false
+        }
+        return shopApi.saveFamilyShoppingItem(familyCode, shoppingItemJson)
+      }))
+      smartSavedCount.value += batch.length
+    }
+    uni.showToast({ title: `已新增 ${items.length} 个物品`, icon: 'success' })
+    closeSmartInput()
+    load()
+  } catch (e) {
+    console.error('批量新增失败', e)
+    uni.showToast({ title: '部分物品保存失败', icon: 'none' })
+  } finally {
+    smartSaving.value = false
+  }
+}
+// ======================== 智能批量输入 ========================
 
 const openEditModal = (item) => {
   modalMode.value = 'edit';
@@ -755,6 +920,11 @@ const themeStyle = computed(() => {
 }
 .sidebar-list::-webkit-scrollbar { display: none; }
 
+zero-drag {
+  display: block;
+  width: 100%;
+}
+
 .add-cat-btn-side {
   flex-shrink: 0;
   border-top: 1rpx solid #F0F2F5;
@@ -765,12 +935,13 @@ const themeStyle = computed(() => {
   flex-shrink: 0;
 }
 
-.nav-item {
+.nav-item, .nav-item-inner {
   height: 90rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  width: 100%;
   
   .nav-text {
     font-size: 28rpx;
@@ -1093,5 +1264,154 @@ const themeStyle = computed(() => {
   font-size: 30rpx;
   font-weight: bold;
   border: none;
+}
+
+// ======================== 智能输入弹窗 ========================
+.smart-modal-content {
+  width: 680rpx;
+  background: #fff;
+  border-radius: 40rpx;
+  padding: 50rpx 40rpx 40rpx;
+  box-sizing: border-box;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.smart-hint {
+  font-size: 24rpx;
+  color: #999;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.smart-textarea {
+  width: 100%;
+  height: 220rpx;
+  background: #F8F9FA;
+  border-radius: 20rpx;
+  padding: 24rpx 28rpx;
+  font-size: 28rpx;
+  color: #2C3E50;
+  box-sizing: border-box;
+  line-height: 1.7;
+  border: 2rpx solid transparent;
+  transition: border-color 0.2s;
+  &:focus { border-color: var(--primary); }
+}
+
+.smart-preview {
+  background: var(--primary-light);
+  border-radius: 20rpx;
+  padding: 20rpx 24rpx;
+
+  .preview-label {
+    font-size: 24rpx;
+    color: var(--primary);
+    font-weight: bold;
+    margin-bottom: 16rpx;
+    display: block;
+  }
+
+  .preview-list {
+    max-height: 160rpx;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12rpx;
+  }
+
+  .preview-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8rpx;
+    background: #fff;
+    border: 1rpx solid var(--primary);
+    border-radius: 100rpx;
+    padding: 8rpx 20rpx;
+    font-size: 24rpx;
+    color: var(--primary);
+
+    .preview-del {
+      font-size: 28rpx;
+      color: #FF7DA8;
+      font-weight: bold;
+      line-height: 1;
+    }
+  }
+}
+
+.smart-cat-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+
+  .smart-cat-label {
+    font-size: 26rpx;
+    color: #666;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .smart-cat-scroll {
+    width: 420rpx;
+    flex: 1;
+    white-space: nowrap;
+
+    .smart-cat-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 10rpx 28rpx;
+      border-radius: 100rpx;
+      font-size: 24rpx;
+      background: #F0F0F0;
+      color: #888;
+      margin-right: 14rpx;
+      transition: all 0.2s;
+
+      &.active {
+        background: var(--primary-grad);
+        color: #fff;
+        box-shadow: 0 4rpx 12rpx var(--primary-shadow);
+      }
+    }
+  }
+}
+
+.smart-btns {
+  display: flex;
+  gap: 20rpx;
+
+  .cancel-btn {
+    flex: 1;
+    height: 88rpx;
+    line-height: 88rpx;
+    background: #F8F9FA;
+    color: #888;
+    border-radius: 100rpx;
+    font-size: 28rpx;
+    font-weight: bold;
+    border: none;
+    &::after { border: none; }
+  }
+
+  .confirm-btn {
+    flex: 2;
+    height: 88rpx;
+    line-height: 88rpx;
+    background: var(--primary-grad);
+    color: #fff;
+    border-radius: 100rpx;
+    font-size: 28rpx;
+    font-weight: bold;
+    border: none;
+    box-shadow: 0 8rpx 20rpx var(--primary-shadow);
+    transition: opacity 0.2s;
+    &::after { border: none; }
+    &[disabled] {
+      opacity: 0.5;
+      box-shadow: none;
+    }
+  }
 }
 </style>

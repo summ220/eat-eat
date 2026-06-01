@@ -98,5 +98,17 @@ export default {
     return request('/deleteFamilyShoppingCategory', 'POST', {
       id
     })
+  },
+
+  /**
+   * 排序家庭购物分类
+   * @param {string} familyCode 家庭码/ID
+   * @param {array} categoryIds 分类ID数组
+   */
+  sortFamilyShoppingCategories(familyCode, categoryIds) {
+    return request('/sortFamilyShoppingCategories', 'POST', {
+      familyCode,
+      categoryIds
+    })
   }
 }

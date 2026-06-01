@@ -12,19 +12,34 @@
     <view class="modal-mask" v-if="showRandomMenuModal" @click="showRandomMenuModal = false">
       <view class="modal-content" @click.stop>
         <text class="modal-title">随机抽菜池管理</text>
-        <scroll-view scroll-y style="max-height: 500rpx; margin-top: 20rpx; margin-bottom: 20rpx;">
+
+        <!-- 场景 Tab -->
+        <view class="scene-tabs">
+          <view
+            class="scene-tab"
+            v-for="tab in sceneTabs"
+            :key="tab.type"
+            :class="{ active: activeType === tab.type }"
+            @click="activeType = tab.type"
+          >
+            <text class="tab-icon">{{ tab.icon }}</text>
+            <text class="tab-label">{{ tab.label }}</text>
+          </view>
+        </view>
+
+        <scroll-view scroll-y style="max-height: 460rpx; margin-top: 16rpx; margin-bottom: 16rpx;">
           <view class="cat-manage-list">
-            <view class="cat-manage-item" v-for="(dish, idx) in randomMenu" :key="idx">
+            <view class="cat-manage-item" v-for="(dish, idx) in filteredMenu" :key="dish.id || idx">
               <text>{{ dish.name || dish }}</text>
-              <text class="del-cat" @click="removeRandomDish(idx)">删除</text>
+              <text class="del-cat" @click="removeRandomDish(dish)">删除</text>
             </view>
-            <view class="cat-manage-item empty-tip" v-if="randomMenu.length === 0" style="justify-content: center; color: #999; font-size: 24rpx; border-bottom: none;">
-              <text>空空如也，快去添加菜品吧~</text>
+            <view class="cat-manage-item empty-tip" v-if="filteredMenu.length === 0" style="justify-content: center; color: #999; font-size: 24rpx; border-bottom: none;">
+              <text>这个场景还没有菜，快去添加吧~</text>
             </view>
           </view>
         </scroll-view>
         <view class="add-cat-box">
-          <input class="add-cat-input" v-model="newRandomDish" placeholder="新推荐菜名称" />
+          <input class="add-cat-input" v-model="newRandomDish" :placeholder="'新增' + sceneTabs.find(t => t.type === activeType).label + '菜名'" />
           <view class="add-cat-btn" @click="addRandomDish">添加</view>
         </view>
         <button class="close-modal-btn" @click="showRandomMenuModal = false">完成</button>
@@ -34,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import familyApi from '@/common/api/family.js'
 
 const props = defineProps({
@@ -46,7 +61,7 @@ const props = defineProps({
 
 const quickFuncs = ref([
   { icon: '🎲', name: '抽菜配置' },
-  { icon: '🧺', name: '随手记' },
+  { icon: '🦺', name: '随手记' },
   { icon: '🗑️', name: '每日计划' },
   { icon: '💵', name: '清空花费' },
   { icon: '🧹', name: '清理数据' },
@@ -55,10 +70,27 @@ const quickFuncs = ref([
   { icon: '📊', name: '开销统计' }
 ])
 
-// --- 抽菜池管理的自治状态与逻辑 ---
+// --- 抽菜池管理 ---
 const showRandomMenuModal = ref(false)
 const randomMenu = ref([])
 const newRandomDish = ref('')
+
+// 场景 tab 配置
+const sceneTabs = [
+  { label: '自己做', type: '做饭', icon: '🍳' },
+  { label: '外卖',   type: '外卖', icon: '🛫' },
+  { label: '出去吃', type: '堂食', icon: '🏪' }
+]
+const activeType = ref('做饭') // 默认自己做
+
+// 按当前 tab 过滤（兼容旧数据: type 为空或 manual 归入「做饭」）
+const filteredMenu = computed(() =>
+  randomMenu.value.filter(dish => {
+    const t = dish.type
+    if (activeType.value === '做饭') return !t || t === '做饭' || t === 'manual'
+    return t === activeType.value
+  })
+)
 
 const loadRandomMenu = async () => {
   if (!props.familyCode) return
@@ -73,7 +105,7 @@ const loadRandomMenu = async () => {
 const addRandomDish = async () => {
   const val = newRandomDish.value.trim()
   if (!val) return
-  const dishJson = { name: val, type: "manual" }
+  const dishJson = { name: val, type: activeType.value }
   try {
     await familyApi.saveFamilyRecipePoolItem(props.familyCode, dishJson)
     uni.showToast({ title: '添加成功', icon: 'none' })
@@ -84,7 +116,7 @@ const addRandomDish = async () => {
   }
 }
 
-const removeRandomDish = async (idx) => {
+const removeRandomDish = async (dish) => {
   uni.showModal({
     title: '确认删除',
     content: '确定要删除该抽菜项吗？',
@@ -93,7 +125,7 @@ const removeRandomDish = async (idx) => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await familyApi.deleteFamilyRecipePoolItem(randomMenu.value[idx].id)
+          await familyApi.deleteFamilyRecipePoolItem(dish.id)
           uni.showToast({ title: '已删除', icon: 'none' })
           loadRandomMenu()
         } catch (e) {
@@ -254,5 +286,33 @@ const handleSetting = (name) => {
   margin-top: 10rpx;
   border: none;
   &::after { border: none; }
+}
+// --- 场景 Tab 样式 ---
+.scene-tabs {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.scene-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  padding: 16rpx 0;
+  border-radius: 20rpx;
+  background: #F5F6F7;
+  transition: all 0.2s;
+
+  .tab-icon { font-size: 30rpx; }
+  .tab-label { font-size: 22rpx; color: #999; font-weight: 500; }
+
+  &.active {
+    background: var(--primary-light, #FFE8EE);
+    .tab-label { color: var(--primary, #FF6B8B); font-weight: 700; }
+  }
+
+  &:active { transform: scale(0.95); }
 }
 </style>

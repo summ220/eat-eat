@@ -3,12 +3,13 @@
   <view class="members-container">
     <scroll-view scroll-x class="member-scroll" :show-scrollbar="false">
       <view class="member-list">
-        <view class="member-card" v-for="(m, idx) in members" :key="idx" >
+        <view class="member-card" v-for="(m, idx) in members" :key="idx" @click.stop="handleMemberClick(m)" >
           <view class="avatar-wrap">
-            <image class="m-avatar" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(m.avatarUrl)" />
-            <view class="edit-tag" v-if="m.isSelf" @click="handleMemberClick(m)">✏️</view>
+            <image class="m-avatar" :class="{ 'is-owner': m.role === 'owner' }" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(m.avatarUrl)" />
+            <view class="edit-tag" v-if="m.isSelf" @click.stop="handleMemberClick(m)">✏️</view>
+            <view class="edit-tag" v-if="m.role === 'owner' && !m.isSelf" @click.stop="handleMemberClick(m)">👑</view>
           </view>
-          <text class="m-nick">{{ m.name || '干饭人' }}{{ m.isSelf ? ' (我)' : m.role === 'owner' ? ' (管理员)' : '' }}</text>
+          <text class="m-nick">{{ m.name || '干饭人' }}{{ m.isSelf ? ' (我)' : '' }}</text>
           <view class="m-role"><text>{{ m.title || '大主厨' }}</text></view>
         </view>
       </view>
@@ -75,6 +76,10 @@ import config from '@/common/config'
 
 const props = defineProps({
   familyCode: {
+    type: String,
+    default: ''
+  },
+  familyRole: {
     type: String,
     default: ''
   }
@@ -443,6 +448,9 @@ defineExpose({
       border-radius: 50%;
       border: 4rpx solid #fff;
       box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+    }
+    .is-owner {
+      border-color: var(--primary);
     }
     .edit-tag {
       position: absolute;
