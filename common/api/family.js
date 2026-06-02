@@ -166,7 +166,7 @@ export default {
    * @param {string} answer 密保答案
    */
   recoverFamilyBySecurity(familyCode, question, answer) {
-    return request('/recoverFamilyBySecurity', 'POST', {
+    return request('/recoverFamilyBySecurityAnswer', 'POST', {
       familyCode,
       question,
       answer

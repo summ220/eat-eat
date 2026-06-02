@@ -400,13 +400,13 @@ const submitRestore = async () => {
     const res = await familyApi.recoverFamilyBySecurity(targetCode, targetQuestion, targetAnswer)
     
     // 双重校验逻辑：校验通过
-    if (res && res.data && res.data.familyCode) {
+    if (res && res.data.member && res.data.member.familyCode) {
       uni.showToast({ title: '找回成功！', icon: 'success' })
       
-      uni.setStorageSync('family_code', res.data.familyCode)
-      uni.setStorageSync('family_name', res.data.familyName || '找回的家庭')
-      uni.setStorageSync('family_avatar', res.data.avatarUrl || '')
-      uni.setStorageSync('family_role', res.data.role || 'owner')
+      uni.setStorageSync('family_code', res.data.member.familyCode)
+      uni.setStorageSync('family_name', res.data.member.familyName || '找回的家庭')
+      uni.setStorageSync('family_avatar', res.data.member.avatarUrl || '')
+      uni.setStorageSync('family_role', res.data.member.role || 'owner')
       
       // 验证找回首次进入，设置临时打卡标志避免首次弹出老用户开屏
       uni.setStorageSync('is_first_launch_after_register', 'true')
