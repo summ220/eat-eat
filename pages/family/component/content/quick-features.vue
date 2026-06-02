@@ -27,7 +27,7 @@
           </view>
         </view>
 
-        <scroll-view scroll-y style="max-height: 460rpx; margin-top: 16rpx; margin-bottom: 16rpx;">
+        <scroll-view scroll-y style="max-height: 460rpx; margin-top: 16rpx; margin-bottom: 16rpx;" :show-scrollbar="false">
           <view class="cat-manage-list">
             <view class="cat-manage-item" v-for="(dish, idx) in filteredMenu" :key="dish.id || idx">
               <text>{{ dish.name || dish }}</text>

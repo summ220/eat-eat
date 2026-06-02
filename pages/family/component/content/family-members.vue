@@ -3,7 +3,7 @@
   <view class="members-container">
     <scroll-view scroll-x class="member-scroll" :show-scrollbar="false">
       <view class="member-list">
-        <view class="member-card" v-for="(m, idx) in members" :key="idx" @click.stop="handleMemberClick(m)" >
+        <view class="member-card" v-for="(m, idx) in displayedMembers" :key="idx" @click.stop="handleMemberClick(m)" >
           <view class="avatar-wrap">
             <image class="m-avatar" :class="{ 'is-owner': m.role === 'owner' }" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(m.avatarUrl)" />
             <view class="edit-tag" v-if="m.isSelf" @click.stop="handleMemberClick(m)">✏️</view>
@@ -11,6 +11,24 @@
           </view>
           <text class="m-nick">{{ m.name || '干饭人' }}{{ m.isSelf ? ' (我)' : '' }}</text>
           <view class="m-role"><text>{{ m.title || '大主厨' }}</text></view>
+        </view>
+        
+        <!-- 查看全部的入口卡片 -->
+        <view class="member-card more-members-card" v-if="members.length > 4 && !showAllMembers" @click.stop="showAllMembers = true">
+          <view class="avatar-wrap more-avatar-wrap">
+            <text class="more-avatar-icon">➕</text>
+          </view>
+          <text class="m-nick">显示全部</text>
+          <view class="m-role"><text>共 {{ members.length }} 人</text></view>
+        </view>
+
+        <!-- 收起的入口卡片 -->
+        <view class="member-card more-members-card fold-btn" v-if="members.length > 4 && showAllMembers" @click.stop="showAllMembers = false">
+          <view class="avatar-wrap more-avatar-wrap">
+            <text class="more-avatar-icon">➖</text>
+          </view>
+          <text class="m-nick">收起列表</text>
+          <view class="m-role"><text>极简模式</text></view>
         </view>
       </view>
     </scroll-view>
@@ -83,6 +101,14 @@ const props = defineProps({
     type: String,
     default: ''
   }
+})
+
+const showAllMembers = ref(false)
+const displayedMembers = computed(() => {
+  if (members.value.length <= 4 || showAllMembers.value) {
+    return members.value
+  }
+  return members.value.slice(0, 3)
 })
 
 const emit = defineEmits(['family-changed', 'show-switch-modal'])
@@ -481,6 +507,38 @@ defineExpose({
     padding: 4rpx 16rpx;
     border-radius: 100rpx;
     transition: all 0.5s ease;
+  }
+}
+
+.more-members-card {
+  background: var(--primary-light) !important;
+  border: 2rpx dashed var(--primary);
+  box-sizing: border-box;
+  
+  .more-avatar-wrap {
+    width: 100rpx;
+    height: 100rpx;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+    margin-bottom: 16rpx;
+    
+    .more-avatar-icon {
+      font-size: 36rpx;
+      color: var(--primary);
+    }
+  }
+  
+  .m-nick {
+    color: var(--primary) !important;
+  }
+  
+  .m-role {
+    background: #fff !important;
+    border: 1rpx solid var(--primary-light);
   }
 }
 

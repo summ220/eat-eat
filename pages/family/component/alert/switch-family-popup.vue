@@ -29,7 +29,7 @@
         <text class="loading-text">正在加载家庭列表...</text>
       </view>
       <block v-else>
-        <scroll-view scroll-y class="other-families-scroll" v-if="otherFamilies.length > 0">
+        <scroll-view scroll-y class="other-families-scroll" v-if="otherFamilies.length > 0" :show-scrollbar="false">
           <view 
             class="other-family-card-item" 
             v-for="fam in otherFamilies" 

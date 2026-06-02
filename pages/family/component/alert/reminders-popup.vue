@@ -7,7 +7,7 @@
         <text class="modal-subtitle">为您整理了 {{ reminders.length }} 条待办事项</text>
       </view>
       
-      <scroll-view scroll-y class="reminder-detail-list">
+      <scroll-view scroll-y class="reminder-detail-list" :show-scrollbar="false">
         <view class="detail-item" v-for="(r, i) in reminders" :key="i" :class="r.type">
           <view class="d-left">
             <view class="d-icon">{{ r.icon }}</view>

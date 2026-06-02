@@ -117,7 +117,7 @@
               <image class="r-img" :src="r.image || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'" mode="aspectFill" />
               <view class="r-content">
                 <view class="r-header">
-                  <text class="r-name">{{ r.name }}</text>
+                  <text class="r-name">{{ r.name || '干饭人' }}</text>
                   <text class="r-fav">❤️</text>
                 </view>
                 <view class="r-tags">

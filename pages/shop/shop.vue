@@ -24,7 +24,7 @@
             @change="handleDragChange"
           >
             <template #default="{ item }">
-              <view class="nav-item-inner" :class="{ active: currentCategory === item.id }" @click="switchCategory(item.id)">
+              <view class="nav-item-inner" :class="{ active: currentCategory === item.id, dragging: !item._disabled }" @click="switchCategory(item.id)">
                 <text class="nav-text">{{ item.name }}</text>
               </view>
             </template>
@@ -139,7 +139,7 @@
         <!-- 解析预览 -->
         <view class="smart-preview" v-if="parsedItems.length > 0">
           <text class="preview-label">将新增 {{ parsedItems.length }} 个物品：</text>
-          <scroll-view scroll-y class="preview-list">
+          <scroll-view scroll-y class="preview-list" :show-scrollbar="false">
             <view class="preview-tag" v-for="(item, idx) in parsedItems" :key="idx">
               <text>{{ item }}</text>
               <text class="preview-del" @click="removePreviewItem(idx)">×</text>
@@ -150,7 +150,7 @@
         <!-- 分类选择 -->
         <view class="smart-cat-row">
           <text class="smart-cat-label">归属分类：</text>
-          <scroll-view scroll-x class="smart-cat-scroll">
+          <scroll-view scroll-x class="smart-cat-scroll" :show-scrollbar="false">
             <view
               class="smart-cat-chip"
               :class="{ active: smartCategoryId === '' }"
@@ -964,6 +964,19 @@ zero-drag {
       width: 8rpx;
       background: var(--primary);
       border-radius: 0 10rpx 10rpx 0;
+    }
+  }
+
+  &.dragging {
+    // border: 2rpx dashed var(--primary) !important;
+    // border-radius: 20rpx;
+    // box-shadow: 0 12rpx 36rpx var(--primary-shadow) !important;
+    // transform: scale(1.05);
+    
+    .nav-text {
+      color: var(--primary) !important;
+      font-weight: bold !important;
+      font-size: 30rpx !important;
     }
   }
 }

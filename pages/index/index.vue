@@ -43,7 +43,7 @@
       <view class="result-wrap">
         <text class="dish-text" :class="{ 'dish-big': result !== '点击开始抽菜～', 'bounce-anim': isCelebrating }">{{ result }}</text>
         <!-- 抽中后的温柔治愈文案 -->
-        <text v-if="result !== '点击开始抽菜～' && !isRolling" class="result-warm-tips">今天就吃它啊，简单又好吃～</text>
+        <text v-if="result !== '点击开始抽菜～' && !isRolling" class="result-warm-tips">{{ currentResultPhrase }}</text>
       </view>
 
       <text class="swipe-hint">← 滑动切换场景 →</text>
@@ -191,6 +191,17 @@ const warmPhrases = [
 ]
 const currentWarmPhrase = ref('')
 
+const resultPhrases = [
+  '今天就吃它啦，简单又好吃～ 🍳',
+  '热气腾腾的食物，最能抚平一日疲惫 ✨',
+  '听胃的话，今天就吃这个啦 💖',
+  '绝妙的选择！这就去准备吧 🐾',
+  '元气满满的一餐，要认真吃完哦 🌟',
+  '胃口大开！今天一定是美味的一天 🍒',
+  '让美食治愈今天的心情吧 🍃'
+]
+const currentResultPhrase = ref('今天就吃它啦，简单又好吃～ 🍳')
+
 // 触发按钮轻轻晃动
 const triggerBtnShake = () => {
   isBtnShaking.value = true
@@ -203,7 +214,7 @@ const triggerBtnShake = () => {
 const generateParticles = () => {
   const emojis = ['🍓', '🍒', '🌟', '✨', '💖', '🍳', '🍋', '🍇', '🧁']
   const newParticles = []
-  for (let i = 0; i < 12; i++) {
+  Array.from({ length: 12 }).forEach(() => {
     const angle = Math.random() * 2 * Math.PI
     const distance = 120 + Math.random() * 160
     const tx = `${Math.cos(angle) * distance}rpx`
@@ -221,7 +232,7 @@ const generateParticles = () => {
         animation-delay: ${delay};
       `
     })
-  }
+  })
   particles.value = newParticles
 }
 
@@ -278,6 +289,7 @@ const getRandomDish = () => {
       isCelebrating.value = true
       rollTip.value = '叮咚！今日首选 🌟'
       
+      currentResultPhrase.value = resultPhrases[Math.floor(Math.random() * resultPhrases.length)]
       generateParticles()
       
       // 1.5秒后关闭庆祝效果

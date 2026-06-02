@@ -31,7 +31,7 @@
         <view class="mp-close-x" @click="closeMealPopup">✕</view>
       </view>
       
-      <scroll-view scroll-y class="mp-scroll-body">
+      <scroll-view scroll-y class="mp-scroll-body" :show-scrollbar="false">
         
         <!-- 当前餐次常用菜单 -->
         <view class="mp-group">

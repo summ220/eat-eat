@@ -144,7 +144,7 @@
           <text class="modal-title">发现好菜谱模板</text>
           <text class="modal-close" @click="showTemplateModal = false">✕</text>
         </view>
-        <scroll-view scroll-y class="template-scroll">
+        <scroll-view scroll-y class="template-scroll" :show-scrollbar="false">
           <view class="template-item" v-for="(tpl, idx) in filteredTemplates" :key="idx">
             <view class="tpl-info">
               <text class="tpl-name">{{ tpl.name }}</text>

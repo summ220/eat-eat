@@ -16,7 +16,7 @@
     </view>
 
     <view class="category-wrapper">
-      <scroll-view class="category-bar" scroll-x="true" show-scrollbar="false">
+      <scroll-view class="category-bar" scroll-x="true" :show-scrollbar="false">
         <view 
             class="category-chip"
             :class="{ active: currentCategory === '全部' }"

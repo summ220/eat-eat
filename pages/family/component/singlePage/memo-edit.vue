@@ -4,7 +4,7 @@
   <view class="page" :style="themeStyle">
     <view class="content edit-view">
       <!-- 极简治愈系富文本工具栏（支持横向滑动，手感极佳） -->
-      <scroll-view class="editor-toolbar" scroll-x show-scrollbar="false">
+      <scroll-view class="editor-toolbar" scroll-x :show-scrollbar="false">
         <view class="toolbar-item" @click="undo">
           <text class="toolbar-text">↩️</text>
         </view>
