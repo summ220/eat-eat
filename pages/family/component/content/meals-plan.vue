@@ -572,6 +572,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 24rpx;
+  z-index: 30;
 }
 
 .meal-simple-card {
@@ -823,7 +824,6 @@ defineExpose({
   bottom: 0; left: 0; right: 0;
   background: linear-gradient(to top, #fff 80%, rgba(255,255,255,0) 100%);
   padding: 40rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));
-  z-index: 10;
   flex-shrink: 0;
   
   .mp-action-btn {

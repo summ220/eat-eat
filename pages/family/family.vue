@@ -900,7 +900,6 @@ const concatenatedReminders = computed(() => {
 .main-content {
   margin-top: -60rpx;
   position: relative;
-  z-index: 10;
   padding: 0 30rpx;
   padding-bottom: 40rpx;
 }

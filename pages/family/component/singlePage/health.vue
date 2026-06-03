@@ -239,13 +239,11 @@ const loadFamilyMembers = async () => {
           m.isSelf = false
         }
       })
-      // 自己排到第一位，管理员第二，其他按加入时间倒序
+      // 自己排到第一位，管理员第二，其他顺延
       members.value.sort((a, b) => {
-        if (a.isSelf) return -1
-        if (b.isSelf) return 1
-        if (a.role === 'owner') return -1
-        if (b.role === 'owner') return 1
-        return 0
+        const scoreA = (a.isSelf ? 10 : 0) + (a.role === 'owner' ? 5 : 0)
+        const scoreB = (b.isSelf ? 10 : 0) + (b.role === 'owner' ? 5 : 0)
+        return scoreB - scoreA
       })
 
       // 默认加载第一个健康成员的详情

@@ -91,7 +91,7 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 9999;
+  z-index: 20;
   background: transparent;
   padding: 10rpx 30rpx calc(16rpx + env(safe-area-inset-bottom)) 30rpx;
   pointer-events: none;

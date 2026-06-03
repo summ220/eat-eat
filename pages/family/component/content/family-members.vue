@@ -6,8 +6,8 @@
         <view class="member-card" v-for="(m, idx) in displayedMembers" :key="idx" @click.stop="handleMemberClick(m)" >
           <view class="avatar-wrap">
             <image class="m-avatar" :class="{ 'is-owner': m.role === 'owner' }" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(m.avatarUrl)" />
-            <view class="edit-tag" v-if="m.isSelf" @click.stop="handleMemberClick(m)">✏️</view>
-            <view class="edit-tag" v-if="m.role === 'owner' && !m.isSelf" @click.stop="handleMemberClick(m)">👑</view>
+            <view class="edit-tag" v-if="m.isSelf && m.role != 'owner'" @click.stop="handleMemberClick(m)">✏️</view>
+            <view class="edit-tag owner-crown" v-if="m.role === 'owner'" @click.stop="handleMemberClick(m)">👑</view>
           </view>
           <text class="m-nick">{{ m.name || '干饭人' }}{{ m.isSelf ? ' (我)' : '' }}</text>
           <view class="m-role"><text>{{ m.title || '大主厨' }}</text></view>
@@ -212,6 +212,9 @@ const tempNick = ref('')
 const tempTitle = ref('')
 
 const handleMemberClick = (m) => {
+  if (m.role !== 'owner') {
+    return
+  }
   activeMember.value = m
   tempAvatarUrl.value = m.avatarUrl || ''
   tempNick.value = m.name || '干饭人'
@@ -299,13 +302,11 @@ const loadFamilyMembers = async () => {
           m.isSelf = false
         }
       })
-      // 自己排到第一位，管理员第二，其他按加入时间倒序
+      // 自己排到第一位，管理员第二，其他顺延
       members.value.sort((a, b) => {
-        if (a.isSelf) return -1
-        if (b.isSelf) return 1
-        if (a.role === 'owner') return -1
-        if (b.role === 'owner') return 1
-        return 1
+        const scoreA = (a.isSelf ? 10 : 0) + (a.role === 'owner' ? 5 : 0)
+        const scoreB = (b.isSelf ? 10 : 0) + (b.role === 'owner' ? 5 : 0)
+        return scoreB - scoreA
       })
       const selfRole = members.value.find(m => m.isSelf)?.role || 'member'
       uni.setStorageSync('family_role', selfRole)
@@ -492,6 +493,13 @@ defineExpose({
       align-items: center;
       font-size: 20rpx;
       border: 2rpx solid #fff;
+      
+      &.owner-crown {
+        left: -6rpx;
+        top: -6rpx;
+        right: auto;
+        bottom: auto;
+      }
     }
   }
   .m-nick {
