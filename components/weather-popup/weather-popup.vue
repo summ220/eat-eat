@@ -18,7 +18,7 @@
             </view>
             
             <view class="temp-row">
-              <image class="weather-icon" :src="`http://110.42.36.7:3000/weather-icons/${weather.now.icon}.svg`" />
+              <image class="weather-icon" :src="`https://lw.feiyuf.top/weather-icons/${weather.now.icon}.svg`" />
               <text class="temp-num">{{ weather.now.temp || '--' }}</text>
               <text class="temp-unit">°C</text>
             </view>
@@ -79,7 +79,7 @@
                 >
                   <text class="f-date">{{ getDayLabel(idx, f.fxDate) }}</text>
                   <!-- <text class="f-icon">{{ getWeatherEmoji(f.iconDay) }}</text> -->
-                  <image class="f-icon" :src="`http://110.42.36.7:3000/weather-icons/${f.iconDay}.svg`" />
+                  <image class="f-icon" :src="`https://lw.feiyuf.top/weather-icons/${f.iconDay}.svg`" />
                   <view class="f-temp-box">
                     <text class="f-temp-max">{{ f.tempMax }}°</text>
                     <text class="f-temp-min">{{ f.tempMin }}°</text>

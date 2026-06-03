@@ -50,7 +50,7 @@
           <text class="c-text">{{ dateInfo.lunar }}</text>
         </view>
         <view class="glass-capsule" @click="openWeatherDetail">
-          <image class="weather-icon" :src="`http://110.42.36.7:3000/weather-icons/${dateInfo.weatherIcon}.svg`" />
+          <image class="weather-icon" :src="`https://lw.feiyuf.top/weather-icons/${dateInfo.weatherIcon}.svg`" />
           <text class="c-text">{{ dateInfo.weather }} {{ dateInfo.temp }}</text>
         </view>
       </view>
