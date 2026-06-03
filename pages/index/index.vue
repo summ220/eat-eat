@@ -54,7 +54,7 @@
     </view>
 
     <!-- 底部引导文案 / 小装饰 -->
-    <view class="footer-decoration">
+    <!-- <view class="footer-decoration">
       <view class="line"></view>
       <text class="footer-tips">{{ currentWarmPhrase }}</text>
       <text class="footer-sub">💡 每一个认真吃饭的日子，都是在好好爱自己 ✨</text>
@@ -63,7 +63,8 @@
         <text class="dot active"></text>
         <text class="dot"></text>
       </view>
-    </view>
+    </view> -->
+    <custom-tabbar />
   </view>
 </template>
 
@@ -240,6 +241,7 @@ const generateParticles = () => {
 let shakeTimer = null
 
 onShow(() => {
+  uni.hideTabBar({ animation: false })
   const code = uni.getStorageSync('family_code')
   currentWarmPhrase.value = warmPhrases[Math.floor(Math.random() * warmPhrases.length)]
 
@@ -309,8 +311,8 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
 
 <style lang="less" scoped>
 .page {
-  padding: 40rpx;
-  height: 100vh;
+  padding: 40rpx 40rpx 180rpx 40rpx;
+  min-height: 100vh;
   box-sizing: border-box;
   background: linear-gradient(180deg, var(--primary-light) 0%, #FFFFFF 100%);
   transition: background 0.4s ease;

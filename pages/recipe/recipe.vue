@@ -97,6 +97,7 @@
         <button class="more-btn" @click.stop="loadMore">加载更多</button>
       </view>
     </view>
+    <custom-tabbar />
   </view>
 </template>
 
@@ -330,6 +331,7 @@ const confirmDelete = (recipe) => {
 }
 
 onShow(() => {
+  uni.hideTabBar({ animation: false })
   const code = uni.getStorageSync('family_code')
   if (!code) {
     uni.switchTab({
@@ -379,7 +381,7 @@ const themeStyle = computed(() => {
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 100%);
   background-color: var(--primary-light);
   // min-height: ~"calc(100vh - 240rpx)";
-  padding: 30rpx 24rpx 40rpx;
+  padding: 30rpx 24rpx 180rpx;
 }
 
 /* 顶部搜索与操作区 */

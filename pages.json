@@ -9,7 +9,7 @@
 		{
 			"path": "pages/welcome/welcome",
 			"style": {
-				"navigationBarTitleText": "干饭小家",
+				"navigationBarTitleText": "食光小栈",
 				"navigationStyle": "custom"
 			}
 		},
@@ -112,7 +112,7 @@
 	],
 	"tabBar": {
 		"color": "#BDBDBD",
-		"selectedColor": "#FF5A79",
+		"selectedColor": "var(--theme-color)",
 		"backgroundColor": "#ffffff",
 		"borderStyle": "white",
 		"fontSize": 16,
@@ -120,32 +120,32 @@
 			{
 				"pagePath": "pages/index/index",
 				"text": "吃什么",
-				"iconPath": "static/tabbar/home.png",
-				"selectedIconPath": "static/tabbar/home-active.png"
+				"iconPath": "static/tabbar/stock2-active.png",
+				"selectedIconPath": "static/tabbar/stock2-active.png"
 			},
 			{
 				"pagePath": "pages/stock/stock",
 				"text": "食材库存",
-				"iconPath": "static/tabbar/stock.png",
-				"selectedIconPath": "static/tabbar/stock-active.png"
+				"iconPath": "static/tabbar/stock2-active.png",
+				"selectedIconPath": "static/tabbar/stock2-active.png"
 			},
 			{
 				"pagePath": "pages/recipe/recipe",
 				"text": "菜谱",
-				"iconPath": "static/tabbar/recipe.png",
-				"selectedIconPath": "static/tabbar/recipe-active.png"
+				"iconPath": "static/tabbar/stock2-active.png",
+				"selectedIconPath": "static/tabbar/stock2-active.png"
 			},
 			{
 				"pagePath": "pages/shop/shop",
 				"text": "购物清单",
-				"iconPath": "static/tabbar/shop.png",
-				"selectedIconPath": "static/tabbar/shop-active.png"
+				"iconPath": "static/tabbar/stock2-active.png",
+				"selectedIconPath": "static/tabbar/stock2-active.png"
 			},
 			{
 				"pagePath": "pages/family/family",
 				"text": "家庭",
-				"iconPath": "static/tabbar/family.png",
-				"selectedIconPath": "static/tabbar/family-active.png"
+				"iconPath": "static/tabbar/stock2-active.png",
+				"selectedIconPath": "static/tabbar/stock2-active.png"
 			}
 		]
 	},

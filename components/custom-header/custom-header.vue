@@ -71,7 +71,7 @@ const goBack = () => {
   left: 0;
   right: 0;
   z-index: 999;
-  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.02);
+  /* box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.02); */
   transition: background 0.3s ease;
 }
 .header-content {

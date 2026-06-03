@@ -267,6 +267,7 @@
     />
     
 
+    <custom-tabbar />
   </view>
 </template>
 
@@ -462,6 +463,7 @@ const themeStyle = computed(() => {
 
 let lastUpdateDate = ''
 onShow(() => {
+  uni.hideTabBar({ animation: false })
   const code = uni.getStorageSync('family_code')
   if (!code) {
     uni.reLaunch({
@@ -1063,7 +1065,7 @@ const concatenatedReminders = computed(() => {
 }
 
 .footer-safe {
-  height: 40rpx;
+  height: 180rpx;
 }
 
 </style>

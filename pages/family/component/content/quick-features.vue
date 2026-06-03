@@ -39,10 +39,10 @@
           </view>
         </scroll-view>
         <view class="add-cat-box">
-          <input class="add-cat-input" v-model="newRandomDish" :placeholder="'新增' + sceneTabs.find(t => t.type === activeType).label + '菜名'" />
+          <input class="add-cat-input" v-model="newRandomDish" :placeholder="'新增' + sceneTabs.find(t => t.type === activeType).label + '菜名'" cursor-spacing="40" />
           <view class="add-cat-btn" @click="addRandomDish">添加</view>
         </view>
-        <button class="close-modal-btn" @click="showRandomMenuModal = false">完成</button>
+        <!-- <button class="close-modal-btn" @click="showRandomMenuModal = false">完成</button> -->
       </view>
     </view>
   </view>
@@ -199,7 +199,7 @@ const handleSetting = (name) => {
   background: rgba(0,0,0,0.6);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 2000;
   backdrop-filter: blur(10rpx);
 }
@@ -212,6 +212,7 @@ const handleSetting = (name) => {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  margin-top: 280rpx;
   
   .modal-title {
     font-size: 34rpx;

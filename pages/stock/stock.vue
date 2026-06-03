@@ -182,6 +182,7 @@
         </view>
       </view>
     </view>
+    <custom-tabbar />
   </view>
 </template>
 
@@ -521,6 +522,7 @@ const deleteItem = (item) => {
 
 
 onShow(() => {
+  uni.hideTabBar({ animation: false })
   const code = uni.getStorageSync('family_code')
   if (!code) {
     uni.switchTab({
@@ -565,7 +567,7 @@ const themeStyle = computed(() => {
 <style lang="less" scoped>
 .page {
   background: #FAFAFA;
-  // height: ~"calc(100vh - 70rpx)";
+  height: 100vh;
   // padding-bottom: 40rpx;
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }
@@ -661,7 +663,7 @@ zero-drag {
 }
 
 .list-bottom-safe {
-  height: 120rpx;
+  height: 180rpx;
   flex-shrink: 0;
 }
 

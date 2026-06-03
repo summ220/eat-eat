@@ -37,7 +37,7 @@
     <view class="splash-step-container" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 80vh; z-index: 9;" v-if="restoreStep === 0">
       <view class="splash-brand" style="text-align: center; margin-top: 100rpx;">
         <!-- <view class="splash-logo" style="font-size: 150rpx; margin-bottom: 20rpx; animation: bounce 2s infinite ease-in-out;">🍳</view> -->
-        <text class="splash-name" style="font-size: 56rpx; font-weight: 900; color: #FF4D6D; display: block; letter-spacing: 4rpx; font-family: system-ui, -apple-system, sans-serif">干饭小家</text>
+        <text class="splash-name" style="font-size: 56rpx; font-weight: 900; color: #FF4D6D; display: block; letter-spacing: 4rpx; font-family: system-ui, -apple-system, sans-serif">食光小栈</text>
         <text class="splash-tag" style="font-size: 26rpx; color: #FF4D6D; font-weight: 500; display: inline-block; margin-top: 24rpx; letter-spacing: 1rpx;">好好吃饭，是对自己最大的善意</text>
       </view>
       

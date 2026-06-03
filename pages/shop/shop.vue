@@ -196,6 +196,7 @@
         </view>
       </view>
     </view>
+    <custom-tabbar />
   </view>
 </template>
 
@@ -378,6 +379,7 @@ const totalCost = computed(() => {
 import eatCo from '@/common/localDB.js'
 
 onShow(() => {
+  uni.hideTabBar({ animation: false })
   const code = uni.getStorageSync('family_code')
   if (!code) {
     uni.switchTab({
@@ -739,7 +741,7 @@ const themeStyle = computed(() => {
 <style lang="less" scoped>
 .page {
   background: #FAFAFA;
-  // min-height: ~"calc(100vh - 240rpx)";
+  min-height: 100vh;
   // padding-bottom: 180rpx;
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }
@@ -785,7 +787,7 @@ const themeStyle = computed(() => {
 /* 底部悬浮统计区域动画样式 */
 .stat-wrapper {
   position: fixed;
-  bottom: 30rpx;
+  bottom: 222rpx;
   left: 40rpx;
   z-index: 200;
   display: flex;
@@ -931,7 +933,7 @@ zero-drag {
 }
 
 .list-bottom-safe {
-  height: 120rpx;
+  height: 260rpx;
   flex-shrink: 0;
 }
 
