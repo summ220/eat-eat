@@ -458,6 +458,7 @@ const deleteRecipe = () => {
   font-size: 22rpx;
   color: #bdc3c7;
   margin-top: -30rpx;
+  margin-left: 160rpx;
 }
 .step-list {
   display: flex;

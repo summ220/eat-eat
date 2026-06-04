@@ -64,17 +64,481 @@
         <text class="dot"></text>
       </view>
     </view> -->
+    <!-- 抽中结果的精美单独展示弹窗 -->
+    <view class="modal-mask flex-center" v-if="showResultModal" @click="showResultModal = false">
+      <view class="modal-card result-show-card" @click.stop>
+        <!-- 主题精致小顶签 -->
+        <view class="theme-top-badge">
+          {{ currentSceneObj.icon }} 今日美味已生成
+        </view>
+        <view class="card-close" @click="showResultModal = false">✕</view>
+        
+        <!-- 卡片图片展示区 -->
+        <view class="card-img-wrap">
+          <image class="card-share-img" :src="shareImgPath" mode="widthFix" :show-menu-by-longpress="true" />
+          <text class="longpress-tip" v-if="shareImgPath">💡 长按卡片可以直接保存或发送哦</text>
+        </view>
+        
+        <!-- 海报风格选择切换：横向滑动胶囊滤镜栏 -->
+        <scroll-view class="style-scroll" scroll-x="true" :show-scrollbar="false">
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 0 }"
+            @click="changePosterStyle(0)"
+          >
+            经典渐变
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 1 }"
+            @click="changePosterStyle(1)"
+          >
+            拍立得文艺
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 2 }"
+            @click="changePosterStyle(2)"
+          >
+            可爱卡通
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 3 }"
+            @click="changePosterStyle(3)"
+          >
+            黑金食堂
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 4 }"
+            @click="changePosterStyle(4)"
+          >
+            温馨手账
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 5 }"
+            @click="changePosterStyle(5)"
+          >
+            法式气质
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 6 }"
+            @click="changePosterStyle(6)"
+          >
+            像素街机
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 7 }"
+            @click="changePosterStyle(7)"
+          >
+            绿野仙踪
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 8 }"
+            @click="changePosterStyle(8)"
+          >
+            国潮朱砂
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 9 }"
+            @click="changePosterStyle(9)"
+          >
+            落日橘海
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 10 }"
+            @click="changePosterStyle(10)"
+          >
+            盐系极简
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 11 }"
+            @click="changePosterStyle(11)"
+          >
+            蒸汽电子
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 12 }"
+            @click="changePosterStyle(12)"
+          >
+            和风浮世
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 13 }"
+            @click="changePosterStyle(13)"
+          >
+            美式波普
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 14 }"
+            @click="changePosterStyle(14)"
+          >
+            魔法占卜
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 15 }"
+            @click="changePosterStyle(15)"
+          >
+            太空宇航
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 16 }"
+            @click="changePosterStyle(16)"
+          >
+            复古迪斯科
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 17 }"
+            @click="changePosterStyle(17)"
+          >
+            中世纪手稿
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 18 }"
+            @click="changePosterStyle(18)"
+          >
+            夏日果冻
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 19 }"
+            @click="changePosterStyle(19)"
+          >
+            中式水墨
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 20 }"
+            @click="changePosterStyle(20)"
+          >
+            怪诞拼贴
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 21 }"
+            @click="changePosterStyle(21)"
+          >
+            Lofi插画
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 22 }"
+            @click="changePosterStyle(22)"
+          >
+            未来工业
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 23 }"
+            @click="changePosterStyle(23)"
+          >
+            童话森林
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 24 }"
+            @click="changePosterStyle(24)"
+          >
+            埃及法老
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 25 }"
+            @click="changePosterStyle(25)"
+          >
+            粉彩独角兽
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 26 }"
+            @click="changePosterStyle(26)"
+          >
+            复古报纸
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 27 }"
+            @click="changePosterStyle(27)"
+          >
+            万圣惊魂
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 28 }"
+            @click="changePosterStyle(28)"
+          >
+            梦幻星云
+          </view>
+          <view 
+            class="style-tab" 
+            :class="{ active: activePosterStyle === 29 }"
+            @click="changePosterStyle(29)"
+          >
+            巴黎午后
+          </view>
+        </scroll-view>
+        
+        <view class="modal-actions">
+          <!-- #ifdef MP-WEIXIN -->
+          <button class="action-btn share-btn" @click="shareCardImage">
+            <text class="btn-icon">💌</text> 发送卡片给好友
+          </button>
+          <!-- <button class="action-btn save-btn" @click="saveCardToAlbum">
+            <text class="btn-icon">💾</text> 保存海报到相册
+          </button> -->
+          <!-- #endif -->
+          
+          <!-- #ifndef MP-WEIXIN -->
+          <button class="action-btn share-btn" @click="copyShareContent">
+            <text class="btn-icon">📋</text> 复制分享文案
+          </button>
+          <!-- #endif -->
+          
+          <button class="action-btn confirm-btn" @click="addToTodayPlan">
+            <text class="btn-icon">🍳</text> 放入今日计划
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 隐藏 Canvas 绘制海报组件 -->
+    <share-poster 
+      ref="sharePosterRef"
+      :themeColor="themes[currentTheme].color"
+      :result="result"
+      :sceneIcon="currentSceneObj.icon"
+      :sceneLabel="currentSceneObj.label"
+      :phrase="currentResultPhrase"
+      :dateStr="todayDateString"
+    />
+
     <custom-tabbar />
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
+import { onShow, onPullDownRefresh, onShareAppMessage } from '@dcloudio/uni-app'
 import familyApi from '@/common/api/family.js'
 import welcomeAd from '@/pages/welcome/welcome-ad.vue'
+import sharePoster from '@/components/share-poster/share-poster.vue'
 
 const familyCode = ref(uni.getStorageSync('family_code') || 'default_family')
+const showResultModal = ref(false)
+const shareImgPath = ref('')
+const sharePosterRef = ref(null)
+const activePosterStyle = ref(0)
+
+const changePosterStyle = async (styleIndex) => {
+  if (activePosterStyle.value === styleIndex) return
+  activePosterStyle.value = styleIndex
+  
+  uni.showLoading({ title: '生成新样式中...', mask: true })
+  try {
+    const path = await sharePosterRef.value.draw(styleIndex)
+    if (path) {
+      shareImgPath.value = path
+    }
+  } catch (e) {
+    console.error('生成海报新样式失败:', e)
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+const todayDateString = computed(() => {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const date = String(d.getDate()).padStart(2, '0')
+  const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+  const dayName = dayNames[d.getDay()]
+  return `${year}年${month}月${date}日 ${dayName}`
+})
+
+const getTodayDateStr = () => {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const date = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${date}`
+}
+
+const addToTodayPlan = async () => {
+  const code = familyCode.value
+  if (!code) return
+  
+  const hour = new Date().getHours()
+  let mealName = '晚餐'
+  if (hour < 10) {
+    mealName = '早餐'
+  } else if (hour < 14) {
+    mealName = '午餐'
+  }
+  
+  uni.showLoading({ title: '正在放入计划...', mask: true })
+  try {
+    const dateStr = getTodayDateStr()
+    
+    // 1. 安全获取最新主餐计划，避免 404 或无数据报错阻断保存
+    let serverMeals = []
+    try {
+      const getRes = await familyApi.getDailyMeals(code, dateStr)
+      if (getRes && getRes.data) {
+        serverMeals = getRes.data.meals || getRes.data || []
+        if (!Array.isArray(serverMeals)) {
+          serverMeals = []
+        }
+      }
+    } catch (getErr) {
+      console.log('今日云端尚无三餐安排，初始化新三餐', getErr)
+    }
+    
+    // 初始化标准的包含三个餐次的完整结构
+    const finalMeals = [
+      { meal_name: '早餐', done: 0, recipes: [] },
+      { meal_name: '午餐', done: 0, recipes: [] },
+      { meal_name: '晚餐', done: 0, recipes: [] }
+    ]
+    
+    // 用获取到的数据回填
+    finalMeals.forEach(fm => {
+      const match = serverMeals.find(sm => (sm.mealName || sm.meal_name || sm.name) === fm.meal_name)
+      if (match) {
+        fm.recipes = match.recipes || []
+        fm.done = (match.done === true || match.done === 1 || match.done === '1') ? 1 : 0
+      }
+    })
+    
+    // 追加本次抽中的菜品
+    let currentMealItem = finalMeals.find(fm => fm.meal_name === mealName)
+    if (currentMealItem) {
+      if (!currentMealItem.recipes.includes(result.value)) {
+        currentMealItem.recipes.push(result.value)
+      }
+    }
+    
+    // 2. 同步保存主餐计划至云端 (包含完整三个餐次)
+    await familyApi.saveDailyMeals(code, dateStr, finalMeals)
+    
+    // 3. 同时将其作为“本次临时安排”保存至云端临时菜品池
+    try {
+      await familyApi.addDailyTempRecipe(code, dateStr, mealName, result.value)
+    } catch (tempErr) {
+      console.error('同步临时安排云端失败:', tempErr)
+    }
+    
+    // 4. 同步更新临时池本地缓存
+    const tempCacheKey = 'daily_temp_pool_' + dateStr
+    let localTempPool = uni.getStorageSync(tempCacheKey) || {}
+    if (!localTempPool[mealName]) {
+      localTempPool[mealName] = []
+    }
+    if (!localTempPool[mealName].includes(result.value)) {
+      localTempPool[mealName].push(result.value)
+      uni.setStorageSync(tempCacheKey, localTempPool)
+    }
+
+    // 5. 同步更新主餐计划本地缓存
+    const localMealsKey = 'daily_meals_' + dateStr
+    let localMeals = uni.getStorageSync(localMealsKey)
+    if (!localMeals) {
+      localMeals = [
+        { name: '早餐', icon: '🥛', recipes: [], done: false },
+        { name: '午餐', icon: '🍱', recipes: [], done: false },
+        { name: '晚餐', icon: '🥗', recipes: [], done: false }
+      ]
+    }
+    let lmItem = localMeals.find(m => m.name === mealName)
+    if (lmItem) {
+      if (!lmItem.recipes.includes(result.value)) {
+        lmItem.recipes.push(result.value)
+      }
+    }
+    uni.setStorageSync(localMealsKey, localMeals)
+    uni.setStorageSync('daily_meals', { date: dateStr, data: localMeals })
+    
+    // 6. 广播全局通知，强制家庭页面三餐安排刷新
+    uni.$emit('refresh-meals')
+    
+    uni.showToast({ title: `已放入今日${mealName}与临时安排`, icon: 'success' })
+    showResultModal.value = false
+  } catch (err) {
+    console.error('放入三餐计划失败:', err)
+    uni.showToast({ title: '添加失败，请重试', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+const copyShareContent = () => {
+  const text = `今天吃什么？我的决定是：【${result.value}】！${currentResultPhrase.value} —— 来自 EatEat`
+  uni.setClipboardData({
+    data: text,
+    success: () => {
+      uni.showToast({ title: '文案已复制，快去分享吧！', icon: 'success' })
+    }
+  })
+}
+
+// 一键保存到相册
+const saveCardToAlbum = () => {
+  if (!shareImgPath.value) {
+    uni.showToast({ title: '海报生成中，请稍后再试', icon: 'none' })
+    return
+  }
+  uni.saveImageToPhotosAlbum({
+    filePath: shareImgPath.value,
+    success: () => {
+      uni.showToast({ title: '海报已保存到相册', icon: 'success' })
+    },
+    fail: () => {
+      uni.showToast({ title: '保存失败，请检查相册授权', icon: 'none' })
+    }
+  })
+}
+
+// 调用微信官方弹出分享图片菜单，直接发送纯图片海报给好友，免除小程序跳转
+const shareCardImage = () => {
+  if (!shareImgPath.value) {
+    uni.showToast({ title: '海报生成中，请稍后再试', icon: 'none' })
+    return
+  }
+  // #ifdef MP-WEIXIN
+  uni.showShareImageMenu({
+    path: shareImgPath.value,
+    fail: (err) => {
+      console.log('分享图片菜单调起失败或用户取消', err)
+    }
+  })
+  // #endif
+  // #ifndef MP-WEIXIN
+  copyShareContent()
+  // #endif
+}
+
+onShareAppMessage(() => {
+  return {
+    title: `今天吃什么？我的决定是：【${result.value}】！`,
+    path: `/pages/index/index?family_code=${familyCode.value}`,
+    imageUrl: shareImgPath.value || ''
+  }
+})
 const hasFamily = ref(!!uni.getStorageSync('family_code'))
 
 const refreshing = ref(false)
@@ -294,19 +758,23 @@ const getRandomDish = () => {
       currentResultPhrase.value = resultPhrases[Math.floor(Math.random() * resultPhrases.length)]
       generateParticles()
       
-      // 1.5秒后关闭庆祝效果
-      setTimeout(() => {
+      // 1.2秒后关闭庆祝效果，后台生成高清图片卡片后滑入精美展示弹窗
+      setTimeout(async () => {
         isCelebrating.value = false
-      }, 1500)
+        uni.showLoading({ title: '生成精致卡片中...', mask: true })
+        try {
+          const path = await sharePosterRef.value.draw(activePosterStyle.value)
+          shareImgPath.value = path
+        } catch (e) {
+          console.error(e)
+        } finally {
+          uni.hideLoading()
+        }
+        showResultModal.value = true
+      }, 1200)
     }
   }, 80)
 }
-
-// 遵循“没用到的地方不要修改”，保留这些未使用的跳转函数，防止外部依赖报错或以后调用
-const goToStock = () => uni.switchTab({ url: '/pages/stock/stock' })
-const goToShop = () => uni.switchTab({ url: '/pages/shop/shop' })
-const goToRecipe = () => uni.switchTab({ url: '/pages/recipe/recipe' })
-const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
 </script>
 
 <style lang="less" scoped>
@@ -594,5 +1062,201 @@ const goToCost = () => uni.navigateTo({ url: '/pages/cost/cost' })
   letter-spacing: 1rpx;
   margin-bottom: 20rpx;
   display: block;
+}
+
+/* 精美单独展示弹窗 */
+.modal-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.65) 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  animation: modalFadeIn 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.result-show-card {
+  width: 620rpx;
+  background: #ffffff;
+  border-radius: 54rpx;
+  padding: 85rpx 40rpx 50rpx 40rpx;
+  box-sizing: border-box;
+  position: relative;
+  overflow: visible;
+  /* 柔和的双重光晕主题投影，彻底解决灰色死阴影生硬问题 */
+  box-shadow: 0 16rpx 48rpx rgba(0,0,0,0.04), 0 32rpx 80rpx -16rpx var(--primary-shadow);
+  border: 2rpx solid rgba(255, 255, 255, 0.8);
+  animation: cardSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  .theme-top-badge {
+    position: absolute;
+    top: -26rpx;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 10rpx 36rpx;
+    border-radius: 100rpx;
+    font-size: 22rpx;
+    font-weight: 800;
+    letter-spacing: 1rpx;
+    box-shadow: 0 8rpx 24rpx var(--primary-shadow);
+    border: 3rpx solid #ffffff;
+    z-index: 10;
+  }
+  
+  .card-close {
+    position: absolute;
+    top: 24rpx;
+    right: 24rpx;
+    font-size: 30rpx;
+    color: #bbb;
+    z-index: 100;
+    width: 54rpx;
+    height: 54rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    background: #F8F9FA;
+    transition: all 0.25s ease;
+    &:active {
+      transform: scale(0.88);
+      background: #EAEAEA;
+    }
+  }
+  
+  .card-img-wrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40rpx;
+    
+    .card-share-img {
+      width: 100%;
+      border-radius: 36rpx;
+      box-shadow: 0 16rpx 36rpx rgba(0, 0, 0, 0.05);
+      background: #fafafa;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      opacity: 0.95;
+      
+      &[src=""] {
+        opacity: 0;
+        transform: scale(0.97);
+      }
+    }
+    
+    .longpress-tip {
+      font-size: 22rpx;
+      color: #a0aec0;
+      margin-top: 18rpx;
+      font-weight: 600;
+      letter-spacing: 1rpx;
+    }
+  }
+
+  .style-scroll {
+    white-space: nowrap;
+    width: 100%;
+    margin: -15rpx 0 30rpx 0;
+    padding: 10rpx 0;
+    
+    .style-tab {
+      display: inline-block;
+      padding: 12rpx 32rpx;
+      margin-right: 16rpx;
+      font-size: 22rpx;
+      color: #718096;
+      font-weight: bold;
+      background: #F4F6F8;
+      border-radius: 100rpx;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+      
+      &:first-child {
+        margin-left: 36rpx;
+      }
+      
+      &:last-child {
+        margin-right: 36rpx;
+      }
+      
+      &.active {
+        background: var(--primary);
+        color: #ffffff;
+        box-shadow: 0 6rpx 16rpx var(--primary-shadow);
+        border-color: transparent;
+      }
+    }
+  }
+  
+  .modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 18rpx;
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    
+    .action-btn {
+      width: 100%;
+      height: 94rpx;
+      line-height: 94rpx;
+      border-radius: 100rpx;
+      font-size: 28rpx;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12rpx;
+      border: none;
+      transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+      letter-spacing: 1rpx;
+      &::after { border: none; }
+      
+      &:active {
+        transform: scale(0.96) translateY(2rpx);
+        opacity: 0.92;
+      }
+    }
+    
+    .share-btn {
+      background: var(--primary-light);
+      color: var(--primary);
+      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.01);
+      &:active {
+        background: var(--primary-light);
+        opacity: 0.8;
+      }
+    }
+    
+    .save-btn {
+      background: #F5F7FA;
+      color: #666;
+    }
+    
+    .confirm-btn {
+      background: var(--primary-grad);
+      color: #fff;
+      box-shadow: 0 12rpx 30rpx var(--primary-shadow);
+      &:active {
+        box-shadow: 0 4rpx 12rpx var(--primary-shadow);
+      }
+    }
+  }
+}
+
+@keyframes cardSlideUp {
+  from { transform: translateY(80rpx) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
 }
 </style>

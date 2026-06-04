@@ -95,7 +95,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onUnmounted } from 'vue'
 import familyApi from '@/common/api/family.js'
 
 const props = defineProps({
@@ -558,6 +558,15 @@ watch(() => props.familyCode, (newVal) => {
     loadMeals()
   }
 }, { immediate: true })
+
+// 监听首页放入计划的通知
+uni.$on('refresh-meals', () => {
+  loadMeals()
+})
+
+onUnmounted(() => {
+  uni.$off('refresh-meals')
+})
 
 defineExpose({
   loadMeals,

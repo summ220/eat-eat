@@ -3,14 +3,14 @@
   <view class="members-container">
     <scroll-view scroll-x class="member-scroll" :show-scrollbar="false">
       <view class="member-list">
-        <view class="member-card" v-for="(m, idx) in displayedMembers" :key="idx" @click.stop="handleMemberClick(m)" >
+        <view class="member-card" v-for="(m, idx) in displayedMembers" :key="idx" @click.stop="handleMemberClick(m, 'owner')" >
           <view class="avatar-wrap">
             <image class="m-avatar" :class="{ 'is-owner': m.role === 'owner' }" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(m.avatarUrl)" />
-            <view class="edit-tag" v-if="m.isSelf && m.role != 'owner'" @click.stop="handleMemberClick(m)">✏️</view>
-            <view class="edit-tag owner-crown" v-if="m.role === 'owner'" @click.stop="handleMemberClick(m)">👑</view>
+            <view class="edit-tag" v-if="m.isSelf && m.role != 'owner'" @click.stop="handleMemberClick(m, 'member')">✏️</view>
+            <view class="edit-tag owner-crown" v-if="m.role === 'owner'">👑</view>
           </view>
-          <text class="m-nick">{{ m.name || '干饭人' }}{{ m.isSelf ? ' (我)' : '' }}</text>
-          <view class="m-role"><text>{{ m.title || '大主厨' }}</text></view>
+          <text class="m-nick" @click.stop="showFullText(m.name || '干饭人')">{{ m.name || '干饭人' }}{{ m.isSelf ? ' (我)' : '' }}</text>
+          <view class="m-role" @click.stop="showFullText(m.title || '大主厨')"><text>{{ m.title || '大主厨' }}</text></view>
         </view>
         
         <!-- 查看全部的入口卡片 -->
@@ -211,8 +211,17 @@ const tempAvatarUrl = ref('')
 const tempNick = ref('')
 const tempTitle = ref('')
 
-const handleMemberClick = (m) => {
-  if (m.role !== 'owner') {
+const showFullText = (text) => {
+  if (!text) return
+  uni.showToast({
+    title: text,
+    icon: 'none',
+    duration: 2000
+  })
+}
+
+const handleMemberClick = (m, type) => {
+  if (m.role !== 'owner' && type !== 'member') {
     return
   }
   activeMember.value = m
@@ -493,6 +502,16 @@ defineExpose({
       align-items: center;
       font-size: 20rpx;
       border: 2rpx solid #fff;
+      z-index: 10;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: -20rpx;
+        left: -20rpx;
+        right: -20rpx;
+        bottom: -20rpx;
+      }
       
       &.owner-crown {
         left: -6rpx;
@@ -507,6 +526,11 @@ defineExpose({
     font-weight: bold;
     color: #2C3E50;
     margin-bottom: 8rpx;
+    max-width: 130rpx;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
   }
   .m-role {
     font-size: 20rpx;
@@ -515,6 +539,12 @@ defineExpose({
     padding: 4rpx 16rpx;
     border-radius: 100rpx;
     transition: all 0.5s ease;
+    max-width: 120rpx;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    text-align: center;
   }
 }
 
