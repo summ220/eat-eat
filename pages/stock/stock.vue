@@ -731,7 +731,7 @@ zero-drag {
 .item-card {
   background: #fff;
   border-radius: 32rpx;
-  padding: 30rpx;
+  padding: 30rpx 30rpx 16rpx;
   margin-bottom: 24rpx;
   box-shadow: 0 8rpx 30rpx rgba(0,0,0,0.03);
   transition: transform 0.2s;
@@ -742,7 +742,7 @@ zero-drag {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 16rpx;
 }
 
 .title-group {
@@ -772,7 +772,7 @@ zero-drag {
 }
 
 .item-body {
-  margin-bottom: 24rpx;
+  margin-bottom: 18rpx;
   display: flex;
   flex-direction: column;
   gap: 12rpx;
@@ -810,7 +810,7 @@ zero-drag {
   justify-content: flex-end;
   gap: 40rpx;
   border-top: 2rpx dashed #FFEEF2;
-  padding-top: 20rpx;
+  padding-top: 10rpx;
 }
 
 .action-btn {

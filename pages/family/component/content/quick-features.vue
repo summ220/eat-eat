@@ -62,7 +62,7 @@ const props = defineProps({
 const quickFuncs = ref([
   { icon: '🎲', name: '抽菜配置' },
   { icon: '🦺', name: '随手记' },
-  { icon: '🗑️', name: '每日计划' },
+  { icon: '📓', name: '饮食日记' },
   { icon: '💵', name: '清空花费' },
   { icon: '🧹', name: '清理数据' },
   { icon: '📤', name: '个性主题' },
@@ -144,6 +144,10 @@ const handleSetting = (name) => {
   } else if (name === '随手记') {
     uni.navigateTo({
       url: '/pages/family/component/singlePage/memo?type=personal'
+    })
+  } else if (name === '饮食日记') {
+    uni.navigateTo({
+      url: '/pages/family/component/singlePage/diet-diary'
     })
   } else {
     uni.showToast({ title: `功能「${name}」开发中...`, icon: 'none' })

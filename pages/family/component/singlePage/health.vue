@@ -17,7 +17,7 @@
             @click="currentMemberIdx = idx"
           >
             <image class="m-avatar" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" />
-            <text class="m-name">{{ m.name || '干饭人' }}</text>
+            <text class="m-name" @click.stop="showHealthCard(m)">{{ m.name || '干饭人' }}</text>
           </view>
         </view>
       </scroll-view>
@@ -204,6 +204,48 @@
     <view class="fab-btn" @click="openWeightModal">
       <text class="fab-icon">+</text>
     </view>
+    
+    <!-- 成员健康名片弹窗 -->
+    <view class="modal-mask member-card-mask" :class="{ 'show': showCardModal }" @click="showCardModal = false">
+      <view class="member-card-content" @click.stop>
+        <view class="card-bg-decoration">
+          <text class="deco-emoji deco-left">🥑</text>
+          <text class="deco-emoji deco-right">🥦</text>
+        </view>
+        <image class="card-avatar" :src="activeMemberCard.avatarUrl ? (activeMemberCard.avatarUrl.startsWith('http') ? activeMemberCard.avatarUrl : config.imgBaseUrl + activeMemberCard.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(activeMemberCard.avatarUrl)" />
+        <view class="card-info">
+          <text class="card-name">{{ activeMemberCard.name || '干饭人' }}{{ activeMemberCard.isSelf ? ' (我)' : '' }}</text>
+          <view class="card-title-badge">
+            <text class="badge-icon">🍳</text>
+            <text class="badge-text">{{ activeMemberCard.title || (activeMemberCard.role === 'owner' ? '家庭创建者' : '家庭成员') }}</text>
+          </view>
+          
+          <!-- 健康数据四宫格 -->
+          <view class="health-grid">
+            <view class="grid-item">
+              <text class="grid-label">年龄</text>
+              <text class="grid-val">{{ activeMemberCard.age || '--' }}<text class="grid-unit">岁</text></text>
+            </view>
+            <view class="grid-item">
+              <text class="grid-label">身高</text>
+              <text class="grid-val">{{ activeMemberCard.height || '--' }}<text class="grid-unit">cm</text></text>
+            </view>
+            <view class="grid-item">
+              <text class="grid-label">体重</text>
+              <text class="grid-val">{{ activeMemberCard.weight || '--' }}<text class="grid-unit">kg</text></text>
+            </view>
+            <view class="grid-item">
+              <text class="grid-label">BMI</text>
+              <view class="grid-val-wrap">
+                <text class="grid-val">{{ activeMemberCard.bmi || '--' }}</text>
+                <view class="bmi-status-dot" :class="getBmiStatusClass(activeMemberCard.bmi)" v-if="activeMemberCard.bmi"></view>
+              </view>
+            </view>
+          </view>
+        </view>
+        <button class="card-close-btn" @click="showCardModal = false">收到</button>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -214,6 +256,41 @@ import { onShow } from '@dcloudio/uni-app'
 import config from '@/common/config'
 
 const familyCode = uni.getStorageSync('family_code')
+
+const showCardModal = ref(false)
+const activeMemberCard = ref({})
+
+const showHealthCard = async (member) => {
+  activeMemberCard.value = member
+  showCardModal.value = true
+  
+  try {
+    const resDetail = await familyApi.getFamilyHealthMember(familyCode, member.memberId)
+    if (resDetail && resDetail.data) {
+      Object.assign(member, {
+        height: resDetail.data.height || 170,
+        weight: resDetail.data.weight || 60,
+        age: resDetail.data.age || 25,
+        bmi: resDetail.data.bmi || '20.8',
+        targetWeight: resDetail.data.targetWeight || 55,
+        startWeight: resDetail.data.startWeight || 60,
+        goalType: resDetail.data.goalType || '维持体态'
+      })
+      activeMemberCard.value = { ...member }
+    }
+  } catch (err) {
+    console.error('获取健康名片指标失败:', err)
+  }
+}
+
+const previewImage = (url) => {
+  const fullUrl = url ? (url.startsWith('http') ? url : config.imgBaseUrl + url) : ''
+  if (fullUrl) {
+    uni.previewImage({
+      urls: [fullUrl]
+    })
+  }
+}
 
 const currentMemberIdx = ref(0)
 const themeStyle = ref('')
@@ -537,7 +614,16 @@ const viewRecipe = (r) => {
         width: 80rpx; height: 80rpx; border-radius: 50%; 
         border: 4rpx solid #fff; transition: all 0.3s;
       }
-      .m-name { font-size: 22rpx; font-weight: 600; color: #BDC3C7; }
+      .m-name {
+        font-size: 22rpx;
+        font-weight: 600;
+        color: #BDC3C7;
+        max-width: 100rpx;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+      }
     }
   }
 }
@@ -728,6 +814,190 @@ const viewRecipe = (r) => {
       &.cancel { background: #F8F9FA; color: #BDC3C7; }
       &.confirm { background: var(--primary-grad); color: #fff; box-shadow: 0 8rpx 20rpx var(--primary-shadow); }
     }
+  }
+}
+
+.member-card-mask {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 4000;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  
+  &.show {
+    opacity: 1;
+    pointer-events: auto;
+    
+    .member-card-content {
+      transform: scale(1);
+    }
+  }
+}
+
+.member-card-content {
+  width: 500rpx;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20rpx);
+  border-radius: 50rpx;
+  padding: 50rpx 40rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  transform: scale(0.85);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2rpx solid rgba(255, 255, 255, 0.6);
+  
+  .card-bg-decoration {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+    
+    .deco-emoji {
+      position: absolute;
+      font-size: 80rpx;
+      opacity: 0.08;
+      
+      &.deco-left {
+        top: -10rpx;
+        left: -10rpx;
+        transform: rotate(-15deg);
+      }
+      &.deco-right {
+        bottom: -15rpx;
+        right: -10rpx;
+        transform: rotate(20deg);
+      }
+    }
+  }
+  
+  .card-avatar {
+    width: 160rpx;
+    height: 160rpx;
+    border-radius: 50%;
+    border: 6rpx solid #fff;
+    box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.1);
+    z-index: 2;
+    margin-bottom: 24rpx;
+  }
+  
+  .card-info {
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    
+    .card-name {
+      font-size: 36rpx;
+      font-weight: 900;
+      color: #2C3E50;
+      margin-bottom: 16rpx;
+      text-align: center;
+      word-break: break-all;
+    }
+    
+    .card-title-badge {
+      display: flex;
+      align-items: center;
+      background: var(--primary-light);
+      padding: 8rpx 20rpx;
+      border-radius: 100rpx;
+      margin-bottom: 30rpx;
+      box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.02);
+      
+      .badge-icon {
+        font-size: 24rpx;
+        margin-right: 8rpx;
+      }
+      
+      .badge-text {
+        font-size: 24rpx;
+        font-weight: bold;
+        color: var(--primary);
+      }
+    }
+    
+    .health-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20rpx;
+      width: 100%;
+      margin-bottom: 40rpx;
+      
+      .grid-item {
+        background: #F8F9FA;
+        border-radius: 24rpx;
+        padding: 16rpx 20rpx;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-sizing: border-box;
+        border: 2rpx solid rgba(0, 0, 0, 0.01);
+        
+        .grid-label {
+          font-size: 18rpx;
+          color: #95A5A6;
+          margin-bottom: 6rpx;
+          font-weight: bold;
+        }
+        
+        .grid-val-wrap {
+          display: flex;
+          align-items: center;
+          gap: 6rpx;
+        }
+        
+        .grid-val {
+          font-size: 28rpx;
+          font-weight: 900;
+          color: #2C3E50;
+          
+          .grid-unit {
+            font-size: 16rpx;
+            color: #BDC3C7;
+            margin-left: 2rpx;
+            font-weight: normal;
+          }
+        }
+        
+        .bmi-status-dot {
+          width: 12rpx;
+          height: 12rpx;
+          border-radius: 50%;
+          
+          &.normal { background: #4DB88F; }
+          &.under { background: #5B89E5; }
+          &.over { background: #F2A13B; }
+          &.obese { background: #FF6B8B; }
+        }
+      }
+    }
+  }
+  
+  .card-close-btn {
+    width: 240rpx;
+    height: 80rpx;
+    line-height: 80rpx;
+    border-radius: 100rpx;
+    font-size: 26rpx;
+    font-weight: bold;
+    background: var(--primary-grad);
+    color: #fff;
+    box-shadow: 0 8rpx 20rpx var(--primary-shadow);
+    border: none;
+    z-index: 2;
+    &::after { border: none; }
   }
 }
 </style>

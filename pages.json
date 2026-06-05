@@ -108,6 +108,13 @@
 				"navigationBarTitleText": "编辑备忘录",
 				"navigationBarBackgroundColor": "#FFF5F7"
 			}
+		},
+		{
+			"path": "pages/family/component/singlePage/diet-diary",
+			"style": {
+				"navigationBarTitleText": "饮食日记",
+				"navigationBarBackgroundColor": "#FFF5F7"
+			}
 		}
 	],
 	"tabBar": {

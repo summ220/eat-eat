@@ -90,7 +90,10 @@
       <view class="section meals-section">
         <view class="section-title with-bar">
           <text class="title-text">今日三餐</text>
-          <text class="action-text subtle-link" @click="mealsPlanRef?.copyMealsToTomorrow()">📅 复制到明天</text>
+          <view class="title-right-actions" style="display: flex; gap: 20rpx;">
+            <text class="action-text subtle-link" @click="goToDietDiary">📓 饮食手账</text>
+            <text class="action-text subtle-link" @click="mealsPlanRef?.copyMealsToTomorrow()">📅 复制到明天</text>
+          </view>
         </view>
         <meals-plan
           ref="mealsPlanRef"
@@ -292,6 +295,7 @@ import themePicker from './component/content/theme-picker.vue' // 个性主题�
 
 import joinFamilyPopup from './component/alert/join-family-popup.vue' // 加入新家庭弹窗
 import editFamilyPopup from './component/alert/edit-family-popup.vue' // 修改家庭名称弹窗
+import remindersPopup from './component/alert/reminders-popup.vue' // 智能管家提醒弹窗
 
 import config from '@/common/config'
 import request from '@/common/request.js'
@@ -343,6 +347,13 @@ onPullDownRefresh(async () => {
     uni.stopPullDownRefresh()
   }
 })
+
+// 跳转至饮食日记
+const goToDietDiary = () => {
+  uni.navigateTo({
+    url: '/pages/family/component/singlePage/diet-diary'
+  })
+}
 
 // --- 一体化三餐/成员/健康组件引用 ---
 const mealsPlanRef = ref(null)

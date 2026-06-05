@@ -9,8 +9,8 @@
             <view class="edit-tag" v-if="m.isSelf && m.role != 'owner'" @click.stop="handleMemberClick(m, 'member')">✏️</view>
             <view class="edit-tag owner-crown" v-if="m.role === 'owner'">👑</view>
           </view>
-          <text class="m-nick" @click.stop="showFullText(m.name || '干饭人')">{{ m.name || '干饭人' }}{{ m.isSelf ? ' (我)' : '' }}</text>
-          <view class="m-role" @click.stop="showFullText(m.title || '大主厨')"><text>{{ m.title || '大主厨' }}</text></view>
+          <text class="m-nick" @click.stop="showMemberCard(m)">{{ m.name || '干饭人' }}{{ m.isSelf ? ' (我)' : '' }}</text>
+          <view class="m-role" @click.stop="showMemberCard(m)"><text>{{ m.title || '大主厨' }}</text></view>
         </view>
         
         <!-- 查看全部的入口卡片 -->
@@ -41,23 +41,34 @@
     </view>
 
     <!-- 1. 邀请家人加入弹窗 -->
-    <view class="modal-mask" v-if="showInviteModal" @click="closeInvite">
+    <view class="modal-mask invite-mask" :class="{ 'show': showInviteModal }" @click="closeInvite">
       <view class="modal-content invite-modal" @click.stop>
         <text class="modal-title">邀请家人加入</text>
         <view class="invite-info">
           <text class="invite-desc">让家人扫描二维码或输入邀请码</text>
           <view class="invite-code-box">
-            <text class="code-val">{{ inviteCode }}</text>
-            <text class="copy-btn" @click="copyCode">复制</text>
+            <text class="code-val" :class="{ 'is-expired': !inviteCode }">{{ inviteCode || '------' }}</text>
+            <text class="copy-btn" v-if="inviteCode" @click="copyCode">复制</text>
           </view>
           <view class="invite-expire-tip">
             <text class="expire-icon">⏱️</text>
-            <text class="expire-text">邀请码有效期5分钟</text>
-            <text class="expire-countdown">{{ formattedCountdown }}</text>
+            <text class="expire-text">{{ inviteCode ? '邀请码有效期5分钟' : '邀请码已过期' }}</text>
+            <text class="expire-countdown" v-if="inviteCode">{{ formattedCountdown }}</text>
           </view>
-          <view class="qr-placeholder">
-            <text class="qr-icon">📱</text>
-            <text>扫码加入家庭</text>
+          <view class="qr-code-wrap">
+            <image 
+              v-if="inviteCode && qrImgUrl"
+              :src="qrImgUrl" 
+              class="invite-qr-image"
+              mode="aspectFit"
+            />
+            <view class="qr-placeholder" v-else>
+              <view class="qr-expired-mask" @click="getInviteCode">
+                <text class="refresh-icon">🔄</text>
+                <text class="refresh-text">邀请码已过期</text>
+                <text class="refresh-subtext">点击重新获取</text>
+              </view>
+            </view>
           </view>
         </view>
         <button class="close-modal-btn prim" @click="closeInvite">完成</button>
@@ -83,6 +94,26 @@
         </view>
       </view>
     </view>
+    
+    <!-- 3. 家庭成员迷你名片弹窗 -->
+    <view class="modal-mask member-card-mask" :class="{ 'show': showCardModal }" @click="showCardModal = false">
+      <view class="member-card-content" @click.stop>
+        <view class="card-bg-decoration">
+          <text class="deco-emoji deco-left">🍜</text>
+          <text class="deco-emoji deco-right">🥑</text>
+        </view>
+        <image class="card-avatar" :src="activeMemberCard.avatarUrl ? (activeMemberCard.avatarUrl.startsWith('http') ? activeMemberCard.avatarUrl : config.imgBaseUrl + activeMemberCard.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(activeMemberCard.avatarUrl)" />
+        <view class="card-info">
+          <text class="card-name">{{ activeMemberCard.name || '干饭人' }}{{ activeMemberCard.isSelf ? ' (我)' : '' }}</text>
+          <view class="card-title-badge">
+            <text class="badge-icon">🍳</text>
+            <text class="badge-text">{{ activeMemberCard.title || '大主厨' }}</text>
+          </view>
+          <text class="card-role-desc">{{ activeMemberCard.role === 'owner' ? '👑 家庭创建者' : '🏡 家庭成员' }}</text>
+        </view>
+        <button class="card-close-btn" @click="showCardModal = false">收到</button>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -91,6 +122,7 @@ import { ref, watch, onBeforeUnmount, computed } from 'vue'
 import familyApi from '@/common/api/family.js'
 import recipeApi from '@/common/api/recipe.js'
 import config from '@/common/config'
+import { generateQrCodeSvg } from '@/common/uqrcode.js'
 
 const props = defineProps({
   familyCode: {
@@ -122,6 +154,17 @@ const inviteCode = ref('')
 const inviteCodeExpireTime = ref(0)
 const countdownSeconds = ref(0)
 let countdownTimer = null
+
+const qrImgUrl = computed(() => {
+  if (!inviteCode.value) return ''
+  const qrData = `eateat://join-family?code=${inviteCode.value}`
+  return generateQrCodeSvg(qrData, {
+    typeNumber: 3,
+    colorDark: '#2C3E50',
+    colorLight: '#FFFFFF',
+    margin: 2
+  })
+})
 
 watch(showInviteModal, (newVal) => {
   if (newVal) {
@@ -183,6 +226,7 @@ const startCountdown = () => {
     countdownSeconds.value = remaining
     if (remaining <= 0) {
       clearTimer()
+      inviteCode.value = '' // 倒计时结束，清空邀请码
     }
   }
   
@@ -211,13 +255,12 @@ const tempAvatarUrl = ref('')
 const tempNick = ref('')
 const tempTitle = ref('')
 
-const showFullText = (text) => {
-  if (!text) return
-  uni.showToast({
-    title: text,
-    icon: 'none',
-    duration: 2000
-  })
+const showCardModal = ref(false)
+const activeMemberCard = ref({})
+
+const showMemberCard = (member) => {
+  activeMemberCard.value = member
+  showCardModal.value = true
 }
 
 const handleMemberClick = (m, type) => {
@@ -653,6 +696,11 @@ defineExpose({
         font-weight: 900;
         color: var(--primary);
         letter-spacing: 4rpx;
+        transition: color 0.3s ease;
+        
+        &.is-expired {
+          color: #BDC3C7;
+        }
       }
       
       .copy-btn {
@@ -676,7 +724,7 @@ defineExpose({
       }
     }
     
-    .qr-placeholder {
+    .qr-code-wrap {
       width: 280rpx;
       height: 280rpx;
       background: #fff;
@@ -684,16 +732,63 @@ defineExpose({
       border-radius: 30rpx;
       margin: 0 auto 30rpx;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 16rpx;
-      color: #BDC3C7;
-      font-size: 22rpx;
+      box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.04);
+      overflow: hidden;
+      position: relative;
       
-      .qr-icon { font-size: 80rpx; }
+      .invite-qr-image {
+        width: 220rpx;
+        height: 220rpx;
+      }
+
+      .qr-placeholder {
+        width: 100%;
+        height: 100%;
+        background: #F8F9FA;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      .qr-expired-mask {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: rgba(248, 249, 250, 0.96);
+        cursor: pointer;
+        
+        .refresh-icon {
+          font-size: 44rpx;
+          margin-bottom: 8rpx;
+          color: var(--primary);
+          animation: spinIcon 8s infinite linear;
+          display: inline-block;
+        }
+        
+        .refresh-text {
+          font-size: 22rpx;
+          font-weight: bold;
+          color: #7F8C8D;
+        }
+        
+        .refresh-subtext {
+          font-size: 18rpx;
+          color: #BDC3C7;
+          margin-top: 2rpx;
+        }
+      }
     }
   }
+
+@keyframes spinIcon {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
   
   .close-modal-btn {
     width: 100%;
@@ -789,6 +884,148 @@ defineExpose({
     background: var(--primary);
     color: #fff;
     box-shadow: 0 8rpx 20rpx var(--primary-shadow);
+  }
+}
+
+.invite-mask {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease-in-out;
+  display: flex !important; /* 强制覆盖 display: none 或者保持 flex 居中 */
+  
+  &.show {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  } 
+}
+
+.member-card-mask {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2500;
+  
+  &.show {
+    opacity: 1;
+    pointer-events: auto;
+    
+    .member-card-content {
+      transform: scale(1);
+    }
+  }
+}
+
+.member-card-content {
+  width: 500rpx;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20rpx);
+  border-radius: 50rpx;
+  padding: 50rpx 40rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  transform: scale(0.85);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2rpx solid rgba(255, 255, 255, 0.6);
+  
+  .card-bg-decoration {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+    
+    .deco-emoji {
+      position: absolute;
+      font-size: 80rpx;
+      opacity: 0.08;
+      
+      &.deco-left {
+        top: -10rpx;
+        left: -10rpx;
+        transform: rotate(-15deg);
+      }
+      &.deco-right {
+        bottom: -15rpx;
+        right: -10rpx;
+        transform: rotate(20deg);
+      }
+    }
+  }
+  
+  .card-avatar {
+    width: 160rpx;
+    height: 160rpx;
+    border-radius: 50%;
+    border: 6rpx solid #fff;
+    box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.1);
+    z-index: 2;
+    margin-bottom: 24rpx;
+  }
+  
+  .card-info {
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    
+    .card-name {
+      font-size: 36rpx;
+      font-weight: 900;
+      color: #2C3E50;
+      margin-bottom: 16rpx;
+      text-align: center;
+      word-break: break-all;
+    }
+    
+    .card-title-badge {
+      display: flex;
+      align-items: center;
+      background: var(--primary-light);
+      padding: 8rpx 20rpx;
+      border-radius: 100rpx;
+      margin-bottom: 16rpx;
+      box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.02);
+      
+      .badge-icon {
+        font-size: 24rpx;
+        margin-right: 8rpx;
+      }
+      
+      .badge-text {
+        font-size: 24rpx;
+        font-weight: bold;
+        color: var(--primary);
+      }
+    }
+    
+    .card-role-desc {
+      font-size: 20rpx;
+      color: #95A5A6;
+      margin-bottom: 40rpx;
+    }
+  }
+  
+  .card-close-btn {
+    width: 240rpx;
+    height: 80rpx;
+    line-height: 80rpx;
+    border-radius: 100rpx;
+    font-size: 26rpx;
+    font-weight: bold;
+    background: var(--primary-grad);
+    color: #fff;
+    box-shadow: 0 8rpx 20rpx var(--primary-shadow);
+    border: none;
+    z-index: 2;
+    &::after { border: none; }
   }
 }
 </style>

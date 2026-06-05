@@ -1009,7 +1009,7 @@ zero-drag {
 .item-card {
   background: #fff;
   border-radius: 32rpx;
-  padding: 30rpx;
+  padding: 30rpx 30rpx 16rpx;
   margin-bottom: 24rpx;
   box-shadow: 0 8rpx 30rpx rgba(0,0,0,0.03);
   transition: all 0.3s;
@@ -1032,7 +1032,7 @@ zero-drag {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 16rpx;
 }
 
 .title-group {
@@ -1063,7 +1063,7 @@ zero-drag {
 }
 
 .item-body {
-  margin-bottom: 24rpx;
+  margin-bottom: 18rpx;
   display: flex;
   gap: 20rpx;
   align-items: center;

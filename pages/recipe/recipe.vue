@@ -72,18 +72,19 @@
           <text class="delete-badge-icon">✕</text>
         </view>
         <view class="cover-wrapper">
-          <image class="cover" :src="config.imgBaseUrl + recipe.cover || defaultCover" mode="heightFix" />
+          <image class="cover" :src="config.imgBaseUrl + recipe.cover || defaultCover" mode="aspectFill" />
+          <text class="category-tag">{{ recipe.category }}</text>
         </view>
         <view class="card-body">
-          <view class="card-header">
+          <view class="recipe-title-row">
             <text class="recipe-name">{{ recipe.name }}</text>
-            <text class="category-tag">{{ recipe.category }}</text>
+            <view class="favorite" @click.stop="toggleFavorite(recipe)">
+              <text class="fav-icon">{{ recipe.favorite ? '❤️' : '🤍' }}</text>
+            </view>
           </view>
           <view class="recipe-info">
             <text class="info-text">⏱ {{ recipe.duration }}</text>
             <text class="info-text">🔥 {{ recipe.kcal }}kcal</text>
-            <text class="info-text health-tag">{{ recipe.healthTag }}</text>
-            <text class="favorite" @click.stop="toggleFavorite(recipe)">{{ recipe.favorite ? '❤️' : '🤍' }}</text>
           </view>
         </view>
       </view>
@@ -597,11 +598,14 @@ const themeStyle = computed(() => {
 
 /* 卡片列表 */
 .card-list {
-  display: flex;
-  flex-direction: column;
-  gap: 32rpx;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  align-content: start;
+  gap: 24rpx;
   height: 70.6vh;
   overflow: auto;
+  padding: 4rpx;
+  box-sizing: border-box;
   /* 隐藏滚动条 */
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -611,29 +615,43 @@ const themeStyle = computed(() => {
 .recipe-card {
   position: relative;
   background: #ffffff;
-  border-radius: 40rpx;
-  // overflow: visible;
-  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.04);
+  border-radius: 32rpx;
+  box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.03);
   transition: transform 0.2s, margin 0.2s;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
   &:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
   }
 }
 
 .cover-wrapper {
-  width: 92%;
-  height: 360rpx;
+  position: relative;
+  width: 100%;
+  height: 260rpx;
+  border-top-left-radius: 32rpx;
+  border-top-right-radius: 32rpx;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 10rpx 4%;
-  border-bottom: 1px dashed var(--primary-light);
+  background-color: var(--primary-light);
+  
   .cover {
-    height: 340rpx;
-    width: auto;
-    margin: 0 auto;
-    overflow: hidden;
+    width: 100%;
+    height: 100%;
+  }
+
+  .category-tag {
+    position: absolute;
+    left: 10rpx;
+    top: 10rpx;
+    padding: 4rpx 10rpx;
+    border-radius: 10rpx;
+    font-size: 18rpx;
+    font-weight: 700;
+    color: var(--primary);
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
   }
 }
 
@@ -641,11 +659,11 @@ const themeStyle = computed(() => {
 /* 删除角标 */
 .delete-badge {
   position: absolute;
-  top: -18rpx;
-  right: -18rpx;
-  z-index: 10;
-  width: 56rpx;
-  height: 56rpx;
+  top: -12rpx;
+  right: -12rpx;
+  z-index: 10; 
+  width: 48rpx;
+  height: 48rpx;
   border-radius: 50%;
   background: #FF4757;
   display: flex;
@@ -656,7 +674,7 @@ const themeStyle = computed(() => {
 }
 .delete-badge-icon {
   color: #fff;
-  font-size: 26rpx;
+  font-size: 22rpx;
   font-weight: 900;
   line-height: 1;
 }
@@ -665,10 +683,6 @@ const themeStyle = computed(() => {
 .edit-shake {
   animation: card-shake 0.5s ease infinite alternate;
   transform-origin: center;
-  .cover-wrapper {
-    width: 90%;
-    height: 340rpx;
-  }
 }
 @keyframes card-shake {
   0%   { transform: rotate(-0.5deg); }
@@ -678,69 +692,68 @@ const themeStyle = computed(() => {
   0%   { transform: scale(0); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
-.cover {
-  height: 360rpx;
-  width: auto;
-  margin: 0 auto;
-  background-color: var(--primary-light);
-}
 .card-body {
-  padding: 30rpx;
+  padding: 20rpx 20rpx 22rpx;
 }
-.card-header {
+.recipe-title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 8rpx;
 }
 .recipe-name {
-  font-size: 34rpx;
-  font-weight: 900;
+  font-size: 30rpx;
+  font-weight: 800;
   color: #2c3e50;
-  flex: 1;
+  margin-bottom: 0;
+  display: block;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
-  letter-spacing: 1rpx;
+  letter-spacing: 0.5rpx;
+  flex: 1;
+  margin-right: 12rpx;
 }
-.category-tag {
-  padding: 8rpx 20rpx;
-  border-radius: 100rpx;
-  font-size: 22rpx;
-  font-weight: 800;
-  margin-left: 20rpx;
-  color: var(--primary);
-  background-color: var(--primary-light);
+.favorite {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  
+  .fav-icon {
+    font-size: 20rpx;
+    line-height: 1;
+  }
+
+  &:active {
+    transform: scale(1.2);
+  }
 }
 .recipe-info {
   display: flex;
   align-items: center;
-  gap: 20rpx;
+  gap: 10rpx;
 }
 .info-text {
-  font-size: 24rpx;
+  font-size: 19rpx;
   color: #7f8c8d;
   background: #f8f9fa;
-  padding: 8rpx 16rpx;
-  border-radius: 12rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 8rpx;
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  gap: 6rpx;
   
   &.health-tag {
     background: #F0F9F4;
     color: #4DB88F;
     border: 1rpx solid #E8F5E9;
-  }
-}
-.favorite {
-  margin-left: auto;
-  font-size: 36rpx;
-  padding: 10rpx;
-  color: var(--primary);
-  transition: transform 0.2s;
-  &:active {
-    transform: scale(1.3);
   }
 }
 
