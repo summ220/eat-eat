@@ -40,9 +40,7 @@
     "widescreen": "x"
   },
   "uni_modules": {
-    "dependencies": [
-      "uni-id-pages"
-    ],
+    "dependencies": [],
     "encrypt": [],
     "platforms": {
       "cloud": {
