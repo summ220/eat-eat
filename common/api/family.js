@@ -413,4 +413,20 @@ export default {
     return request(`/family/health/member/${memberId}/recommendations`, 'GET', { family_code: familyCode, type })
   },
 
+  // 切换家庭用餐计划状态
+  // record: source, emoji, photo, cost, tags, notes
+  getFamilyMealPlanStatus(familyCode, date, meal_name, done, record) {
+    return request('/family/meal/plan/status', 'PUT', { family_code: familyCode, date, meal_name, done, record })
+  },
+
+  // 获取家庭用餐日记
+  getFamilyMealDiary(familyCode, startDate, endDate) {
+    return request('/family/meal/diary', 'GET', { family_code: familyCode, startDate, endDate })
+  },
+
+  // 上传家庭用餐计划图片
+  uploadMealPhoto(familyCode, imageData) {
+    return request('/family/meal/photo/upload', 'POST', { family_code: familyCode, imageData })
+  },
+
 } 

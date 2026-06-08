@@ -166,8 +166,8 @@
             <text class="set-desc" style="margin-right:16rpx; color: #999;">保障历史数据</text>
             <text class="set-arrow">👉</text>
           </view>
-          <view class="set-item">
-            <text class="set-icon" @click="handleClearCache">🧹</text>
+          <view class="set-item" @click="handleClearCache">
+            <text class="set-icon">🧹</text>
             <text class="set-text">清除缓存</text>
             <text class="set-arrow"> 👉</text>
           </view>
@@ -615,7 +615,7 @@ const handleClearCache = () => {
   // 第一次警告
   uni.showModal({
     title: '⚠️ 清除所有数据',
-    content: '清除缓存后将永久删除：食材、购物车、花费、菜谱、备忘录、主题设置，无法恢复！',
+    content: '确定要清除所有缓存吗？\n\n此操作不可恢复！\n\n将清除当前家庭数据，包括：\n1.食材\n2.购物车\n3.花费\n4.菜谱\n5.备忘录\n6.主题设置等',
     confirmText: '确认清除',
     confirmColor: '#FF4444', // 红色警告
     success: (res) => {
@@ -623,7 +623,7 @@ const handleClearCache = () => {
         // 第二次二次确认
         uni.showModal({
           title: '最终确认',
-          content: '确定要清空所有数据吗？此操作不可恢复！',
+          content: '确定要清空所有数据吗？\n\n此操作不可恢复！\n\n请确保已经保存家庭编码并设置密保问题！',
           confirmText: '确定清空',
           confirmColor: '#FF0000',
           success: (res2) => {
@@ -634,6 +634,11 @@ const handleClearCache = () => {
                 title: '已清空所有数据',
                 icon: 'success'
               });
+              setTimeout(() => {
+                uni.reLaunch({
+                  url: '/pages/welcome/welcome'
+                });
+              }, 1500);
             }
           }
         })

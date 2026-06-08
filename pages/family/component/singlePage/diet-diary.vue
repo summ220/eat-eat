@@ -203,7 +203,7 @@ const loadDietDiary = async () => {
       const endStr = end.toISOString().split('T')[0]
       
       try {
-        const res = await familyApi.getDietDiary(familyCode, startStr, endStr)
+        const res = await familyApi.getFamilyMealDiary(familyCode, startStr, endStr)
         if (res && res.data && res.data.diary) {
           list = res.data.diary || []
         }
