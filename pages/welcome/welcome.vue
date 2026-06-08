@@ -42,7 +42,7 @@
       </view>
       
       <view class="splash-action-box" style="width: 620rpx; display: flex; flex-direction: column; align-items: center; gap: 40rpx; margin-bottom: 40rpx;">
-        <button class="splash-btn-primary" style="background: linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%); color: #fff; font-size: 32rpx; font-weight: bold; height: 100rpx; line-height: 100rpx; border-radius: 50rpx; box-shadow: 0 12rpx 30rpx rgba(255, 90, 121, 0.35); border: none; margin: 0; width: 520rpx; text-align: center;" @click="silentCreateNewFamily">
+        <button class="splash-btn-primary" style="background: linear-gradient(135deg, #FF7DA8 0%, #FF5A79 100%); color: #fff; font-size: 32rpx; font-weight: bold; height: 100rpx; line-height: 100rpx; border-radius: 50rpx; box-shadow: 0 12rpx 30rpx rgba(255, 90, 121, 0.35); border: none; margin: 0; width: 520rpx; text-align: center;" @click="goToCreatePresetStep3">
           开始使用
         </button>
         
@@ -69,7 +69,7 @@
         <button class="splash-btn-primary" style="background: var(--primary-grad); color: #fff; font-size: 30rpx; font-weight: bold; height: 100rpx; line-height: 100rpx; border-radius: 50rpx; box-shadow: 0 10rpx 24rpx var(--primary-shadow); border: none; margin: 0; width: 100%;" @click="goToRestoreStep2">
           找回家庭数据
         </button>
-        <button class="splash-btn-secondary" style="background: #fff; color: #666; font-size: 30rpx; font-weight: bold; height: 100rpx; line-height: 100rpx; border-radius: 50rpx; border: 2rpx solid #EFEFEF; margin: 0; width: 100%; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.01);" @click="silentCreateNewFamily">
+        <button class="splash-btn-secondary" style="background: #fff; color: #666; font-size: 30rpx; font-weight: bold; height: 100rpx; line-height: 100rpx; border-radius: 50rpx; border: 2rpx solid #EFEFEF; margin: 0; width: 100%; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.01);" @click="goToCreatePresetStep3">
           重新开始
         </button>
       </view>
@@ -153,6 +153,61 @@
         </button>
         <view class="abandon-btn" style="padding: 10rpx 40rpx; cursor: pointer;" @click="handleBackClick">
           <text class="abandon-text" style="font-size: 26rpx; color: #999; font-weight: 500;">暂不找回，返回</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 页面三：创建家庭预设页 -->
+    <view class="splash-step-container" style="width: 100%; display: flex; flex-direction: column; box-sizing: border-box; padding: 0 40rpx;" v-if="restoreStep === 3">
+      <view class="splash-form-header" style="margin-top: 60rpx; margin-bottom: 30rpx; text-align: center;">
+        <text class="form-title" style="font-size: 40rpx; font-weight: 900; color: #333; display: block; margin-bottom: 12rpx;">🏡 开启您的美食小屋</text>
+        <text class="form-subtitle" style="font-size: 24rpx; color: #888; display: block;">预设基本信息，让家庭餐桌充满仪式感</text>
+      </view>
+      
+      <scroll-view scroll-y style="max-height: 60vh; background: #fff; padding: 40rpx; border-radius: 36rpx; box-shadow: 0 16rpx 40rpx rgba(0,0,0,0.02); border: 2rpx solid var(--primary-light); box-sizing: border-box;">
+        <view class="form-item">
+          <text class="form-label" style="font-size: 26rpx; font-weight: bold; color: #555; display: block; margin-bottom: 12rpx;">家庭名称</text>
+          <input 
+            class="form-input" 
+            style="background: #FAFAFA; border: 2rpx solid #F0F0F0; border-radius: 16rpx; height: 84rpx; padding: 0 24rpx; font-size: 26rpx; color: #333; width: 100%; box-sizing: border-box;"
+            v-model="createForm.familyName" 
+            placeholder="如：我的暖心小厨房"
+            @input="syncDefaultSecurityAnswer"
+          />
+        </view>
+        
+        <view class="form-item" style="margin-top: 30rpx;">
+          <text class="form-label" style="font-size: 26rpx; font-weight: bold; color: #555; display: block; margin-bottom: 12rpx;">🛡️ 密保答案 (密保问题：我的家庭名称是？)</text>
+          <input 
+            class="form-input" 
+            style="background: #FAFAFA; border: 2rpx solid #F0F0F0; border-radius: 16rpx; height: 84rpx; padding: 0 24rpx; font-size: 26rpx; color: #333; width: 100%; box-sizing: border-box;"
+            v-model="createForm.securityAnswer" 
+            placeholder="请输入密保答案 (找回凭证)" 
+          />
+          <text class="form-hint" style="font-size: 20rpx; color: #bbb; display: block; margin-top: 8rpx;">未来如果本地缓存丢失，可以用此密保安全找回数据。</text>
+        </view>
+        
+        <view class="form-item" style="margin-top: 30rpx; border-top: 2rpx dashed #eee; padding-top: 30rpx;">
+          <text class="form-label" style="font-size: 26rpx; font-weight: bold; color: #555; display: block; margin-bottom: 12rpx;">您的家庭昵称</text>
+          <input 
+            class="form-input" 
+            style="background: #FAFAFA; border: 2rpx solid #F0F0F0; border-radius: 16rpx; height: 84rpx; padding: 0 24rpx; font-size: 26rpx; color: #333; width: 100%; box-sizing: border-box;"
+            v-model="createForm.nickName" 
+            placeholder="自己在厨房的昵称，如：大厨、大饱饱" 
+          />
+        </view>
+      </scroll-view>
+      
+      <view class="splash-form-footer" style="margin-top: 40rpx; display: flex; flex-direction: column; align-items: center; gap: 20rpx; width: 100%; padding-bottom: 60rpx;">
+        <button 
+          class="splash-btn-primary" 
+          style="background: var(--primary-grad); color: #fff; font-size: 28rpx; font-weight: bold; height: 90rpx; line-height: 90rpx; border-radius: 45rpx; box-shadow: 0 10rpx 24rpx var(--primary-shadow); border: none; margin: 0; width: 100%;"
+          @click="submitCreateFamily"
+        >
+          立即创建并进入
+        </button>
+        <view class="abandon-btn" style="padding: 10rpx 40rpx; cursor: pointer;" @click="silentCreateNewFamily">
+          <text class="abandon-text" style="font-size: 24rpx; color: #999; font-weight: 500;">暂不预设，稍后在家庭修改</text>
         </view>
       </view>
     </view>
@@ -302,6 +357,104 @@ const handleBackClick = () => {
   }
 }
 
+const createForm = ref({
+  familyName: '我的厨房',
+  securityAnswer: '我的厨房',
+  nickName: '厨神'
+})
+
+const syncDefaultSecurityAnswer = () => {
+  createForm.value.securityAnswer = createForm.value.familyName
+}
+
+const goToCreatePresetStep3 = () => {
+  createForm.value = {
+    familyName: '我的厨房',
+    securityAnswer: '我的厨房',
+    nickName: '厨神'
+  }
+  restoreStep.value = 3
+}
+
+const ensureDeviceRegistered = async () => {
+  const deviceId = uni.getStorageSync('device_id')
+  if (deviceId) {
+    return true
+  }
+  
+  try {
+    const res = await familyApi.registerDevice()
+    const data = res?.data || res
+    if (data && data.device?.deviceId && data.deviceSecret) {
+      uni.setStorageSync('device_id', data.device.deviceId)
+      uni.setStorageSync('device_secret', data.deviceSecret)
+      return true
+    }
+  } catch (err) {
+    console.error('设备自动注册失败:', err)
+  }
+  return false
+}
+
+const submitCreateFamily = async () => {
+  const fName = createForm.value.familyName.trim()
+  const sAns = createForm.value.securityAnswer.trim()
+  const nName = createForm.value.nickName.trim()
+  
+  if (!fName) return uni.showToast({ title: '请输入家庭名称', icon: 'none' })
+  if (!sAns) return uni.showToast({ title: '请输入密保答案', icon: 'none' })
+  if (!nName) return uni.showToast({ title: '请输入您的家庭昵称', icon: 'none' })
+  
+  uni.showLoading({ title: '正在为您筑巢...', mask: true })
+  
+  const isOk = await ensureDeviceRegistered()
+  if (!isOk) {
+    uni.hideLoading()
+    return uni.showToast({ title: '设备初始化失败，请稍后重试', icon: 'none' })
+  }
+  
+  try {
+    const res = await familyApi.createFamily(fName)
+    if (res && res.data && res.data.family) {
+      const fam = res.data.family
+      const member = res.data.member
+      const fCode = fam.familyCode
+      
+      try {
+        await familyApi.setFamilySecurityQuestion(fCode, '我的家庭名称是？', sAns)
+        uni.setStorageSync('has_set_security_' + fCode, true)
+      } catch (secErr) {
+        console.error('密保自动预设失败，可稍后重试', secErr)
+      }
+      
+      try {
+        await familyApi.updateMyFamilyMemberProfile(fCode, nName, 'Owner', '')
+      } catch (profErr) {
+        console.error('成员昵称自动预设失败', profErr)
+      }
+      
+      uni.setStorageSync('family_code', fCode)
+      uni.setStorageSync('family_name', fName)
+      uni.setStorageSync('family_avatar', fam.avatarUrl || '')
+      uni.setStorageSync('family_role', member.role || 'owner')
+      uni.setStorageSync('is_first_launch_after_register', 'true')
+      
+      uni.showToast({ title: '家庭创建成功！', icon: 'success' })
+      
+      setTimeout(() => {
+        uni.switchTab({ url: '/pages/index/index' })
+      }, 500)
+    } else {
+      uni.showToast({ title: '创建家庭失败，请重试', icon: 'none' })
+    }
+  } catch (e) {
+    console.error('创建家庭流程出错', e)
+    uni.showToast({ title: '创建家庭失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
 const goToRestoreStep2 = () => {
   restoreForm.value = {
     familyCode: '',
@@ -319,6 +472,13 @@ const onRestoreQuestionChange = (e) => {
 // 静默生成全新默认家庭并直接进入
 const silentCreateNewFamily = async () => {
   uni.showLoading({ title: '正在初始化...', mask: true })
+  
+  const isOk = await ensureDeviceRegistered()
+  if (!isOk) {
+    uni.hideLoading()
+    return uni.showToast({ title: '设备初始化失败，请稍后重试', icon: 'none' })
+  }
+  
   try {
     const res = await familyApi.createFamily('我的厨房')
     if (res && res.data && res.data.family) {

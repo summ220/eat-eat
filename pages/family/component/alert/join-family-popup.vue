@@ -5,13 +5,26 @@
       <block v-if="!isJoining">
         <text class="modal-title">加入新家庭</text>
         <view class="input-box">
-          <input class="join-input" v-model="joinCode" placeholder="请输入邀请码" />
+          <input class="join-input" v-model="joinCode" placeholder="请输入邀请码 (必填)" />
           <view class="scan-icon-btn" @click="handleScan">
             <text class="scan-icon">📷</text>
           </view>
         </view>
-        <view class="modal-tips">加入后将同步该家庭的所有数据</view>
-        <view class="modal-btns">
+        
+        <view class="preset-fields-title" style="font-size: 24rpx; color: #888; font-weight: bold; margin-top: 24rpx; margin-bottom: 12rpx;">👤 预设我的成员信息</view>
+        <view class="input-box">
+          <input class="join-input" v-model="nickName" placeholder="预设我的昵称 (如：大饱饱)" />
+        </view>
+        <view class="input-box">
+          <input class="join-input" v-model="memberTitle" placeholder="预设家庭称呼 (如：女儿、爸爸)" />
+        </view>
+        
+        <view class="modal-tips" style="margin-top: 16rpx; display: flex; flex-direction: column; gap: 8rpx; align-items: center;">
+          <text>加入后将同步该家庭的所有数据</text>
+          <text style="color: #999; text-decoration: underline; cursor: pointer; font-size: 22rpx; font-weight: 500;" @click="skipPreset">暂不预设，稍后在家庭修改</text>
+        </view>
+        
+        <view class="modal-btns" style="margin-top: 20rpx;">
           <button class="m-btn-sub" @click="close">取消</button>
           <button class="m-btn-main" @click="confirmJoin">加入</button>
         </view>
@@ -44,17 +57,27 @@ const props = defineProps({
 const emit = defineEmits(['close', 'joined'])
 
 const joinCode = ref('')
+const nickName = ref('')
+const memberTitle = ref('')
 const isJoining = ref(false)
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
     joinCode.value = ''
+    nickName.value = ''
+    memberTitle.value = ''
     isJoining.value = false
   }
 })
 
 const close = () => {
   emit('close')
+}
+
+const skipPreset = () => {
+  nickName.value = ''
+  memberTitle.value = ''
+  confirmJoin()
 }
 
 const handleScan = () => {
@@ -92,7 +115,6 @@ const handleScan = () => {
       }, 300)
     },
     fail: (err) => {
-      // 过滤用户主动取消扫码的情况，避免在控制台输出误导性的错误日志
       if (err && err.errMsg && err.errMsg.indexOf('cancel') !== -1) {
         return
       }
@@ -113,16 +135,24 @@ const confirmJoin = async () => {
     if (res && res.data) {
       const code = res.data.member.familyCode
       const role = res.data.member.role
-      // 要判断所加入的所有家庭
+      
+      const finalNick = nickName.value.trim()
+      const finalTitle = memberTitle.value.trim()
+      if (finalNick || finalTitle) {
+        try {
+          await familyApi.updateMyFamilyMemberProfile(code, finalNick || '新成员', finalTitle || '成员', '')
+        } catch (profErr) {
+          console.error('预设修改成员资料失败:', profErr)
+        }
+      }
+      
       const myFamilies = await familyApi.getMyFamilies()
       if (myFamilies && myFamilies.data) {
         myFamiliesList.value = myFamilies.data.families || []
       }
       
-      // 重复加入同一个家庭时友好拦截提示
       if (myFamiliesList.value.find(item => item.familyCode === code)) {
         isJoining.value = false
-        // uni.showToast({ title: '您已是该家庭的成员啦 🏡', icon: 'none' })
         uni.showToast({ title: '成功加入家庭，开始记录每一餐吧~', icon: 'none' })
         uni.setStorageSync('family_code', code)
         setTimeout(() => {
@@ -131,7 +161,6 @@ const confirmJoin = async () => {
         return
       }
       uni.setStorageSync('family_code', code)
-      // uni.setStorageSync('family_role', role)
       
       uni.showToast({ title: '成功加入家庭，开始记录每一餐吧~'})
       emit('joined', { code, role })

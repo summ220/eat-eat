@@ -166,7 +166,7 @@
             <text class="set-desc" style="margin-right:16rpx; color: #999;">保障历史数据</text>
             <text class="set-arrow">👉</text>
           </view>
-          <view class="set-item" @click="handleClearCache">
+          <view class="set-item" @click="handleClearCache" v-if="familyCode && familyRole === 'owner'">
             <text class="set-icon">🧹</text>
             <text class="set-text">清除缓存</text>
             <text class="set-arrow"> 👉</text>
@@ -651,6 +651,16 @@ const handleFamilyMembersChanged = ({ role }) => {
 
 
 const handleClearCache = () => {
+  // 如果还有成员，不能清除缓存，需要解散家庭
+  if(family.value.memberList.length > 0) {
+    uni.showModal({
+      title: '⚠️ 成员存在',
+      content: '当前家庭还有成员，不能清除缓存。\n\n请先解散家庭，再重新创建。',
+      confirmText: '知道了',
+      confirmColor: '#FF4444',
+    })
+    return
+  }
   // 第一次警告
   uni.showModal({
     title: '⚠️ 清除所有数据',
