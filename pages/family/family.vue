@@ -251,6 +251,7 @@
       :show="showReminderModal"
       :reminders="reminders"
       @close="showReminderModal = false"
+      @action="handleReminderAction"
     />
 
 
@@ -266,9 +267,23 @@
       :show="showSecuritySettingModal"
       :family-code="familyCode"
       @close="showSecuritySettingModal = false"
-      @saved="loadFamily"
+      @saved="handleSecuritySaved"
     />
     
+    <!-- 密保强引导弹窗 -->
+    <view class="modal-mask" v-if="showSecurityGuideModal" @click="closeSecurityGuide(false)">
+      <view class="modal-content security-guide-modal" @click.stop>
+        <view class="shield-badge">🛡️</view>
+        <text class="guide-title">设置安全密保</text>
+        <text class="guide-desc">
+          检测到您尚未设置找回密保。设置密保后，未来即使清空缓存或更换设备，也能凭密保一键找回所有家庭数据（食材、账本、菜单等）。
+        </text>
+        <view class="guide-btns">
+          <button class="g-btn-later" @click="closeSecurityGuide(true)">下次提醒</button>
+          <button class="g-btn-go" @click="goSetSecurity">立即设置</button>
+        </view>
+      </view>
+    </view>
 
     <custom-tabbar />
   </view>
@@ -433,7 +448,12 @@ const loadFamily = async () => {
   if (family && family.data) {
     familyName.value = family.data.familyName
     familyAvatar.value = family.data.avatarUrl || uni.getStorageSync('family_avatar') || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'
+    if (family.data.hasSecurityQuestion || family.data.has_security) {
+      uni.setStorageSync('has_set_security_' + familyCode.value, true)
+    }
   }
+  updateReminders()
+  checkSecurityGuide()
 }
 
 // 家庭成员
@@ -510,6 +530,7 @@ onShow(() => {
   if (spendingTrendRef.value) {
     spendingTrendRef.value.loadSpendingTrends()
   }
+  updateReminders()
 })
 
 // 天气与定位逻辑
@@ -585,11 +606,29 @@ const initDateWeather = () => {
 }
 
 // 智能提醒
-const reminders = ref([
-  { type: 'warning', icon: '⚠️', text: '库存预警：鸡蛋仅剩 2 个', action: '加购' },
-  { type: 'danger', icon: '⏳', text: '过期提醒：鲜牛奶还有 2 天过期', action: '处理' },
-  { type: 'info', icon: '💡', text: '今日推荐：根据天气为您推荐「冬瓜排骨汤」', action: '查看' }
-])
+const reminders = ref([])
+
+const updateReminders = () => {
+  const list = [
+    { type: 'warning', icon: '⚠️', text: '库存预警：鸡蛋仅剩 2 个', action: '加购' },
+    { type: 'danger', icon: '⏳', text: '过期提醒：鲜牛奶还有 2 天过期', action: '处理' },
+    { type: 'info', icon: '💡', text: '今日推荐：根据天气为您推荐「冬瓜排骨汤」', action: '查看' }
+  ]
+  
+  if (familyRole.value === 'owner' && familyCode.value && familyCode.value !== 'default_family') {
+    const hasSetSecurity = uni.getStorageSync('has_set_security_' + familyCode.value)
+    if (!hasSetSecurity) {
+      list.unshift({
+        type: 'danger',
+        icon: '🛡️',
+        text: '安全提醒：当前家庭尚未设置数据找回密保，请尽快配置！',
+        action: '去设置'
+      })
+    }
+  }
+  
+  reminders.value = list
+}
 
 // 日期与天气数据
 const dateInfo = ref({
@@ -647,6 +686,54 @@ const handleClearCache = () => {
   })
 }
 
+const handleReminderAction = (r) => {
+  if (r.icon === '🛡️' || r.action === '去设置') {
+    openSetSecurityModal()
+  } else {
+    if (r.action === '加购') {
+      uni.switchTab({ url: '/pages/shop/shop' })
+    } else if (r.action === '查看' || r.action === '处理') {
+      uni.switchTab({ url: '/pages/recipe/recipe' })
+    }
+  }
+}
+
+const handleSecuritySaved = () => {
+  if (familyCode.value) {
+    uni.setStorageSync('has_set_security_' + familyCode.value, true)
+    updateReminders()
+  }
+  loadFamily()
+}
+
+// 密保强引导逻辑
+const showSecurityGuideModal = ref(false)
+
+const checkSecurityGuide = () => {
+  if (familyRole.value === 'owner' && familyCode.value && familyCode.value !== 'default_family') {
+    const hasSetSecurity = uni.getStorageSync('has_set_security_' + familyCode.value)
+    if (!hasSetSecurity) {
+      const laterTime = uni.getStorageSync('security_remind_later_' + familyCode.value)
+      const oneDay = 24 * 60 * 60 * 1000
+      if (!laterTime || (Date.now() - Number(laterTime) > oneDay)) {
+        showSecurityGuideModal.value = true
+      }
+    }
+  }
+}
+
+const closeSecurityGuide = (remindLater = false) => {
+  showSecurityGuideModal.value = false
+  if (remindLater && familyCode.value) {
+    uni.setStorageSync('security_remind_later_' + familyCode.value, Date.now())
+  }
+}
+
+const goSetSecurity = () => {
+  showSecurityGuideModal.value = false
+  openSetSecurityModal()
+}
+
 const goToMemo = () => {
   uni.navigateTo({ url: '/pages/family/component/singlePage/memo' })
 }
@@ -683,6 +770,81 @@ const concatenatedReminders = computed(() => {
   background-color: #F6F7F9;
   min-height: ~"calc(100vh - 240rpx)";
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* 密保强引导弹窗 */
+.security-guide-modal {
+  width: 580rpx;
+  background: #fff;
+  border-radius: 40rpx;
+  padding: 50rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  .shield-badge {
+    font-size: 80rpx;
+    margin-bottom: 24rpx;
+    animation: pulse 2s infinite;
+  }
+  
+  .guide-title {
+    font-size: 34rpx;
+    font-weight: 800;
+    color: #2D3748;
+    margin-bottom: 20rpx;
+  }
+  
+  .guide-desc {
+    font-size: 26rpx;
+    color: #718096;
+    line-height: 1.6;
+    margin-bottom: 40rpx;
+  }
+  
+  .guide-btns {
+    display: flex;
+    gap: 20rpx;
+    width: 100%;
+    
+    button {
+      flex: 1;
+      height: 84rpx;
+      line-height: 84rpx;
+      font-size: 26rpx;
+      font-weight: bold;
+      border-radius: 42rpx;
+      margin: 0;
+      &::after { border: none; }
+    }
+    
+    .g-btn-later {
+      background: #EDF2F7;
+      color: #718096;
+    }
+    
+    .g-btn-go {
+      background: var(--primary-grad);
+      color: #fff;
+      box-shadow: 0 8rpx 20rpx var(--primary-shadow);
+    }
+  }
+}
+
+@keyframes modalScaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
 }
 
 /* 1. 顶部大卡片 */

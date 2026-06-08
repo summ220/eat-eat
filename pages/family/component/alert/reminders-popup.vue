@@ -37,14 +37,15 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'action'])
 
 const close = () => {
   emit('close')
 }
 
 const handleReminderAction = (r) => {
-  uni.showToast({ title: `触发功能: ${r.action}`, icon: 'none' })
+  emit('action', r)
+  close()
 }
 </script>
 
