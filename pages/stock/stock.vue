@@ -567,7 +567,7 @@ const themeStyle = computed(() => {
 <style lang="less" scoped>
 .page {
   background: #FAFAFA;
-  height: 100vh;
+  height: ~"calc(100vh - 170rpx)";
   // padding-bottom: 40rpx;
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }

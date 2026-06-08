@@ -58,7 +58,12 @@
       <text class="edit-bar-done" @click="exitEditMode">完成</text>
     </view>
 
-    <view class="card-list">
+    <view class="empty-state" v-if="visibleRecipes.length === 0">
+      <text v-if="searchText || currentCategory !== '全部'">未找到匹配菜谱，试试清空搜索或切换分类</text>
+      <text v-else>暂无菜谱，点击右上角创建新菜谱</text>
+    </view>
+    
+    <view class="card-list" v-else>
       <view
         class="recipe-card"
         :class="{ 'edit-shake': editMode }"
@@ -89,14 +94,12 @@
         </view>
       </view>
 
-      <view class="empty-state" v-if="visibleRecipes.length === 0">
-        <text v-if="searchText || currentCategory !== '全部'">未找到匹配菜谱，试试清空搜索或切换分类</text>
-        <text v-else>暂无菜谱，点击右上角创建新菜谱</text>
-      </view>
-
       <view class="more-row" v-if="page * pageSize < filteredRecipes.length">
         <button class="more-btn" @click.stop="loadMore">加载更多</button>
       </view>
+      
+      <!-- 底部防遮挡安全区 -->
+      <view class="list-bottom-safe"></view>
     </view>
     <custom-tabbar />
   </view>
@@ -380,8 +383,8 @@ const themeStyle = computed(() => {
 <style lang="less" scoped>
 .page {
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 100%);
-  background-color: var(--primary-light);
-  // min-height: ~"calc(100vh - 240rpx)";
+  // background-color: var(--primary-light);
+  height: ~"calc(100vh - 400rpx)";
   padding: 30rpx 24rpx 180rpx;
 }
 
@@ -601,7 +604,7 @@ const themeStyle = computed(() => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   align-content: start;
-  gap: 24rpx;
+  gap: 6rpx;
   height: 70.6vh;
   overflow: auto;
   padding: 4rpx;
@@ -629,7 +632,7 @@ const themeStyle = computed(() => {
 .cover-wrapper {
   position: relative;
   width: 100%;
-  height: 260rpx;
+  height: 320rpx;
   border-top-left-radius: 32rpx;
   border-top-right-radius: 32rpx;
   overflow: hidden;
@@ -759,6 +762,7 @@ const themeStyle = computed(() => {
 
 /* 更多及空状态 */
 .more-row {
+  grid-column: span 2;
   padding: 30rpx 0;
   display: flex;
   justify-content: center;
@@ -782,5 +786,10 @@ const themeStyle = computed(() => {
   color: #95a5a6;
   font-size: 28rpx;
   padding: 60rpx 0;
+}
+.list-bottom-safe {
+  grid-column: span 2;
+  height: 180rpx;
+  flex-shrink: 0;
 }
 </style>

@@ -48,13 +48,19 @@
           <text class="invite-desc">让家人扫描二维码或输入邀请码</text>
           <view class="invite-code-box">
             <text class="code-val" :class="{ 'is-expired': !inviteCode }">{{ inviteCode || '------' }}</text>
-            <text class="copy-btn" v-if="inviteCode" @click="copyCode">复制</text>
+            <view class="code-actions">
+              <view class="action-btn refresh-btn-wrap" @click="handleRefreshCode" :class="{ 'spinning': isRefreshing }">
+                <text class="action-icon">🔄</text>
+              </view>
+              <text class="copy-btn" v-if="inviteCode" @click="copyCode">复制</text>
+            </view>
           </view>
           <view class="invite-expire-tip">
             <text class="expire-icon">⏱️</text>
             <text class="expire-text">{{ inviteCode ? '邀请码有效期5分钟' : '邀请码已过期' }}</text>
             <text class="expire-countdown" v-if="inviteCode">{{ formattedCountdown }}</text>
           </view>
+          <view class="invite-expire-tip">* 每邀请码仅可使用一次哦～ *</view>
           <view class="qr-code-wrap">
             <image 
               v-if="inviteCode && qrImgUrl"
@@ -63,7 +69,7 @@
               mode="aspectFit"
             />
             <view class="qr-placeholder" v-else>
-              <view class="qr-expired-mask" @click="getInviteCode">
+              <view class="qr-expired-mask" @click="handleRefreshCode">
                 <text class="refresh-icon">🔄</text>
                 <text class="refresh-text">邀请码已过期</text>
                 <text class="refresh-subtext">点击重新获取</text>
@@ -153,6 +159,7 @@ const showInviteModal = ref(false)
 const inviteCode = ref('')
 const inviteCodeExpireTime = ref(0)
 const countdownSeconds = ref(0)
+const isRefreshing = ref(false)
 let countdownTimer = null
 
 const qrImgUrl = computed(() => {
@@ -211,10 +218,25 @@ const getInviteCode = async () => {
       inviteCodeExpireTime.value = Date.now() + 5 * 60 * 1000
       startCountdown()
     } else {
-      uni.showToast({ title: '获取验证码失败', icon: 'none' })
+      uni.showToast({ title: '获取邀请码失败', icon: 'none' })
     }
   } catch (e) {
-    uni.showToast({ title: '获取验证码失败', icon: 'none' })
+    uni.showToast({ title: '获取邀请码失败', icon: 'none' })
+  }
+}
+
+const handleRefreshCode = async () => {
+  if (isRefreshing.value) return
+  isRefreshing.value = true
+  try {
+    await getInviteCode()
+    uni.showToast({ title: '邀请码已更新', icon: 'success' })
+  } catch (e) {
+    console.error(e)
+  } finally {
+    setTimeout(() => {
+      isRefreshing.value = false
+    }, 800)
   }
 }
 
@@ -700,6 +722,39 @@ defineExpose({
         
         &.is-expired {
           color: #BDC3C7;
+        }
+      }
+
+      .code-actions {
+        display: flex;
+        align-items: center;
+        gap: 16rpx;
+
+        .refresh-btn-wrap {
+          width: 56rpx;
+          height: 56rpx;
+          border-radius: 50%;
+          background: #ECEFF1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+          
+          &:active {
+            transform: scale(0.9);
+            background: #CFD8DC;
+          }
+          
+          .action-icon {
+            font-size: 24rpx;
+            display: inline-block;
+          }
+          
+          &.spinning {
+            .action-icon {
+              animation: spinIcon 0.8s infinite linear;
+            }
+          }
         }
       }
       

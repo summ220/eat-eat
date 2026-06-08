@@ -122,14 +122,16 @@ const confirmJoin = async () => {
       // 重复加入同一个家庭时友好拦截提示
       if (myFamiliesList.value.find(item => item.familyCode === code)) {
         isJoining.value = false
-        uni.showToast({ title: '您已是该家庭的成员啦 🏡', icon: 'none' })
+        // uni.showToast({ title: '您已是该家庭的成员啦 🏡', icon: 'none' })
+        uni.showToast({ title: '成功加入家庭，开始记录每一餐吧~', icon: 'none' })
+        uni.setStorageSync('family_code', code)
         setTimeout(() => {
           close()
         }, 1500)
         return
       }
       uni.setStorageSync('family_code', code)
-      uni.setStorageSync('family_role', role)
+      // uni.setStorageSync('family_role', role)
       
       uni.showToast({ title: '成功加入家庭，开始记录每一餐吧~'})
       emit('joined', { code, role })

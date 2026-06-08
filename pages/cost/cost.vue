@@ -90,7 +90,7 @@
       <view class="modal-content" @click.stop>
         <text class="modal-title">{{ modalMode === 'add' ? '新增花费' : '编辑花费' }}</text>
         <view class="input-group">
-          <input type="digit" v-model="editForm.price" placeholder="金额 ¥ (必填)" class="input-line" />
+          <input type="digit" v-model="editForm.price" placeholder="金额 ¥ (必填)" class="input-line" @blur="onPriceBlur" />
           <input v-model="editForm.name" placeholder="备注/物品名称" class="input-line" />
           <picker mode="date" :value="editForm.date" @change="onDateChange">
             <view class="input-line picker-line">日期：{{ editForm.date }}</view>
@@ -368,6 +368,15 @@ const onDateChange = (e) => {
   editForm.value.date = e.detail.value
 }
 
+const onPriceBlur = () => {
+  if (editForm.value.price) {
+    const val = parseFloat(editForm.value.price)
+    if (!isNaN(val)) {
+      editForm.value.price = val.toFixed(2)
+    }
+  }
+}
+
 const openModal = (mode, item = null) => {
   modalMode.value = mode
   if (mode === 'add') {
@@ -381,7 +390,10 @@ const openModal = (mode, item = null) => {
       id: '', price: '', name: '', date: dStr, category: currentCategory.value === '全部' ? categories.value[0].name : currentCategory.value, categoryId: currentCategory.value === '全部' ? categories.value[0].id : categories.value.find(c => c.name === currentCategory.value).id
     }
   } else {
-    editForm.value = { ...item }
+    editForm.value = { 
+      ...item,
+      price: item.price ? parseFloat(item.price).toFixed(2) : ''
+    }
     item.translateX = 0
   }
   showModal.value = true

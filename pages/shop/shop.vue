@@ -59,7 +59,7 @@
 
           <view class="item-body">
             <text class="num">数量：{{ item.num || '-' }}</text>
-            <text class="price" v-if="item.price && item.price !== ''">预估单价: ¥ {{ item.price }}</text>
+            <text class="price" v-if="item.price && item.price !== ''">{{ item.done ? '实际花费' : '预估单价' }}: ¥ {{ item.price }}</text>
           </view>
 
           <view class="item-footer">
@@ -196,6 +196,45 @@
         </view>
       </view>
     </view>
+    <!-- 实际消费确认弹窗 -->
+    <view class="modal-mask" v-if="showPurchaseModal" @click="showPurchaseModal = false">
+      <view class="modal-content" @click.stop>
+        <text class="modal-title">确认购买</text>
+        <view class="purchase-tip">
+          <text class="purchase-item-name">🛍️ {{ activeToggleItem?.name }}</text>
+          <text class="purchase-item-desc">数量：{{ activeToggleItem?.num || '1' }} | 预估单价：¥{{ activeToggleItem?.price || '0' }}</text>
+        </view>
+        <view class="input-group">
+          <view class="price-input-container">
+            <text class="price-symbol">¥</text>
+            <input 
+              type="digit" 
+              v-model="purchaseForm.price" 
+              placeholder="请输入实际消费总额" 
+              class="modal-input price-input-field" 
+              @blur="onPriceBlur"
+            />
+          </view>
+        </view>
+        
+        <view class="sync-checkboxes">
+          <view class="sync-checkbox-item" @click="purchaseForm.syncToCost = !purchaseForm.syncToCost">
+            <checkbox :checked="purchaseForm.syncToCost" color="var(--primary)" style="transform:scale(0.8);" />
+            <text class="checkbox-text">同步到花费账本</text>
+          </view>
+          <view class="sync-checkbox-item" @click="purchaseForm.syncToStock = !purchaseForm.syncToStock">
+            <checkbox :checked="purchaseForm.syncToStock" color="var(--primary)" style="transform:scale(0.8);" />
+            <text class="checkbox-text">同步到食材库存</text>
+          </view>
+        </view>
+
+        <view class="modal-btns">
+          <button class="cancel-btn" @click="showPurchaseModal = false">取消</button>
+          <button class="confirm-btn" @click="confirmPurchase">确定</button>
+        </view>
+      </view>
+    </view>
+
     <custom-tabbar />
   </view>
 </template>
@@ -213,6 +252,15 @@ let familyCode = uni.getStorageSync('family_code') || 'default_family';
 const refreshing = ref(false)
 const list = ref([])
 const isStatExpanded = ref(false)
+
+// 购买确认弹窗状态
+const showPurchaseModal = ref(false)
+const activeToggleItem = ref(null)
+const purchaseForm = ref({
+  price: '',
+  syncToCost: true,
+  syncToStock: true
+})
 
 // ========================分类管理========================
 const categories = ref([])
@@ -403,6 +451,115 @@ onShow(() => {
   }
 })
 
+const onPriceBlur = () => {
+  if (purchaseForm.value.price) {
+    const val = parseFloat(purchaseForm.value.price)
+    if (!isNaN(val)) {
+      purchaseForm.value.price = val.toFixed(2)
+    }
+  }
+}
+
+const toggle = (item) => {
+  if (item.done) return; // 勾选之后不能取消勾选
+  
+  activeToggleItem.value = item
+  
+  // 计算预估总价
+  const singlePrice = parseFloat(item.price)
+  const num = parseInt(item.num) || 1
+  let estPrice = ''
+  if (!isNaN(singlePrice)) {
+    estPrice = (singlePrice * num).toFixed(2)
+  }
+  
+  purchaseForm.value = {
+    price: estPrice,
+    syncToCost: true,
+    syncToStock: true
+  }
+  
+  showPurchaseModal.value = true
+}
+
+const confirmPurchase = async () => {
+  const item = activeToggleItem.value
+  if (!item) return
+  
+  const shouldSyncToCost = purchaseForm.value.syncToCost
+  const shouldSyncToStock = purchaseForm.value.syncToStock
+  let finalPrice = parseFloat(purchaseForm.value.price)
+  
+  if (shouldSyncToCost) {
+    if (!purchaseForm.value.price || isNaN(finalPrice) || finalPrice <= 0) {
+      return uni.showToast({ title: '请输入有效的实际消费金额', icon: 'none' })
+    }
+  } else {
+    // 如果不同步到花费，我们也算一个预估总价作为该项的实际花费
+    const singlePrice = parseFloat(item.price)
+    const num = parseInt(item.num) || 1
+    finalPrice = !isNaN(singlePrice) ? singlePrice * num : 0
+  }
+  
+  showPurchaseModal.value = false
+  
+  const newDone = true
+  const oldPrice = item.price
+  item.done = newDone // 乐观更新
+  item.price = finalPrice > 0 ? finalPrice.toFixed(2) : oldPrice
+  
+  try {
+    // 1. 更新购物车项为已购买状态，并写入实际花费总价
+    await shopApi.updateFamilyShoppingItem(familyCode, {
+      id: item.id,
+      name: item.name,
+      num: item.num,
+      price: finalPrice > 0 ? finalPrice.toFixed(2) : oldPrice,
+      categoryId: item.categoryId,
+      done: newDone
+    })
+    
+    // 2. 同步到食材库存
+    if (shouldSyncToStock) {
+      const ingredientItemJson = {
+        name: item.name,
+        num: item.num,
+        categoryId: item.categoryId,
+        expire_date: '',
+        has: true,
+      }
+      await stockApi.saveFamilyIngredientItem(familyCode, ingredientItemJson)
+    }
+    
+    // 3. 同步到花费账本
+    if (shouldSyncToCost && finalPrice > 0) {
+      const consumptionRecordJson = {
+        name: item.name,
+        price: finalPrice,
+        categoryId: item.categoryId,
+        date: new Date().toISOString().split('T')[0],
+      }
+      await costApi.saveFamilyConsumptionRecord(familyCode, consumptionRecordJson)
+    }
+    
+    // 提示
+    let tip = '购买成功'
+    if (shouldSyncToStock && shouldSyncToCost) {
+      tip = '已记账并同步食材'
+    } else if (shouldSyncToStock) {
+      tip = '已同步食材'
+    } else if (shouldSyncToCost) {
+      tip = '已记入花费账本'
+    }
+    uni.showToast({ title: tip, icon: 'success' })
+    load()
+  } catch (e) {
+    item.done = false // 回滚
+    item.price = oldPrice
+    uni.showToast({ title: '购买确认失败，请重试', icon: 'none' })
+  }
+}
+
 const load = async () => {
   try {
     uni.showLoading({ title: '加载中...' })
@@ -426,67 +583,6 @@ const switchCategory = (cat) => {
 }
 
 
-const toggle = async (item) => {
-  if (item.done) return; // 勾选之后不能取消勾选
-
-  const newDone = true
-  item.done = newDone // 乐观更新
-  
-  const proceedUpdate = async (shouldSyncToStock) => {
-    try {
-      await shopApi.updateFamilyShoppingItem(familyCode, {
-        id: item.id,
-        name: item.name,
-        num: item.num,
-        price: item.price,
-        categoryId: item.categoryId,
-        done: newDone
-      })
-      
-      if (shouldSyncToStock) {
-        // 走新增食材的接口   saveFamilyConsumptionRecord
-        const ingredientItemJson = {
-          name: item.name,
-          num: item.num,
-          categoryId: item.categoryId,
-          expire_date: '',
-          has: true,
-        }
-        await stockApi.saveFamilyIngredientItem(familyCode, ingredientItemJson)
-      }
-
-      if (newDone && item.price && parseFloat(item.price) > 0) {
-        // 购买后自动记账
-        const consumptionRecordJson = {
-          name: item.name,
-          price: item.price,
-          categoryId: item.categoryId,
-          date: new Date().toISOString().split('T')[0],
-        };
-        await costApi.saveFamilyConsumptionRecord(familyCode, consumptionRecordJson);
-        uni.showToast({ title: shouldSyncToStock ? '已同步并记账' : '已自动记账', icon: 'success' })
-      } else if (shouldSyncToStock) {
-        uni.showToast({ title: '已同步到食材', icon: 'success' })
-      }
-      load()
-    } catch (e) {
-      item.done = false // 回滚
-      uni.showToast({ title: '更新失败', icon: 'none' })
-    }
-  }
-
-  uni.showModal({
-    title: '同步提示',
-    content: '是否需要同步该物品到「家里食材」？',
-    confirmText: '是',
-    cancelText: '否',
-    confirmColor: '#FF7DA8',
-    success: (res) => {
-      proceedUpdate(res.confirm)
-    }
-  })
-}
-
 const clearDone = () => {
   if (doneCount.value === 0) {
     return uni.showToast({ title: '暂无已购买的物品', icon: 'none' });
@@ -500,29 +596,29 @@ const clearDone = () => {
         uni.showLoading({ title: '清理中...' })
         try {
           // 1. 先同步到库存 (如果是新增物品)
-          const doneItems = list.value.filter(item => item.done)
-          if (doneItems.length > 0) {
-            const syncRes = await uni.showModal({
-              title: '同步提示',
-              content: '是否将这些已购物品同步到「食材库存」中？',
-              confirmText: '同步',
-              cancelText: '仅清理'
-            })
+          // const doneItems = list.value.filter(item => item.done)
+          // if (doneItems.length > 0) {
+          //   const syncRes = await uni.showModal({
+          //     title: '同步提示',
+          //     content: '是否将这些已购物品同步到「食材库存」中？',
+          //     confirmText: '同步',
+          //     cancelText: '仅清理'
+          //   })
             
-            if (syncRes.confirm) {
-              uni.showLoading({ title: '同步中...' })
-              for (const item of doneItems) {
-                // 走新增食材接口
-                await stockApi.addStock({
-                  familyCode,
-                  name: item.name,
-                  num: item.num,
-                  categoryId: item.categoryId,
-                  has: true
-                })
-              }
-            }
-          }
+          //   if (syncRes.confirm) {
+          //     uni.showLoading({ title: '同步中...' })
+          //     for (const item of doneItems) {
+          //       // 走新增食材接口
+          //       await stockApi.addStock({
+          //         familyCode,
+          //         name: item.name,
+          //         num: item.num,
+          //         categoryId: item.categoryId,
+          //         has: true
+          //       })
+          //     }
+          //   }
+          // }
 
           // 2. 执行清理
           
@@ -740,8 +836,8 @@ const themeStyle = computed(() => {
 
 <style lang="less" scoped>
 .page {
-  background: #FAFAFA;
-  min-height: 100vh;
+  // background: #FAFAFA;
+  height: ~"calc(100vh - 170rpx)";
   // padding-bottom: 180rpx;
   background-image: linear-gradient(180deg, var(--primary-light) 0%, #FAFAFA 400rpx);
 }
@@ -1120,6 +1216,82 @@ zero-drag {
     font-size: 32rpx;
     font-weight: bold;
     line-height: 1;
+  }
+}
+
+/* 购买确认弹窗专有样式 */
+.purchase-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30rpx;
+  gap: 8rpx;
+  
+  .purchase-item-name {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #2C3E50;
+  }
+  
+  .purchase-item-desc {
+    font-size: 24rpx;
+    color: #95A5A6;
+  }
+}
+
+.price-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #F8F9FA;
+  border-radius: 24rpx;
+  margin-bottom: 30rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+  
+  &:focus-within {
+    border-color: var(--primary);
+    background: #FFF;
+  }
+  
+  .price-symbol {
+    position: absolute;
+    left: 30rpx;
+    font-size: 36rpx;
+    font-weight: bold;
+    color: var(--primary);
+  }
+  
+  .price-input-field {
+    flex: 1;
+    height: 90rpx;
+    padding: 0 30rpx 0 70rpx;
+    font-size: 36rpx;
+    font-weight: bold;
+    color: #2C3E50;
+    margin-bottom: 0; // 覆盖默认 modal-input 的 margin-bottom
+    border: none !important;
+    background: transparent !important;
+  }
+}
+
+.sync-checkboxes {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 40rpx;
+  width: 100%;
+  
+  .sync-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    cursor: pointer;
+    
+    .checkbox-text {
+      font-size: 26rpx;
+      color: #7F8C8D;
+      font-weight: bold;
+    }
   }
 }
 
