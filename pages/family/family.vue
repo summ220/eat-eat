@@ -171,7 +171,7 @@
             <text class="set-text">清除缓存</text>
             <text class="set-arrow"> 👉</text>
           </view>
-          <view class="set-item">
+          <view class="set-item" @click="showHelpPopup = true">
             <text class="set-icon">📖</text>
             <text class="set-text">使用帮助</text>
             <text class="set-arrow"> 👉</text>
@@ -285,6 +285,12 @@
       </view>
     </view>
 
+    <!-- 使用帮助/指南弹窗 -->
+    <help-popup
+      :show="showHelpPopup"
+      @close="showHelpPopup = false"
+    />
+
     <custom-tabbar />
   </view>
 </template>
@@ -311,6 +317,7 @@ import themePicker from './component/content/theme-picker.vue' // 个性主题�
 import joinFamilyPopup from './component/alert/join-family-popup.vue' // 加入新家庭弹窗
 import editFamilyPopup from './component/alert/edit-family-popup.vue' // 修改家庭名称弹窗
 import remindersPopup from './component/alert/reminders-popup.vue' // 智能管家提醒弹窗
+import helpPopup from './component/alert/help-popup.vue' // 使用帮助指南弹窗
 
 import config from '@/common/config'
 import request from '@/common/request.js'
@@ -381,6 +388,7 @@ const spendingTrendRef = ref(null)
 // --- 数据找回与密保双重验证系统 ---
 const showFamilyCodeModal = ref(false)
 const showSecuritySettingModal = ref(false)
+const showHelpPopup = ref(false)
 
 const openShowFamilyCodeModal = () => {
   showFamilyCodeModal.value = true

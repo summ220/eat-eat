@@ -102,7 +102,7 @@
         </view>
 
         <!-- 5. 推荐餐单 -->
-        <view class="section-box">
+        <!-- <view class="section-box">
           <view class="section-title">
             <text class="t-text">专属健康推荐</text>
             <text class="t-action more-link" @click="goToRecipes">查看更多 →</text>
@@ -130,7 +130,7 @@
               </view>
             </view>
           </view>
-        </view>
+        </view> -->
 
         <view class="footer-safe"></view>
       </view>
