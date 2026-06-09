@@ -176,9 +176,14 @@
             <text class="set-text">使用帮助</text>
             <text class="set-arrow"> 👉</text>
           </view>
-          <view class="set-item">
+          <view class="set-item" @click="showFeedbackPopup = true">
             <text class="set-icon">💬</text>
             <text class="set-text">意见反馈</text>
+            <text class="set-arrow"> 👉</text>
+          </view>
+          <view class="set-item" @click="showAdminFeedbackPopup = true" v-if="familyCode === 'fam_edabd3e2094819c7'">
+            <text class="set-icon">📬</text>
+            <text class="set-text">馆长收信箱 (管理)</text>
             <text class="set-arrow"> 👉</text>
           </view>
           <view class="set-item version">
@@ -291,6 +296,18 @@
       @close="showHelpPopup = false"
     />
 
+    <!-- 时光邮局意见反馈弹窗 -->
+    <feedback-popup
+      :show="showFeedbackPopup"
+      @close="showFeedbackPopup = false"
+    />
+
+    <!-- 管理员专属：馆长收信箱弹窗 -->
+    <admin-feedback-popup
+      :show="showAdminFeedbackPopup"
+      @close="showAdminFeedbackPopup = false"
+    />
+
     <custom-tabbar />
   </view>
 </template>
@@ -318,6 +335,8 @@ import joinFamilyPopup from './component/alert/join-family-popup.vue' // 加入�
 import editFamilyPopup from './component/alert/edit-family-popup.vue' // 修改家庭名称弹窗
 import remindersPopup from './component/alert/reminders-popup.vue' // 智能管家提醒弹窗
 import helpPopup from './component/alert/help-popup.vue' // 使用帮助指南弹窗
+import feedbackPopup from './component/alert/feedback-popup.vue' // 时光邮局反馈弹窗
+import adminFeedbackPopup from './component/alert/admin-feedback-popup.vue' // 管理员收信箱弹窗
 
 import config from '@/common/config'
 import request from '@/common/request.js'
@@ -389,6 +408,8 @@ const spendingTrendRef = ref(null)
 const showFamilyCodeModal = ref(false)
 const showSecuritySettingModal = ref(false)
 const showHelpPopup = ref(false)
+const showFeedbackPopup = ref(false)
+const showAdminFeedbackPopup = ref(false)
 
 const openShowFamilyCodeModal = () => {
   showFamilyCodeModal.value = true

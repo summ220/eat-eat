@@ -429,4 +429,24 @@ export default {
     return request('/family/meal/photo/upload', 'POST', { family_code: familyCode, imageData })
   },
 
+  // 提交意见反馈
+  submitFeedback(feedbackType, content, contact) {
+    return request('/feedback', 'POST', { type: feedbackType, content, contact })
+  },
+
+  // 获取意见反馈信箱列表
+  getFeedbackList() {
+    return request('/feedback/list', 'GET')
+  },
+
+  // 【管理员】获取全量意见反馈信件列表
+  getAdminFeedbackList() {
+    return request('/admin/feedback/list', 'GET')
+  },
+
+  // 【管理员】提笔给反馈信件回信
+  replyFeedback(feedbackId, replyText) {
+    return request('/admin/feedback/reply', 'POST', { feedbackId, replyText })
+  }
+
 } 
