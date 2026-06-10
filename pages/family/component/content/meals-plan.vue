@@ -767,8 +767,7 @@ defineExpose({
 }
 
 .mp-scroll-body {
-  flex: 1;
-  height: 0;
+  max-height: 60vh; /* 显式高度，防止 iOS WebKit 下使用 flex 导致 scroll-view 高度计算塌陷为 0 不显示 */
   padding: 20rpx 40rpx 180rpx;
   box-sizing: border-box;
 }

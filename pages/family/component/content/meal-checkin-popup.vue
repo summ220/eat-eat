@@ -287,8 +287,7 @@ const submitCheckin = async () => {
 }
 
 .mc-scroll-body {
-  flex: 1;
-  height: 0;
+  max-height: 55vh; /* 显式给定高度，防止 iOS WebKit 下使用 flex 导致 scroll-view 高度计算塌陷为 0 不显示 */
   padding: 30rpx 40rpx;
   box-sizing: border-box;
 }
