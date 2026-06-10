@@ -51,6 +51,9 @@
       <button class="btn-round" :class="{ 'btn-shake': isBtnShaking }" hover-class="btn-hover" @click="getRandomDish">
         🎲 帮我选一个！
       </button>
+      
+      <!-- 极为低调雅致的自定义抽菜池小字链接 -->
+      <text class="manage-pool-link" @click.stop="showRandomMenuModal = true">✨ 自定义抽菜池</text>
     </view>
 
     <!-- 底部引导文案 / 小装饰 -->
@@ -327,18 +330,128 @@
       :dateStr="todayDateString"
     />
 
+    <!-- 随机抽菜池管理弹窗 -->
+    <view class="modal-mask flex-center " v-if="showRandomMenuModal" @click="showRandomMenuModal = false">
+      <view class="modal-card config-modal" @click.stop style="padding: 40rpx; width: 620rpx; margin-top: 0; align-items: stretch; display: flex; flex-direction: column; box-sizing: border-box;">
+        <text class="modal-title" style="margin-bottom: 20rpx; font-size: 34rpx; font-weight: 800; color: #2C3E50; text-align: center;">抽菜池配置</text>
+        
+        <!-- 场景 Tab 切换 -->
+        <view class="scene-tabs">
+          <view
+            class="scene-tab"
+            v-for="tab in sceneTabs"
+            :key="tab.type"
+            :class="{ active: activeType === tab.type }"
+            @click="activeType = tab.type"
+          >
+            <text class="tab-icon">{{ tab.icon }}</text>
+            <text class="tab-label">{{ tab.label }}</text>
+          </view>
+        </view>
+
+        <scroll-view scroll-y style="max-height: 460rpx; margin-top: 24rpx; margin-bottom: 16rpx;" :show-scrollbar="false">
+          <view class="cat-manage-list">
+            <view class="cat-manage-item" v-for="(dish, idx) in filteredMenu" :key="dish.id || idx">
+              <text class="dish-name-text">{{ dish.name || dish }}</text>
+              <text class="del-cat" @click="removeRandomDish(dish)">删除</text>
+            </view>
+            <view class="cat-manage-item empty-tip" v-if="filteredMenu.length === 0" style="justify-content: center; color: #999; font-size: 24rpx; border-bottom: none;">
+              <text>该分类暂无菜品~</text>
+            </view>
+          </view>
+        </scroll-view>
+
+        <view class="add-cat-box">
+          <input class="add-cat-input" v-model="newRandomDish" :placeholder="'新增' + sceneTabs.find(t => t.type === activeType).label + '菜品'" cursor-spacing="40" />
+          <view class="add-cat-btn" @click="addRandomDish">添加</view>
+        </view>
+        
+        <button class="close-modal-btn" @click="showRandomMenuModal = false" style="margin-top: 20rpx;">完成</button>
+      </view>
+    </view>
+
     <custom-tabbar />
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { onShow, onPullDownRefresh, onShareAppMessage } from '@dcloudio/uni-app'
 import familyApi from '@/common/api/family.js'
 import welcomeAd from '@/pages/welcome/welcome-ad.vue'
 import sharePoster from '@/components/share-poster/share-poster.vue'
 
 const familyCode = ref(uni.getStorageSync('family_code') || 'default_family')
+
+// --- 随机抽菜池配置自治管理 ---
+const showRandomMenuModal = ref(false)
+const newRandomDish = ref('')
+const activeType = ref('做饭') // 默认自己做
+
+// 场景 tab 配置
+const sceneTabs = [
+  { label: '自己做', type: '做饭', icon: '🍳' },
+  { label: '外卖',   type: '外卖', icon: '🛫' },
+  { label: '出去吃', type: '堂食', icon: '🏪' }
+]
+
+// 过滤后的随机菜池（弹框管理中展示用）
+const filteredMenu = computed(() => {
+  return randomMenuPool.value.filter(dish => {
+    const t = dish.type
+    if (activeType.value === '做饭') return !t || t === '做饭' || t === 'manual'
+    return t === activeType.value
+  })
+})
+
+const addRandomDish = async () => {
+  const val = newRandomDish.value.trim()
+  if (!val) return
+  const exists = randomMenuPool.value.some(dish => (dish.name || dish) === val)
+  if (exists) {
+    return uni.showToast({ title: '菜品已在池中', icon: 'none' })
+  }
+  const dishJson = { name: val, type: activeType.value }
+  try {
+    await familyApi.saveFamilyRecipePoolItem(familyCode.value, dishJson)
+    uni.showToast({ title: '添加成功', icon: 'none' })
+    newRandomDish.value = ''
+    loadRandomMenuPool()
+  } catch (e) {
+    uni.showToast({ title: '添加失败', icon: 'none' })
+  }
+}
+
+const removeRandomDish = async (dish) => {
+  if (!dish.id) {
+    uni.showToast({ title: '默认菜品无法删除', icon: 'none' })
+    return
+  }
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要从抽菜池删除“${dish.name}”吗？`,
+    confirmText: '删除',
+    confirmColor: '#FF4D6D',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await familyApi.deleteFamilyRecipePoolItem(dish.id)
+          uni.showToast({ title: '已删除', icon: 'none' })
+          loadRandomMenuPool()
+        } catch (e) {
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        }
+      }
+    }
+  })
+}
+
+// 监听弹框开启，刷新菜单池
+watch(showRandomMenuModal, (newVal) => {
+  if (newVal) {
+    loadRandomMenuPool()
+  }
+})
 const showResultModal = ref(false)
 const shareImgPath = ref('')
 const sharePosterRef = ref(null)
@@ -1258,5 +1371,138 @@ const getRandomDish = () => {
 @keyframes cardSlideUp {
   from { transform: translateY(80rpx) scale(0.95); opacity: 0; }
   to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* 自定义抽菜池小链接 */
+.manage-pool-link {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 18rpx;
+  text-decoration: underline;
+  letter-spacing: 1rpx;
+  text-align: center;
+  transition: all 0.2s;
+  display: block;
+  font-weight: 500;
+  
+  &:active {
+    opacity: 0.85;
+    color: rgba(255, 255, 255, 0.95);
+  }
+}
+
+/* 场景配置弹窗内部样式 */
+.config-modal {
+  background: #ffffff;
+  border-radius: 20rpx;
+  .scene-tabs {
+    display: flex;
+    gap: 16rpx;
+    margin-top: 10rpx;
+  }
+  
+  .scene-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6rpx;
+    padding: 16rpx 0;
+    border-radius: 20rpx;
+    background: #F5F6F7;
+    transition: all 0.2s;
+    
+    .tab-icon { font-size: 30rpx; }
+    .tab-label { font-size: 22rpx; color: #999; font-weight: 500; }
+    
+    &.active {
+      background: var(--primary-light, #FFE8EE);
+      .tab-label { color: var(--primary, #FF6B8B); font-weight: 700; }
+    }
+    
+    &:active { transform: scale(0.95); }
+  }
+  
+  .cat-manage-list {
+    display: flex;
+    flex-direction: column;
+    
+    .cat-manage-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24rpx 0;
+      border-bottom: 2rpx solid #F5F6F7;
+      font-size: 28rpx;
+      color: #2C3E50;
+      
+      .dish-name-text {
+        font-weight: 500;
+      }
+      
+      .del-cat {
+        font-size: 24rpx;
+        color: #FF4D6D;
+        font-weight: bold;
+        padding: 6rpx 16rpx;
+        &:active {
+          opacity: 0.7;
+        }
+      }
+    }
+  }
+  
+  .add-cat-box {
+    display: flex;
+    gap: 20rpx;
+    margin-top: 20rpx;
+    margin-bottom: 30rpx;
+    
+    .add-cat-input {
+      flex: 1;
+      height: 80rpx;
+      background: #F8F9FA;
+      border-radius: 20rpx;
+      padding: 0 30rpx;
+      font-size: 28rpx;
+      color: #2C3E50;
+      text-align: left;
+    }
+    
+    .add-cat-btn {
+      width: 140rpx;
+      height: 80rpx;
+      background: var(--primary);
+      color: #fff;
+      font-size: 28rpx;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 20rpx;
+      box-shadow: 0 8rpx 16rpx var(--primary-shadow);
+      &:active {
+        transform: scale(0.95);
+        opacity: 0.9;
+      }
+    }
+  }
+}
+
+.close-modal-btn {
+  width: 100%;
+  height: 90rpx;
+  line-height: 90rpx;
+  background: #F5F6F7;
+  color: #7F8C8D;
+  font-size: 28rpx;
+  font-weight: bold;
+  border-radius: 100rpx;
+  margin-top: 10rpx;
+  border: none;
+  &::after { border: none; }
+  &:active {
+    background: #EAEAEA;
+  }
 }
 </style>

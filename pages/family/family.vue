@@ -114,12 +114,12 @@
       </view>
 
       <!-- 5. 快捷功能宫格 -->
-      <view class="section quick-section">
+      <!-- <view class="section quick-section">
         <view class="section-title"><text class="title-text">快捷功能</text></view>
         <quick-features
           :family-code="familyCode"
         />
-      </view>
+      </view> -->
 
       <!-- 6. 饮食偏好设置 -->
       <view class="section prefs-section">
@@ -131,13 +131,13 @@
       </view>
 
       <!-- 7. 消费趋势卡片 -->
-      <view class="section trend-section">
+      <!-- <view class="section trend-section">
         <view class="section-title"><text class="title-text">近7日开销</text></view>
         <spending-trend
           ref="spendingTrendRef"
           :family-code="familyCode"
         />
-      </view>
+      </view> -->
 
       <!-- 8. 主题切换 -->
       <view class="section theme-section">

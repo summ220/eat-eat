@@ -60,7 +60,7 @@ const props = defineProps({
 })
 
 const quickFuncs = ref([
-  { icon: '🎲', name: '抽菜配置' },
+  // { icon: '🎲', name: '抽菜配置' },
   { icon: '🦺', name: '随手记' },
   { icon: '📓', name: '饮食日记' },
   { icon: '💵', name: '清空花费' },
