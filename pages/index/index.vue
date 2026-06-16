@@ -4,6 +4,13 @@
 
   <view class="page" :style="themeStyle" v-if="hasFamily">
     <gourmet-refresher :refreshing="refreshing" type="index" :theme="currentTheme" />
+    
+    <!-- 灵动漂浮极光背景 (Orbs) -->
+    <view class="aura-container">
+      <view class="aura-orb orb-1"></view>
+      <view class="aura-orb orb-2"></view>
+    </view>
+
     <!-- 顶部标题 -->
     <view class="header">
       <view class="title-wrap">
@@ -13,15 +20,38 @@
       <text class="sub-title">别纠结啦，交给我来决定～</text>
     </view>
 
-    <!-- 随机抽菜卡片模块 -->
-    <view class="random-card"
-      :class="{ 'breathe-anim': !isRolling }"
+    <!-- 食材架 (场景选择区) -->
+    <view class="ingredients-shelf">
+      <view class="shelf-label">
+        <text class="shelf-emoji">🥗</text>
+        <text class="shelf-title">挑选食材投入锅中</text>
+      </view>
+      <view class="ingredients-list">
+        <view 
+          class="ingredient-bubble" 
+          v-for="s in scenes" 
+          :key="s.type"
+          :class="{ active: currentScene === s.type }"
+          @click="switchSceneWithAnim(s.type)"
+        >
+          <view class="bubble-icon-wrap">
+            <text class="bubble-icon">{{ s.icon }}</text>
+          </view>
+          <text class="bubble-text">{{ s.label }}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 投掷食材坠入锅中的临时抛物线小气泡 -->
+    <view v-if="isThrowing && throwingScene" class="throwing-ingredient-item">
+      <text class="throwing-icon">{{ throwingScene.icon }}</text>
+    </view>
+
+    <!-- 咕嘟咕嘟大炖锅与蒸汽云朵区域 -->
+    <view class="pot-zone"
       @touchstart="onTouchStart"
-      @touchmove.stop.prevent
       @touchend="onTouchEnd"
     >
-      <view class="random-bg"></view>
-      
       <!-- 庆祝小金币/花瓣/Emoji粒子飘落彩蛋 -->
       <view v-if="isCelebrating" class="celebration-particles">
         <view v-for="(p, index) in particles" :key="index" class="particle" :style="p.style">
@@ -29,27 +59,64 @@
         </view>
       </view>
 
-      <!-- 场景指示器 -->
-      <view class="scene-indicator">
-        <text class="scene-icon">{{ currentSceneObj.icon }}</text>
-        <text class="scene-label">{{ currentSceneObj.label }}</text>
-        <view class="scene-dots">
-          <view v-for="s in scenes" :key="s.type" class="scene-dot" :class="{ active: currentScene === s.type }"></view>
+      <!-- 挂在锅区右上角的小风铃挂饰 (自定义抽菜池) -->
+      <view class="pot-hang-tag" @click.stop="showRandomMenuModal = true">
+        <view class="hang-string"></view>
+        <view class="hang-board">
+          <text class="hang-emoji">🧺</text>
+          <text class="hang-text">菜池</text>
         </view>
       </view>
 
-      <text class="dish-label">{{ rollTip }}</text>
-      
-      <view class="result-wrap">
-        <text class="dish-text" :class="{ 'dish-big': result !== '点击开始抽菜～', 'bounce-anim': isCelebrating }">{{ result }}</text>
-        <!-- 抽中后的温柔治愈文案 -->
-        <text v-if="result !== '点击开始抽菜～' && !isRolling" class="result-warm-tips">{{ currentResultPhrase }}</text>
+      <!-- 锅上方的香气/蒸汽云朵 (Steam Cloud) -->
+      <view class="steam-cloud" :class="{ 'steam-rolling': isRolling }">
+        <view class="steam-bg"></view>
+        <view class="steam-content">
+          <text class="steam-tip">{{ rollTip }}</text>
+          <text class="steam-result" :class="{ 'result-highlight': result !== '点击开始抽菜～', 'bounce-anim': isCelebrating }">
+            {{ result }}
+          </text>
+          <text v-if="result !== '点击开始抽菜～' && !isRolling" class="result-warm-tips">
+            {{ currentResultPhrase }}
+          </text>
+        </view>
       </view>
 
-      <text class="swipe-hint">← 滑动切换场景 →</text>
+      <!-- 拟物化高水准大炖锅 (The Pot) -->
+      <view class="gourmet-pot" :class="{ 'pot-boiling': isRolling, 'pot-splash': isPotSplashing }">
+        <!-- 锅盖 -->
+        <view class="pot-lid" :class="{ 'lid-jumping': isRolling }">
+          <view class="lid-handle"></view>
+        </view>
+        <!-- 锅身 -->
+        <view class="pot-body">
+          <view class="pot-shimmer"></view>
+          <view class="pot-brand">GOURMET POT</view>
+          <!-- 锅耳 -->
+          <view class="pot-ear ear-left"></view>
+          <view class="pot-ear ear-right"></view>
+          
+          <!-- 食材坠入时喷洒的小汤珠特效 -->
+          <view class="pot-splashes" v-if="isPotSplashing">
+            <view class="splash-drop drop-1"></view>
+            <view class="splash-drop drop-2"></view>
+            <view class="splash-drop drop-3"></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 锅底温润炉火 (Fire Glow) -->
+      <view class="pot-fire" :class="{ 'fire-blazing': isRolling }">
+        <view class="flame flame-1"></view>
+        <view class="flame flame-2"></view>
+        <view class="flame flame-3"></view>
+        <view class="fire-glow"></view>
+      </view>
+
+      <text class="swipe-hint">← 滑动屏幕也可切换食材架 →</text>
       
       <button class="btn-round" :class="{ 'btn-shake': isBtnShaking }" hover-class="btn-hover" @click="getRandomDish">
-        🎲 帮我选一个！
+        🍲 咕嘟咕嘟！帮我选一个
       </button>
       
       <!-- 极为低调雅致的自定义抽菜池小字链接 -->
@@ -322,7 +389,7 @@
     <!-- 隐藏 Canvas 绘制海报组件 -->
     <share-poster 
       ref="sharePosterRef"
-      :themeColor="themes[currentTheme].color"
+      :themeColor="currentThemeColor"
       :result="result"
       :sceneIcon="currentSceneObj.icon"
       :sceneLabel="currentSceneObj.label"
@@ -707,6 +774,34 @@ const scenes = [
 ]
 const currentScene = ref('做饭')
 const currentSceneObj = computed(() => scenes.find(s => s.type === currentScene.value) || scenes[0])
+const sliderStyle = computed(() => {
+  const idx = scenes.findIndex(s => s.type === currentScene.value)
+  return `transform: translateX(${idx * 100}%);`
+})
+
+// 治愈炖锅动效状态
+const throwingScene = ref(null)
+const isThrowing = ref(false)
+const isPotSplashing = ref(false)
+
+const switchSceneWithAnim = (sceneType) => {
+  if (isRolling.value || isThrowing.value) return
+  throwingScene.value = scenes.find(s => s.type === sceneType)
+  isThrowing.value = true
+  
+  // 气泡落入锅内时触发溅水/溅热气效果
+  setTimeout(() => {
+    isPotSplashing.value = true
+  }, 300)
+  
+  setTimeout(() => {
+    currentScene.value = sceneType
+    result.value = '点击开始抽菜～'
+    isThrowing.value = false
+    isPotSplashing.value = false
+    throwingScene.value = null
+  }, 700)
+}
 
 // 按场景过滤抽菜池
 const activePool = computed(() => {
@@ -722,16 +817,14 @@ const activePool = computed(() => {
 let touchStartX = 0
 const onTouchStart = (e) => { touchStartX = e.touches[0].clientX }
 const onTouchEnd = (e) => {
-  if (isRolling.value) return
+  if (isRolling.value || isThrowing.value) return
   const dx = e.changedTouches[0].clientX - touchStartX
   if (Math.abs(dx) < 40) return
   const idx = scenes.findIndex(s => s.type === currentScene.value)
   if (dx < 0 && idx < scenes.length - 1) {
-    currentScene.value = scenes[idx + 1].type
-    result.value = '点击开始抽菜～'
+    switchSceneWithAnim(scenes[idx + 1].type)
   } else if (dx > 0 && idx > 0) {
-    currentScene.value = scenes[idx - 1].type
-    result.value = '点击开始抽菜～'
+    switchSceneWithAnim(scenes[idx - 1].type)
   }
 }
 
@@ -744,13 +837,25 @@ const themes = [
 ]
 const currentTheme = ref(uni.getStorageSync('current_theme') || 0)
 const themeStyle = computed(() => {
-  const t = themes[currentTheme.value]
+  let idx = parseInt(currentTheme.value, 10)
+  if (isNaN(idx) || idx < 0 || idx >= themes.length) {
+    idx = 0
+  }
+  const t = themes[idx]
   return `
     --primary: ${t.color};
     --primary-grad: ${t.gradient};
     --primary-light: ${t.light};
     --primary-shadow: ${t.shadow};
   `
+})
+
+const currentThemeColor = computed(() => {
+  let idx = parseInt(currentTheme.value, 10)
+  if (isNaN(idx) || idx < 0 || idx >= themes.length) {
+    idx = 0
+  }
+  return themes[idx].color
 })
 
 // 治愈系动效控制状态
@@ -892,15 +997,69 @@ const getRandomDish = () => {
 
 <style lang="less" scoped>
 .page {
-  padding: 40rpx 40rpx 180rpx 40rpx;
+  padding: 40rpx 40rpx 220rpx 40rpx;
   min-height: 100vh;
   box-sizing: border-box;
   background: linear-gradient(180deg, var(--primary-light) 0%, #FFFFFF 100%);
   transition: background 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 极光背景容器 */
+.aura-container {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  
+  .aura-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(150rpx);
+    opacity: 0.35;
+    mix-blend-mode: multiply;
+    animation: floatOrb 25s infinite ease-in-out;
+    will-change: transform;
+  }
+  
+  .orb-1 {
+    width: 450rpx;
+    height: 450rpx;
+    background: var(--primary);
+    top: 10%;
+    left: -100rpx;
+    animation-duration: 22s;
+  }
+  
+  .orb-2 {
+    width: 500rpx;
+    height: 500rpx;
+    background: #FFD485;
+    bottom: 25%;
+    right: -150rpx;
+    animation-delay: -5s;
+  }
+}
+
+@keyframes floatOrb {
+  0%, 100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(50rpx, 100rpx) scale(1.15) rotate(120deg);
+  }
+  66% {
+    transform: translate(-30rpx, -50rpx) scale(0.9) rotate(240deg);
+  }
 }
 
 .header {
-  margin: 120rpx 0 60rpx;
+  margin: 80rpx 0 32rpx;
+  position: relative;
+  z-index: 10;
+  
   .title-wrap {
     display: flex;
     align-items: center;
@@ -909,7 +1068,7 @@ const getRandomDish = () => {
   .main-title {
     font-size: 52rpx;
     font-weight: 800;
-    color: #333;
+    color: #333333;
     letter-spacing: 2rpx;
   }
   .badge {
@@ -925,256 +1084,704 @@ const getRandomDish = () => {
   }
   .sub-title {
     font-size: 28rpx;
-    color: #888;
+    color: #888888;
     font-weight: 500;
   }
 }
 
-.random-card {
+/* 食材架样式 */
+.ingredients-shelf {
   position: relative;
-  background: var(--primary-grad);
-  border-radius: 48rpx;
-  padding: 100rpx 40rpx;
-  text-align: center;
-  box-shadow: 0 16rpx 40rpx var(--primary-shadow);
+  z-index: 10;
   margin-bottom: 40rpx;
-  overflow: visible; /* 为了飘洒花瓣特效不被裁剪 */
-  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
   
-  .random-bg {
-    position: absolute;
-    right: -40rpx;
-    top: -40rpx;
-    width: 200rpx;
-    height: 200rpx;
-    background: rgba(255,255,255,0.08);
-    border-radius: 50%;
+  .shelf-label {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    margin-bottom: 24rpx;
+    padding-left: 14rpx;
+    
+    .shelf-emoji { 
+      font-size: 34rpx; 
+      filter: drop-shadow(0 2rpx 4rpx rgba(0,0,0,0.06));
+    }
+    .shelf-title {
+      font-size: 26rpx;
+      color: #8A7E72;
+      font-weight: 800;
+      letter-spacing: 2rpx;
+      position: relative;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -6rpx;
+        left: 0;
+        width: 32rpx;
+        height: 4rpx;
+        background: var(--primary);
+        border-radius: 2rpx;
+        transition: background 0.3s;
+      }
+    }
   }
 
-  .dish-label {
-    display: block;
-    color: rgba(255,255,255,0.85);
-    font-size: 26rpx;
-    margin-bottom: 30rpx;
-    letter-spacing: 4rpx;
-    font-weight: bold;
+  /* 精致的原木托底托盘线 */
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -6rpx;
+    left: 16rpx;
+    right: 16rpx;
+    height: 8rpx;
+    background: linear-gradient(to bottom, #EAD7BE, #CCA47D);
+    border-radius: 4rpx;
+    box-shadow: 0 4rpx 10rpx rgba(138, 113, 79, 0.12);
+    z-index: 1;
   }
-  .result-wrap {
+
+  .ingredients-list {
+    display: flex;
+    justify-content: space-between;
+    gap: 22rpx;
+    position: relative;
+    z-index: 2;
+    padding-bottom: 12rpx;
+    
+    .ingredient-bubble {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14rpx;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1.5rpx solid rgba(255, 255, 255, 0.85);
+      border-radius: 40rpx;
+      padding: 26rpx 10rpx;
+      transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 
+        0 6rpx 18rpx rgba(138, 113, 79, 0.03),
+        inset 0 2rpx 4rpx rgba(255,255,255,0.6);
+      
+      /* 温润呼吸感漂浮 */
+      animation: bubbleSoftFloat 4s infinite ease-in-out alternate;
+      
+      &:nth-child(1) { animation-delay: 0s; }
+      &:nth-child(2) { animation-delay: -0.9s; }
+      &:nth-child(3) { animation-delay: -1.8s; }
+      &:nth-child(4) { animation-delay: -2.7s; }
+      
+      .bubble-icon-wrap {
+        width: 86rpx;
+        height: 86rpx;
+        background: #FFFDF9;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 
+          0 4rpx 10rpx rgba(138, 113, 79, 0.05),
+          inset 0 -2rpx 6rpx rgba(138, 113, 79, 0.02);
+        border: 1rpx solid rgba(0,0,0,0.02);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        
+        .bubble-icon {
+          font-size: 44rpx;
+          transition: transform 0.3s ease;
+        }
+      }
+      
+      .bubble-text {
+        font-size: 22rpx;
+        color: #8A7E72;
+        font-weight: 700;
+        transition: color 0.3s;
+      }
+      
+      &:active {
+        transform: scale(0.93) translateY(2rpx);
+      }
+      
+      /* 激活高亮状态：精致轻巧的卡口式沉降激活 */
+      &.active {
+        background: #FFFDF9;
+        border-color: var(--primary);
+        box-shadow: 
+          0 16rpx 32rpx var(--primary-shadow),
+          inset 0 2rpx 6rpx rgba(255,255,255,0.8);
+        transform: translateY(-12rpx);
+        animation-play-state: paused; /* 激活时停止随机漂浮，静止高亮 */
+        
+        .bubble-icon-wrap {
+          transform: scale(1.18) rotate(6deg);
+          background: var(--primary-grad);
+          box-shadow: 0 8rpx 20rpx var(--primary-shadow);
+          border-color: transparent;
+          
+          .bubble-icon {
+            transform: scale(1.05);
+          }
+        }
+        
+        .bubble-text {
+          color: var(--primary);
+          font-weight: 800;
+        }
+      }
+    }
+  }
+}
+
+/* 气泡呼吸漂浮动画 */
+@keyframes bubbleSoftFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-8rpx); }
+}
+
+/* 抛物线食材落锅动画 */
+.throwing-ingredient-item {
+  position: absolute;
+  z-index: 99;
+  width: 90rpx;
+  height: 90rpx;
+  background: var(--primary-light);
+  border: 4rpx solid #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12rpx 24rpx rgba(0,0,0,0.08);
+  animation: throwArc 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  pointer-events: none;
+  
+  .throwing-icon {
+    font-size: 44rpx;
+  }
+}
+
+@keyframes throwArc {
+  0% {
+    top: 250rpx;
+    left: 50%;
+    transform: translate(-50%, 0) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translate(-50%, -100rpx) scale(1.2) rotate(180deg);
+  }
+  100% {
+    top: 600rpx;
+    left: 50%;
+    transform: translate(-50%, 0) scale(0.5) rotate(360deg);
+    opacity: 0.1;
+  }
+}
+
+/* 咕嘟咕嘟大炖锅与蒸汽云朵交互区 */
+.pot-zone {
+  position: relative;
+  z-index: 5;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(40rpx);
+  -webkit-backdrop-filter: blur(40rpx);
+  border: 2rpx solid rgba(255, 255, 255, 0.85);
+  border-radius: 56rpx;
+  padding: 46rpx 36rpx 36rpx 36rpx;
+  text-align: center;
+  box-shadow: 
+    0 10rpx 30rpx rgba(0, 0, 0, 0.01),
+    0 24rpx 60rpx rgba(60, 54, 48, 0.02);
+  margin-bottom: 30rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  /* 粒子撒花特效容器 */
+  .celebration-particles {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2rpx;
+    height: 2rpx;
+    z-index: 99;
+    pointer-events: none;
+    
+    .particle {
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-size: 38rpx;
+      line-height: 1;
+      white-space: nowrap;
+      animation: particleExplode 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    }
+  }
+
+  /* 悬挂定制菜池小风铃牌子 */
+  .pot-hang-tag {
+    position: absolute;
+    top: 0;
+    right: 40rpx;
+    z-index: 100;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 200rpx;
+    cursor: pointer;
+    
+    .hang-string {
+      width: 2rpx;
+      height: 40rpx;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.08) 50%, rgba(255,255,255,0.4) 100%);
+    }
+    
+    .hang-board {
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(10rpx);
+      -webkit-backdrop-filter: blur(10rpx);
+      border: 1.5rpx solid rgba(255, 255, 255, 0.95);
+      border-radius: 14rpx;
+      padding: 8rpx 14rpx;
+      box-shadow: 
+        0 6rpx 16rpx rgba(0, 0, 0, 0.02),
+        0 2rpx 8rpx rgba(255, 107, 139, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6rpx;
+      transform-origin: top center;
+      animation: hangSwing 3s infinite ease-in-out alternate;
+      
+      .hang-emoji {
+        font-size: 22rpx;
+      }
+      
+      .hang-text {
+        font-size: 18rpx;
+        color: #8A7E72;
+        font-weight: 800;
+        letter-spacing: 0.5rpx;
+      }
+    }
+    
+    &:active .hang-board {
+      transform: scale(0.93) rotate(5deg);
+      background: var(--primary-light);
+    }
   }
-  .dish-text {
-    font-size: 44rpx;
-    color: #fff;
-    font-weight: 500;
+
+  /* 蒸汽云朵 - 升级为法式轻奢极简磨砂舱 */
+  .steam-cloud {
+    position: relative;
+    width: 530rpx;
+    height: 220rpx;
+    margin-bottom: 72rpx;
+    z-index: 10;
     transition: all 0.3s;
+    
+    .steam-bg {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255, 255, 255, 0.76);
+      backdrop-filter: blur(36rpx);
+      -webkit-backdrop-filter: blur(36rpx);
+      border-radius: 46rpx;
+      box-shadow: 
+        0 10rpx 36rpx rgba(0, 0, 0, 0.01),
+        0 20rpx 48rpx -12rpx var(--primary-shadow);
+      z-index: 1;
+      border: 1.5rpx solid rgba(255, 255, 255, 0.9);
+    }
+    
+    .steam-content {
+      position: relative;
+      z-index: 2;
+      padding: 24rpx 36rpx;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 220rpx;
+      box-sizing: border-box;
+    }
+    
+    .steam-tip {
+      font-size: 23rpx;
+      color: #9E9184;
+      font-weight: 700;
+      margin-bottom: 12rpx;
+      letter-spacing: 1.5rpx;
+    }
+    
+    .steam-result {
+      font-size: 38rpx;
+      color: #3C3630;
+      font-weight: 800;
+      letter-spacing: 2rpx;
+      transition: all 0.3s ease;
+      display: block;
+      line-height: 1.35;
+    }
+    
+    .result-highlight {
+      font-size: 48rpx;
+      font-weight: 900;
+      background: var(--primary-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4rpx 10rpx var(--primary-shadow));
+    }
+    
+    /* 优雅的极细渐变香气线 */
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      bottom: -28rpx;
+      width: 3rpx;
+      height: 60rpx;
+      background: linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.75) 50%, rgba(255,255,255,0) 100%);
+      filter: blur(1rpx);
+      border-radius: 50%;
+      opacity: 0;
+      z-index: -1;
+    }
+    &::before { left: 40%; animation: steamLineRise 2.4s infinite linear; }
+    &::after { right: 40%; animation: steamLineRise 2.4s infinite linear 1.2s; }
+    
+    &.steam-rolling {
+      animation: steamFloat 1.8s ease-in-out infinite alternate;
+    }
+  }
+
+  /* 拟物化大炖锅 - 升级为法式双耳珐琅锅 */
+  .gourmet-pot {
+    position: relative;
+    width: 290rpx;
+    height: 165rpx;
+    margin-bottom: 16rpx;
+    z-index: 5;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    
+    .pot-lid {
+      position: absolute;
+      top: -16rpx;
+      left: 15rpx;
+      width: 260rpx;
+      height: 18rpx;
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(12rpx);
+      -webkit-backdrop-filter: blur(12rpx);
+      border-radius: 12rpx 12rpx 4rpx 4rpx;
+      border: 2rpx solid rgba(255, 255, 255, 0.85);
+      z-index: 10;
+      box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.03);
+      transition: transform 0.15s ease;
+      
+      .lid-handle {
+        position: absolute;
+        top: -12rpx;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 32rpx;
+        height: 14rpx;
+        background: linear-gradient(135deg, #FFEED4 0%, #D4AF37 100%);
+        border-radius: 20rpx 20rpx 0 0;
+        box-shadow: 0 2rpx 4rpx rgba(0,0,0,0.1);
+        border: 1rpx solid rgba(255,255,255,0.5);
+      }
+      
+      &.lid-jumping {
+        animation: lidJump 0.22s infinite alternate;
+      }
+    }
+    
+    .pot-body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 290rpx;
+      height: 142rpx;
+      background: var(--primary-grad);
+      border-radius: 8rpx 8rpx 54rpx 54rpx;
+      border: 2rpx solid rgba(255, 255, 255, 0.85);
+      box-shadow: 
+        0 12rpx 36rpx rgba(0, 0, 0, 0.04),
+        0 20rpx 40rpx -10rpx var(--primary-shadow),
+        inset 0 -12rpx 20rpx rgba(0,0,0,0.06);
+      z-index: 5;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      
+      .pot-shimmer {
+        position: absolute;
+        top: 0;
+        left: -80%;
+        width: 160%;
+        height: 100%;
+        background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.15) 45%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.15) 55%, transparent 70%);
+        transform: skewX(-20deg);
+        pointer-events: none;
+      }
+      
+      .pot-brand {
+        font-size: 16rpx;
+        color: rgba(255, 255, 255, 0.55);
+        font-weight: 800;
+        letter-spacing: 5rpx;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      }
+      
+      .pot-ear {
+        position: absolute;
+        top: 24rpx;
+        width: 14rpx;
+        height: 38rpx;
+        background: linear-gradient(to bottom, #FFEED4, #D4AF37);
+        border: 1.5rpx solid rgba(255, 255, 255, 0.6);
+        border-radius: 6rpx;
+        z-index: -1;
+      }
+      .ear-left {
+        left: -12rpx;
+        transform: rotate(-5deg);
+      }
+      .ear-right {
+        right: -12rpx;
+        transform: rotate(5deg);
+      }
+
+      /* 食材落锅汤珠飞溅 */
+      .pot-splashes {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 80rpx;
+        height: 60rpx;
+        z-index: 99;
+        pointer-events: none;
+        
+        .splash-drop {
+          position: absolute;
+          background: rgba(255, 255, 255, 0.85);
+          border-radius: 50%;
+          
+          &.drop-1 {
+            width: 8rpx;
+            height: 8rpx;
+            left: 35%;
+            animation: splashL 0.45s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+          }
+          &.drop-2 {
+            width: 8rpx;
+            height: 8rpx;
+            right: 35%;
+            animation: splashR 0.45s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+          }
+          &.drop-3 {
+            width: 6rpx;
+            height: 6rpx;
+            left: 50%;
+            animation: splashC 0.38s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+          }
+        }
+      }
+    }
+    
+    &.pot-boiling {
+      animation: potShake 0.15s infinite;
+      
+      .pot-body .pot-shimmer {
+        animation: shimmerMove 1.5s infinite linear;
+      }
+    }
+    
+    &.pot-splash {
+      animation: potSplashAnim 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+  }
+
+  /* 锅底温润炉火 - 升级为高雅感应呼吸火光 */
+  .pot-fire {
+    position: relative;
+    width: 200rpx;
+    height: 30rpx;
+    margin-bottom: 64rpx;
+    display: flex;
+    justify-content: center;
+    
+    .flame {
+      display: none; /* 去除原本的卡通火焰块 */
+    }
+    
+    .fire-glow {
+      position: absolute;
+      bottom: -6rpx;
+      width: 140rpx;
+      height: 18rpx;
+      background: radial-gradient(circle, rgba(255, 172, 85, 0.55) 0%, rgba(255, 107, 139, 0.2) 60%, transparent 100%);
+      filter: blur(8rpx);
+      border-radius: 50%;
+      opacity: 0.85;
+      animation: fireBreathe 2s infinite ease-in-out alternate;
+    }
+    
+    &.fire-blazing {
+      .fire-glow {
+        background: radial-gradient(circle, rgba(255, 120, 60, 0.85) 0%, rgba(255, 50, 100, 0.4) 60%, transparent 100%);
+        filter: blur(12rpx);
+        transform: scale(1.35);
+        animation: fireBreathe 0.5s infinite ease-in-out alternate;
+      }
+    }
+  }
+
+  .swipe-hint {
+    font-size: 18rpx;
+    color: #C1B5A9;
+    letter-spacing: 1rpx;
+    margin-bottom: 24rpx;
     display: block;
   }
-  .dish-big {
-    font-size: 64rpx;
-    font-weight: bold;
-    text-shadow: 0 6rpx 16rpx rgba(0,0,0,0.1);
-  }
+
   .btn-round {
-    background: #fff;
-    color: var(--primary);
+    background: var(--primary-grad);
+    color: #ffffff;
     border-radius: 100rpx;
-    font-size: 32rpx;
-    font-weight: bold;
-    padding: 0 80rpx;
-    height: 96rpx;
-    line-height: 96rpx;
-    margin-top: 60rpx;
-    display: inline-block;
-    box-shadow: 0 10rpx 24rpx rgba(0,0,0,0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    font-size: 28rpx;
+    font-weight: 800;
+    padding: 0 60rpx;
+    height: 84rpx;
+    line-height: 84rpx;
+    box-shadow: 0 16rpx 36rpx var(--primary-shadow);
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: none;
     &::after { border: none; }
+    
+    &:active {
+      transform: scale(0.94) translateY(4rpx);
+      box-shadow: 0 8rpx 16rpx var(--primary-shadow);
+    }
   }
-  .btn-hover {
-    transform: scale(0.95);
-    box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.03);
+
+  .manage-pool-link {
+    font-size: 22rpx;
+    color: #8A7E72;
+    margin-top: 25rpx;
+    text-decoration: underline;
+    letter-spacing: 1rpx;
+    text-align: center;
+    transition: all 0.2s;
+    display: block;
+    font-weight: 700;
+    
+    &:active {
+      opacity: 0.85;
+      color: var(--primary);
+    }
   }
 }
 
-/* 呼吸动效 */
-.breathe-anim {
-  animation: cardBreathe 4s ease-in-out infinite;
-}
-@keyframes cardBreathe {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 16rpx 40rpx var(--primary-shadow);
-  }
-  50% {
-    transform: scale(1.015);
-    box-shadow: 0 24rpx 50rpx var(--primary-shadow);
-  }
+/* 食材气泡轻微漂浮 */
+@keyframes bubbleFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-8rpx); }
 }
 
-/* 按钮轻微晃动 */
-.btn-shake {
-  animation: btnWobble 0.8s ease;
-}
-@keyframes btnWobble {
-  0%, 100% { transform: scale(1) rotate(0); }
-  15% { transform: scale(1.04) rotate(-3deg); }
-  30% { transform: scale(1.04) rotate(3deg); }
-  45% { transform: scale(1.02) rotate(-1.5deg); }
-  60% { transform: scale(1.02) rotate(1.5deg); }
-  75% { transform: scale(1.01) rotate(-0.5deg); }
-  90% { transform: scale(1.01) rotate(0.5deg); }
+/* 右上角定制牌子随风晃动 */
+@keyframes hangSwing {
+  0% { transform: rotate(-5deg); }
+  100% { transform: rotate(5deg); }
 }
 
-/* 文字弹跳 */
-.bounce-anim {
-  animation: resultBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+/* 锅内水珠飞溅 */
+@keyframes splashL {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+  100% { transform: translate(-50rpx, -50rpx) scale(0.1); opacity: 0; }
 }
-@keyframes resultBounce {
-  0% { transform: scale(0.6); }
-  70% { transform: scale(1.15); }
-  100% { transform: scale(1); }
+@keyframes splashR {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+  100% { transform: translate(50rpx, -50rpx) scale(0.1); opacity: 0; }
+}
+@keyframes splashC {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+  100% { transform: translate(0, -60rpx) scale(0.1); opacity: 0; }
 }
 
-/* 庆祝粒子飘洒 */
-.celebration-particles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 50;
+/* 蒸汽云朵漂浮动画 */
+@keyframes steamFloat {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-12rpx) scale(1.02); }
 }
-.particle {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  font-size: 40rpx;
-  will-change: transform, opacity;
-  animation: particleExplode 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+
+/* 锅身左右震动 */
+@keyframes potShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-3rpx, 2rpx) rotate(-1deg); }
+  50% { transform: translate(3rpx, -1rpx) rotate(1deg); }
+  75% { transform: translate(-2rpx, -2rpx) rotate(-0.5deg); }
 }
+
+/* 锅盖弹跳 */
+@keyframes lidJump {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-10rpx) rotate(3deg); }
+}
+
+/* 锅盖溅水溅热气回弹 */
+@keyframes potSplashAnim {
+  0% { transform: scaleY(1) translateY(0); }
+  40% { transform: scaleY(0.88) translateY(18rpx); }
+  70% { transform: scaleY(1.04) translateY(-6rpx); }
+  100% { transform: scaleY(1) translateY(0); }
+}
+
+/* 火苗抖动 */
+@keyframes flameWiggle {
+  0% { transform: scaleX(0.9) rotate(-2deg); }
+  100% { transform: scaleX(1.1) rotate(2deg); }
+}
+
+/* 锅内高光流动 */
+@keyframes shimmerMove {
+  0% { left: -80%; }
+  100% { left: 100%; }
+}
+
+/* 渐变蒸汽香气线冉冉升起 */
+@keyframes steamLineRise {
+  0% { transform: translateY(30rpx) scaleX(0.7); opacity: 0; }
+  25% { opacity: 0.55; }
+  80% { opacity: 0.3; }
+  100% { transform: translateY(-70rpx) scaleX(1.3); opacity: 0; }
+}
+
+/* 锅底莫兰迪火光呼吸 */
+@keyframes fireBreathe {
+  0% { transform: scale(0.96); opacity: 0.75; }
+  100% { transform: scale(1.04); opacity: 0.95; }
+}
+
+/* 庆祝粒子四散爆开动画 */
 @keyframes particleExplode {
   0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(var(--tx), var(--ty)) scale(1.2) rotate(var(--rot));
+    transform: translate(-50%, -50%) translate(0, 0) scale(0) rotate(0deg);
     opacity: 0;
   }
-}
-
-/* 温柔治愈的反馈文字 */
-.result-warm-tips {
-  font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.85);
-  margin-top: 20rpx;
-  display: block;
-  animation: fadeInTips 0.8s ease forwards;
-  font-weight: 500;
-}
-@keyframes fadeInTips {
-  from { opacity: 0; transform: translateY(10rpx); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* 底部引导文案 / 小装饰 */
-.footer-decoration {
-  margin-top: 20rpx;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 40rpx 20rpx;
-  
-  .line {
-    width: 60rpx;
-    height: 6rpx;
-    background: var(--primary-light);
-    border-radius: 10rpx;
-    margin-bottom: 30rpx;
-    opacity: 0.8;
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(calc(var(--tx) * 0.25), calc(var(--ty) * 0.25)) scale(1.3) rotate(calc(var(--rot) * 0.25));
   }
-  .footer-tips {
-    font-size: 28rpx;
-    color: #666;
-    line-height: 1.6;
-    margin-bottom: 16rpx;
-    padding: 0 40rpx;
-    font-weight: 500;
-    text-align: center;
+  75% {
+    opacity: 0.9;
   }
-  .footer-sub {
-    font-size: 22rpx;
-    color: #bbb;
-    letter-spacing: 1rpx;
+  100% {
+    transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) scale(0.5) rotate(var(--rot));
+    opacity: 0;
   }
-  .decor-dots {
-    display: flex;
-    gap: 12rpx;
-    margin-top: 40rpx;
-    .dot {
-      width: 10rpx;
-      height: 10rpx;
-      background: #EAEAEA;
-      border-radius: 50%;
-      &.active {
-        background: var(--primary);
-        width: 30rpx;
-        border-radius: 10rpx;
-        transition: all 0.3s;
-      }
-    }
-  }
-}
-/* 场景指示器 */
-.scene-indicator {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10rpx;
-  margin-bottom: 20rpx;
-
-  .scene-icon { font-size: 40rpx; }
-
-  .scene-label {
-    font-size: 24rpx;
-    color: rgba(255, 255, 255, 0.9);
-    font-weight: 700;
-    letter-spacing: 2rpx;
-  }
-
-  .scene-dots {
-    display: flex;
-    gap: 10rpx;
-    margin-top: 4rpx;
-
-    .scene-dot {
-      width: 10rpx;
-      height: 10rpx;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.35);
-      transition: all 0.3s;
-
-      &.active {
-        width: 28rpx;
-        border-radius: 10rpx;
-        background: rgba(255, 255, 255, 0.9);
-      }
-    }
-  }
-}
-
-/* 滑动切换提示 */
-.swipe-hint {
-  font-size: 20rpx;
-  color: rgba(255, 255, 255, 0.45);
-  letter-spacing: 1rpx;
-  margin-bottom: 20rpx;
-  display: block;
 }
 
 /* 精美单独展示弹窗 */
@@ -1373,22 +1980,20 @@ const getRandomDish = () => {
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-/* 自定义抽菜池小链接 */
-.manage-pool-link {
-  font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.65);
-  margin-top: 18rpx;
-  text-decoration: underline;
-  letter-spacing: 1rpx;
-  text-align: center;
-  transition: all 0.2s;
+/* 温柔治愈的反馈文字 */
+.result-warm-tips {
+  font-size: 25rpx;
+  color: #8A7E72;
+  margin-top: 24rpx;
   display: block;
-  font-weight: 500;
-  
-  &:active {
-    opacity: 0.85;
-    color: rgba(255, 255, 255, 0.95);
-  }
+  animation: fadeInTips 0.8s ease forwards;
+  font-weight: 600;
+  padding: 0 20rpx;
+  line-height: 1.5;
+}
+@keyframes fadeInTips {
+  from { opacity: 0; transform: translateY(10rpx); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* 场景配置弹窗内部样式 */

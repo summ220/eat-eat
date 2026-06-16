@@ -79,7 +79,11 @@ const themes = [
 
 const activeThemeIdx = computed(() => {
   const t = props.theme !== null && props.theme !== undefined ? props.theme : uni.getStorageSync('current_theme')
-  return t !== null && t !== undefined ? Number(t) : 0
+  const num = Number(t)
+  if (isNaN(num) || num < 0 || num >= themes.length) {
+    return 0
+  }
+  return num
 })
 
 const localThemeStyle = computed(() => {
