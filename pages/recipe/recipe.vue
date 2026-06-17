@@ -404,7 +404,9 @@ const themeStyle = computed(() => {
   flex: 1;
   display: flex;
   align-items: center;
-  padding: 20rpx 30rpx;
+  height: 64rpx;
+  box-sizing: border-box;
+  padding: 0 30rpx;
   background: #ffffff;
   border-radius: 100rpx;
   box-shadow: 0 12rpx 30rpx rgba(0,0,0,0.03);
@@ -412,14 +414,14 @@ const themeStyle = computed(() => {
 }
 .search-icon {
   margin-right: 16rpx;
-  font-size: 32rpx;
+  font-size: 28rpx;
   color: var(--primary);
   transition: transform 0.3s ease;
 }
 .search-input {
   flex: 1;
-  height: 26rpx;
-  font-size: 28rpx;
+  height: 36rpx;
+  font-size: 26rpx;
   color: #333;
   border: none;
   background: transparent;
@@ -444,7 +446,7 @@ const themeStyle = computed(() => {
 .category-wrapper {
   display: flex;
   align-items: center;
-  margin-bottom: 24rpx;
+  margin-bottom: 20rpx;
   width: 100%;
 }
 .category-bar {
@@ -456,14 +458,14 @@ const themeStyle = computed(() => {
 .category-chip {
   display: inline-flex;
   align-items: center;
-  padding: 14rpx 36rpx;
+  padding: 8rpx 28rpx; /* 调矮上下padding */
   border-radius: 100rpx;
   background: rgba(0, 0, 0, 0.04);
   color: #888;
-  font-size: 27rpx;
+  font-size: 25rpx;
   font-weight: 600;
   transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-  margin-right: 16rpx;
+  margin-right: 14rpx;
   margin-left: 4rpx;
   border: 2rpx solid transparent;
   letter-spacing: 0.5rpx;
@@ -471,22 +473,22 @@ const themeStyle = computed(() => {
 .category-chip.active {
   background: var(--primary-grad);
   color: #fff;
-  transform: scale(1.05);
+  transform: scale(1.04);
   box-shadow: 0 8rpx 20rpx var(--primary-shadow);
   border-color: transparent;
 }
 
 .add-chip {
-  font-size: 32rpx;
+  font-size: 26rpx;
   color: var(--primary);
   background: var(--primary-light);
   flex-shrink: 0;
   margin-right: 0;
-  margin-left: 16rpx;
+  margin-left: 14rpx;
   border-radius: 50%;
   border: 1px solid var(--primary);
-  width: 48rpx;
-  height: 48rpx;
+  width: 40rpx; /* 调小圆形添加分类按钮 */
+  height: 40rpx;
   display: flex;
   justify-content: center;
   align-items: center;

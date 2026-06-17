@@ -3,9 +3,9 @@
   <gourmet-refresher :refreshing="refreshing" type="shop" />
   <view class="page" :style="themeStyle">
     <view class="top-actions-bar">
-      <button class="action-btn-top add" @click="goSmartInput">+ 智能输入</button>
       <button class="action-btn-top clear" @click="clearDone">清空已购</button>
       <button class="action-btn-top add" @click="goAdd">+ 新增</button>
+      <button class="action-btn-top smart" @click="goSmartInput">✨ 智能输入</button>
     </view>
 
     <view class="main-layout">
@@ -870,6 +870,12 @@ const themeStyle = computed(() => {
     border: 2rpx solid var(--primary);
   }
   &.add {
+    background: var(--primary-grad);
+    color: #fff;
+    border: none;
+    box-shadow: 0 6rpx 16rpx var(--primary-shadow);
+  }
+  &.smart {
     background: var(--primary-grad);
     color: #fff;
     border: none;

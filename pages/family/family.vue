@@ -101,17 +101,7 @@
         />
       </view>
 
-      <!-- 4. 家庭备忘录入口 -->
-      <view class="section memo-section" @click="goToMemo">
-        <view class="section-title">
-          <text class="title-text">家庭备忘录</text>
-          <text class="action-text">查看 👉</text>
-        </view>
-        <memo-card
-          ref="memoCardRef"
-          :family-code="familyCode"
-        />
-      </view>
+
 
       <!-- 5. 快捷功能宫格 -->
       <!-- <view class="section quick-section">
@@ -308,6 +298,35 @@
       @close="showAdminFeedbackPopup = false"
     />
 
+    <!-- 悬浮和纸胶带备忘便签 -->
+    <movable-area class="memo-movable-area">
+      <movable-view 
+        class="floating-memo-tag" 
+        direction="all" 
+        :out-of-bounds="false"
+        :x="memoX"
+        :y="memoY"
+        @change="onMemoYChange"
+      >
+        <view 
+          class="floating-memo-tag-inner" 
+          :class="{ collapsed: isMemoCollapsed }"
+          @click="goToMemo"
+        >
+          <!-- 折叠开关图标：展开时显示 ›，收起时显示 ‹ -->
+          <view class="tape-btn" @click.stop="toggleMemoCollapse">
+            <text class="arrow-txt">{{ isMemoCollapsed ? '‹' : '›' }}</text>
+          </view>
+          
+          <!-- 仅在未折叠时显示备忘内容 -->
+          <view class="memo-content" v-if="!isMemoCollapsed">
+            <text class="memo-icon">📝</text>
+            <text class="memo-tag-text">备忘</text>
+          </view>
+        </view>
+      </movable-view>
+    </movable-area>
+
     <custom-tabbar />
   </view>
 </template>
@@ -322,7 +341,6 @@ import compassPopup from '@/components/compass-popup/compass-popup.vue' // 指�
 import mealsPlan from './component/content/meals-plan.vue' // 一体化自治三餐组件
 import familyMembers from './component/content/family-members.vue' // 家庭成员自治组件
 import healthCard from './component/content/health-card.vue' // 家庭健康简报卡片自治组件
-import memoCard from './component/content/memo-card.vue' // 家庭备忘录简报卡片自治组件
 import quickFeatures from './component/content/quick-features.vue' // 快捷功能及抽菜自治组件
 import switchFamilyPopup from './component/alert/switch-family-popup.vue' // 切换家庭弹窗
 import securitySettingPopup from './component/alert/security-setting-popup.vue' // 密保找回设置弹窗
@@ -358,9 +376,6 @@ const refreshAllData = async () => {
     }
     if (healthCardRef.value && typeof healthCardRef.value.loadHealthSummary === 'function') {
       promises.push(healthCardRef.value.loadHealthSummary())
-    }
-    if (memoCardRef.value && typeof memoCardRef.value.loadMemoPreview === 'function') {
-      promises.push(memoCardRef.value.loadMemoPreview())
     }
     if (dietPreferencesRef.value && typeof dietPreferencesRef.value.loadDietPreferences === 'function') {
       promises.push(dietPreferencesRef.value.loadDietPreferences())
@@ -400,7 +415,6 @@ const goToDietDiary = () => {
 const mealsPlanRef = ref(null)
 const familyMembersRef = ref(null)
 const healthCardRef = ref(null)
-const memoCardRef = ref(null)
 const dietPreferencesRef = ref(null)
 const spendingTrendRef = ref(null)
 
@@ -549,9 +563,6 @@ onShow(() => {
   }
   if (healthCardRef.value) {
     healthCardRef.value.loadHealthSummary()
-  }
-  if (memoCardRef.value) {
-    memoCardRef.value.loadMemoPreview()
   }
   if (dietPreferencesRef.value) {
     dietPreferencesRef.value.loadDietPreferences()
@@ -773,8 +784,40 @@ const goSetSecurity = () => {
   openSetSecurityModal()
 }
 
+const isMemoCollapsed = ref(uni.getStorageSync('memo_collapsed') || false)
+
+let windowWidth = 375
+try {
+  const sys = uni.getSystemInfoSync()
+  windowWidth = sys.windowWidth
+} catch (e) {}
+
+const getPx = (rpx) => rpx * (windowWidth / 750)
+const tagSizePx = getPx(90)
+const expandedX = windowWidth - tagSizePx - getPx(24) // 展开时贴右边缘（留24rpx距离）
+const collapsedX = windowWidth - getPx(56) // 折叠时滑出屏幕外，只在右边缘留出56rpx，使居中圆形图标恰好露在边缘内侧
+
+const memoX = ref(isMemoCollapsed.value ? collapsedX : expandedX)
+const memoY = ref(uni.getStorageSync('memo_y') !== '' ? Number(uni.getStorageSync('memo_y')) : getPx(780))
+
+const onMemoYChange = (e) => {
+  if (e.detail.source === 'touch') {
+    uni.setStorageSync('memo_y', e.detail.y)
+  }
+}
+
+const toggleMemoCollapse = () => {
+  isMemoCollapsed.value = !isMemoCollapsed.value
+  uni.setStorageSync('memo_collapsed', isMemoCollapsed.value)
+  memoX.value = isMemoCollapsed.value ? collapsedX : expandedX
+}
+
 const goToMemo = () => {
-  uni.navigateTo({ url: '/pages/family/component/singlePage/memo' })
+  if (isMemoCollapsed.value) {
+    toggleMemoCollapse()
+  } else {
+    uni.navigateTo({ url: '/pages/family/component/singlePage/memo' })
+  }
 }
 
 const goToHealth = () => {
@@ -1284,4 +1327,140 @@ const concatenatedReminders = computed(() => {
   height: 180rpx;
 }
 
+/* 悬浮和纸胶带便签拖拽区域及样式 */
+.memo-movable-area {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none; /* 穿透不影响底层点击 */
+  z-index: 99;
+}
+
+.floating-memo-tag {
+  pointer-events: auto; /* 恢复点击 */
+  width: 90rpx;
+  height: 90rpx;
+  
+  .floating-memo-tag-inner {
+    width: 100%;
+    height: 100%;
+    background: var(--primary-light);
+    opacity: 0.9;
+    border: 2rpx solid var(--primary);
+    border-radius: 16rpx;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 8rpx 20rpx var(--primary-shadow);
+    transform: rotate(-3deg); /* 手账贴纸倾斜感 */
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    
+    /* 顶部半透明折叠/展开开关小圆标 */
+    .tape-btn {
+      position: absolute;
+      top: -36rpx;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 32rpx;
+      height: 32rpx;
+      // background: var(--primary); /* 半透明粉色胶带色 */
+      opacity: 0.85;
+      border-radius: 50%;
+      box-shadow: 0 2rpx 8rpx var(--primary-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      
+      /* 扩大触控热区，方便一键折叠 */
+      &::after {
+        content: '';
+        position: absolute;
+        top: -15rpx;
+        left: -15rpx;
+        right: -15rpx;
+        bottom: -15rpx;
+      }
+      
+      .arrow-txt {
+        font-size: 24rpx;
+        color: var(--primary);
+        font-weight: bold;
+        line-height: 1;
+        position: relative;
+        top: -2rpx; /* 文字垂直微调 */
+        left: 1rpx;
+      }
+      
+      &:active {
+        opacity: 0.95;
+        transform: translateX(-50%) scale(0.9);
+      }
+    }
+    
+    &:active {
+      transform: scale(0.95) rotate(0deg);
+    }
+    
+    /* 折叠状态（只在屏幕边缘留存一个向左展开的半圆气泡图标 ‹） */
+    &.collapsed {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      transform: rotate(0deg);
+      
+      .tape-btn {
+        top: 28rpx;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0.85;
+        box-shadow: -2rpx 2rpx 8rpx var(--primary-shadow);
+        animation: tapePulse 2.5s infinite ease-in-out;
+        
+        .arrow-txt {
+          left: -1rpx; /* 折缩后‹的左侧对齐微调 */
+        }
+      }
+      
+      &:active {
+        transform: none;
+      }
+    }
+  }
+  
+  .memo-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .memo-icon {
+    font-size: 32rpx;
+    line-height: 1;
+    margin-bottom: 4rpx;
+    margin-top: 4rpx;
+  }
+  
+  .memo-tag-text {
+    font-size: 20rpx;
+    color: var(--primary);
+    font-weight: 800;
+    letter-spacing: 1rpx;
+    line-height: 1.2;
+  }
+}
+
+@keyframes tapePulse {
+  0%, 100% { opacity: 0.85; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.6; transform: translateX(-50%) scale(0.9); }
+}
 </style>
