@@ -7,7 +7,7 @@ import config from '../config.js'
  * @param {object} data 请求数据
  * @returns {Promise<any>}
  */
-const request = (url, method = 'POST', data = {}) => {
+const request = (url, method = 'POST', data = {}, headers = {}) => {
   return new Promise((resolve, reject) => {
     const fullUrl = url.startsWith('http') ? url : (config.apiBaseUrl || 'http://lw.feiyuf.top/api') + url
     const deviceId = uni.getStorageSync('device_id') || ''
@@ -16,16 +16,17 @@ const request = (url, method = 'POST', data = {}) => {
     uni.request({
       url: fullUrl,
       method: method,
-      header: {
+      header: Object.assign({
         'Content-Type': 'application/json',
         'X-Device-Id': deviceId,
-        'X-Device-Secret': deviceSecret
-      },
+        'X-Device-Secret': deviceSecret,
+        'X-User-Id': deviceId
+      }, headers),
       data: data,
       success: (res) => {
-        // 如果接口返回错误码，也应该 reject
-        if (res.data && res.data.code && res.data.code !== 0) {
-          reject(new Error(res.data.message || '请求失败'))
+        // 如果接口返回错误码，且既不是 0 也不是 200，则判定为失败并 reject
+        if (res.data && res.data.code !== undefined && res.data.code !== null && res.data.code !== 0 && res.data.code !== 200) {
+          reject(new Error(res.data.message || res.data.msg || '请求失败'))
         } else {
           resolve(res.data)
         }

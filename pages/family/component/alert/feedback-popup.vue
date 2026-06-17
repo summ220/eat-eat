@@ -212,66 +212,28 @@ const closeAndSwitch = () => {
   fetchFeedbackList()
 }
 
-// 获取信件列表（优先云端，降级为本地模拟回复）
+// 获取信件列表（对接服务端 /feedback/list）
 const fetchFeedbackList = async () => {
   try {
     const res = await familyApi.getFeedbackList()
-    if (res) {
-      const serverList = Array.isArray(res) ? res : (res.data || [])
-      const formattedList = serverList.map(item => ({
-        id: item.id || Date.now(),
-        type: item.type || 'love',
-        content: item.content || '',
-        contact: item.contact || '',
-        date: item.date || '',
-        replied: !!item.replied,
-        replyText: item.replyText || ''
-      }))
-      feedbackList.value = formattedList
-      uni.setStorageSync('my_sent_feedbacks', formattedList)
-      return
-    }
+    console.log(res, 'feedback')
+    const serverList = Array.isArray(res) ? res : (res && res.data ? res.data : [])
+    feedbackList.value = serverList.map(item => ({
+      id: item.id || Date.now(),
+      type: item.type || 'love',
+      content: item.content || '',
+      contact: item.contact || '',
+      date: item.date || '',
+      replied: !!item.replied,
+      replyText: item.replyText || ''
+    }))
   } catch (e) {
-    console.warn('从服务器获取信箱列表失败，降级为读取本地缓存:', e)
+    console.error('从服务器获取信箱列表失败:', e)
+    uni.showToast({ title: '拉取信件历史失败', icon: 'none' })
   }
-
-  // 降级本地缓存处理
-  const list = uni.getStorageSync('my_sent_feedbacks') || []
-  let modified = false
-  
-  const replyPool = {
-    love: [
-      '谢谢你的夸夸和鼓励呀！💖 听到你这么说，馆长做菜都更有动力了，今天也要好好吃饭哦 🍓',
-      '能帮到你真是太开心啦！这是我今天收到最温暖的礼物。我会继续加油优化的，啵啵～ ( *^-^)ρ(^0^* )',
-      '哇，比心比心！❤️ 收到小主的喜欢是我们的荣幸，以后会给你提供更疗愈的厨房助手体验！'
-    ],
-    idea: [
-      '收到你的奇思妙想啦！💡 这个建议太棒了，我已经用小本本记下来了，争取下次更新就安排上！💻',
-      '哇！这个做菜点子很有创意呢。我们会认真评估并规划实现它的，非常感谢你的大脑洞！✨',
-      '哈哈这个想法馆长也觉得很赞！已把它塞进下一版本优化清单里啦，十分感谢你帮小厨房成长！'
-    ],
-    bug: [
-      '哎呀呀，居然有小Bug跑出来了！🐛 谢谢你的反馈，我已经拉着程序员快马加鞭开始排查啦，我们会尽快捉虫的！🐜',
-      '给你添麻烦了，真抱歉！😢 我们已经收到反馈并着手定位原因了，感谢你的倾情守护！',
-      '收到虫子警报！💻 馆长已拿着苍蝇拍去抓Bug了，会尽快通过热更新修复，抱歉啦！'
-    ]
-  }
-
-  list.forEach(item => {
-    if (!item.replied && (Date.now() - item.id > 5000)) {
-      const pool = replyPool[item.type] || replyPool.love
-      item.replyText = pool[Math.floor(Math.random() * pool.length)]
-      item.replied = true
-      modified = true
-    }
-  })
-
-  if (modified) {
-    uni.setStorageSync('my_sent_feedbacks', list)
-  }
-  feedbackList.value = list
 }
 
+// 提交意见反馈（对接服务端 POST /feedback）
 const submitFeedback = async () => {
   if (!content.value.trim()) {
     uni.showToast({ title: '信纸上空空的，写点什么吧～', icon: 'none' })
@@ -280,38 +242,17 @@ const submitFeedback = async () => {
 
   isSending.value = true
   
-  const formattedDate = () => {
-    const d = new Date()
-    const month = d.getMonth() + 1
-    const day = d.getDate()
-    const hours = d.getHours().toString().padStart(2, '0')
-    const minutes = d.getMinutes().toString().padStart(2, '0')
-    return `${month}月${day}日 ${hours}:${minutes}`
-  }
-
-  const newFeedback = {
-    id: Date.now(),
-    type: activeType.value,
-    content: content.value,
-    contact: contact.value,
-    date: formattedDate(),
-    replied: false,
-    replyText: ''
-  }
-
   try {
-    await familyApi.submitFeedback(activeType.value, content.value, contact.value)
-  } catch (e) {
-    console.warn('接口提交失败，走本地数据存档及前端飞信逻辑:', e)
-  } finally {
-    const list = uni.getStorageSync('my_sent_feedbacks') || []
-    list.unshift(newFeedback)
-    uni.setStorageSync('my_sent_feedbacks', list)
-    
+    await familyApi.submitFeedback(activeType.value, content.value.trim(), contact.value.trim())
+    // 成功，触发飞信成功动效
     setTimeout(() => {
       isSending.value = false
       isSent.value = true
     }, 1800)
+  } catch (e) {
+    console.error('提交反馈接口调用失败:', e)
+    isSending.value = false
+    uni.showToast({ title: '投递失败，请稍后重试', icon: 'none' })
   }
 }
 </script>

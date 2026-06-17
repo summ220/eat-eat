@@ -171,7 +171,7 @@
             <text class="set-text">意见反馈</text>
             <text class="set-arrow"> 👉</text>
           </view>
-          <view class="set-item" @click="showAdminFeedbackPopup = true" v-if="familyCode === 'fam_edabd3e2094819c7'">
+          <view class="set-item" @click="showAdminFeedbackPopup = true" v-if="isAdmin">
             <text class="set-icon">📬</text>
             <text class="set-text">馆长收信箱 (管理)</text>
             <text class="set-arrow"> 👉</text>
@@ -183,7 +183,7 @@
           </view>
         </view>
         <view class="brand-info">
-          <text>家庭小厨房 • 用心记录每一餐</text>
+          <text @click="handleVersionClick">家庭小厨房 • 用心记录每一餐</text>
         </view>
       </view>
       <view class="footer-safe"></view>
@@ -295,7 +295,7 @@
     <!-- 管理员专属：馆长收信箱弹窗 -->
     <admin-feedback-popup
       :show="showAdminFeedbackPopup"
-      @close="showAdminFeedbackPopup = false"
+      @close="handleCloseAdminFeedback"
     />
 
     <!-- 悬浮和纸胶带备忘便签 -->
@@ -335,6 +335,7 @@
 import { ref, computed } from 'vue'
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import familyApi from '@/common/api/family.js'
+import stockApi from '@/common/api/stock.js'
 import weatherPopup from '@/components/weather-popup/weather-popup.vue' // 天气预警弹窗
 import calendarPopup from '@/components/calendar-popup/calendar-popup.vue' // 万年历弹窗
 import compassPopup from '@/components/compass-popup/compass-popup.vue' // 指南针弹窗
@@ -424,6 +425,45 @@ const showSecuritySettingModal = ref(false)
 const showHelpPopup = ref(false)
 const showFeedbackPopup = ref(false)
 const showAdminFeedbackPopup = ref(false)
+
+const isAdmin = ref(false)
+const versionClickCount = ref(0)
+let versionClickTimer = null
+
+const handleVersionClick = () => {
+  versionClickCount.value++
+  if (versionClickCount.value === 1) {
+    versionClickTimer = setTimeout(() => {
+      versionClickCount.value = 0
+    }, 3000)
+  }
+  if (versionClickCount.value >= 5) {
+    clearTimeout(versionClickTimer)
+    versionClickCount.value = 0
+    uni.showModal({
+      title: '馆长身份认证',
+      placeholderText: '请输入馆长专属暗号',
+      editable: true,
+      success: (res) => {
+        if (res.confirm) {
+          const code = res.content.trim()
+          if (code === '馆长驾到' || code === 'eat-eat-admin') {
+            isAdmin.value = true
+            uni.showToast({ title: '馆长身份已激活！', icon: 'success' })
+          } else {
+            uni.showToast({ title: '暗号错误，认证失败', icon: 'none' })
+          }
+        }
+      }
+    })
+  }
+}
+
+const handleCloseAdminFeedback = () => {
+  showAdminFeedbackPopup.value = false
+  isAdmin.value = false
+  uni.showToast({ title: '馆长身份已注销', icon: 'none' })
+}
 
 const openShowFamilyCodeModal = () => {
   showFamilyCodeModal.value = true
@@ -645,20 +685,17 @@ const initDateWeather = () => {
   getWeather()
 }
 
-// 智能提醒
+// 智能提醒 (纯前端真实计算与分析)
 const reminders = ref([])
 
-const updateReminders = () => {
-  const list = [
-    { type: 'warning', icon: '⚠️', text: '库存预警：鸡蛋仅剩 2 个', action: '加购' },
-    { type: 'danger', icon: '⏳', text: '过期提醒：鲜牛奶还有 2 天过期', action: '处理' },
-    { type: 'info', icon: '💡', text: '今日推荐：根据天气为您推荐「冬瓜排骨汤」', action: '查看' }
-  ]
-  
+const updateReminders = async () => {
+  const list = []
+
+  // 1. 安全提醒：如果用户是 Owner 并且没有配置密保
   if (familyRole.value === 'owner' && familyCode.value && familyCode.value !== 'default_family') {
     const hasSetSecurity = uni.getStorageSync('has_set_security_' + familyCode.value)
     if (!hasSetSecurity) {
-      list.unshift({
+      list.push({
         type: 'danger',
         icon: '🛡️',
         text: '安全提醒：当前家庭尚未设置数据找回密保，请尽快配置！',
@@ -666,7 +703,117 @@ const updateReminders = () => {
       })
     }
   }
+
+  // 2. 食材分析：通过接口拉取食材，计算已过期、临期与库存偏低食材
+  if (familyCode.value) {
+    try {
+      const res = await stockApi.getFamilyIngredientItems(familyCode.value, '')
+      const items = res?.data?.items || []
+      
+      const now = new Date()
+      now.setHours(0, 0, 0, 0)
+      
+      const expiredItems = []
+      const nearExpiredItems = []
+      const shortageItems = []
+      
+      items.forEach(item => {
+        // 过期/临期判断
+        if (item.expire_date) {
+          const target = new Date(item.expire_date)
+          target.setHours(0, 0, 0, 0)
+          const diffTime = target.getTime() - now.getTime()
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          
+          if (diffDays < 0) {
+            expiredItems.push(item)
+          } else if (diffDays <= 3) {
+            nearExpiredItems.push(item)
+          }
+        }
+        
+        // 库存偏低判断 (比如 num <= 2)
+        if (item.num !== undefined && item.num !== null) {
+          const numVal = parseFloat(item.num)
+          if (!isNaN(numVal) && numVal <= 2 && numVal >= 0) {
+            shortageItems.push(item)
+          } else {
+            const numStr = String(item.num).trim()
+            if (numStr && ['0', '1', '2', '少', '无', '空', '缺'].some(flag => numStr.includes(flag))) {
+              shortageItems.push(item)
+            }
+          }
+        }
+      })
+      
+      // 过期提醒：高优
+      if (expiredItems.length > 0) {
+        const names = expiredItems.slice(0, 2).map(i => i.name).join('、')
+        const suffix = expiredItems.length > 2 ? '等' : ''
+        list.push({
+          type: 'danger',
+          icon: '⏳',
+          text: `过期提醒：您有 ${expiredItems.length} 个食材已过期 (${names}${suffix})，建议及时清理。`,
+          action: '去清理'
+        })
+      }
+      
+      // 临期提醒
+      if (nearExpiredItems.length > 0) {
+        const names = nearExpiredItems.slice(0, 2).map(i => i.name).join('、')
+        const suffix = nearExpiredItems.length > 2 ? '等' : ''
+        list.push({
+          type: 'warning',
+          icon: '⚠️',
+          text: `临期预警：您的 ${names}${suffix} 食材即将过期，建议尽快做出美味哦。`,
+          action: '去整理'
+        })
+      }
+      
+      // 缺料/库存偏低提醒
+      if (shortageItems.length > 0) {
+        const names = shortageItems.slice(0, 2).map(i => i.name).join('、')
+        const suffix = shortageItems.length > 2 ? '等' : ''
+        list.push({
+          type: 'warning',
+          icon: '🛒',
+          text: `缺料预警：您的 ${names}${suffix} 食材库存偏低，建议提前采购补充。`,
+          action: '去采购'
+        })
+      }
+      
+    } catch (e) {
+      console.error('智能管家分析食材库存失败:', e)
+    }
+  }
+
+  // 3. 基于天气的智能饮食推荐
+  const weatherText = dateInfo.value.weather || ''
+  const tempVal = parseFloat(dateInfo.value.temp)
   
+  if (weatherText.includes('雨') || weatherText.includes('雪') || (!isNaN(tempVal) && tempVal < 15)) {
+    list.push({
+      type: 'info',
+      icon: '🍲',
+      text: '智能推荐：今日气温较低或有雨雪，管家建议煲一碗热气腾腾的「冬瓜排骨汤」暖胃～',
+      action: '去看看'
+    })
+  } else if (weatherText.includes('晴') && !isNaN(tempVal) && tempVal > 30) {
+    list.push({
+      type: 'info',
+      icon: '🍧',
+      text: '智能推荐：今日天气炎热，建议吃一碗解暑的「绿豆百合甜汤」消暑降火～',
+      action: '去看看'
+    })
+  } else {
+    list.push({
+      type: 'info',
+      icon: '💡',
+      text: '智能推荐：今日天气宜人，管家推荐做家常招牌菜「西红柿炒鸡蛋」，快去看看吧！',
+      action: '去看看'
+    })
+  }
+
   reminders.value = list
 }
 
@@ -740,9 +887,11 @@ const handleReminderAction = (r) => {
   if (r.icon === '🛡️' || r.action === '去设置') {
     openSetSecurityModal()
   } else {
-    if (r.action === '加购') {
+    if (r.action === '去采购' || r.action === '加购') {
       uni.switchTab({ url: '/pages/shop/shop' })
-    } else if (r.action === '查看' || r.action === '处理') {
+    } else if (r.action === '去清理' || r.action === '去整理' || r.action === '处理') {
+      uni.switchTab({ url: '/pages/stock/stock' })
+    } else if (r.action === '去看看' || r.action === '查看') {
       uni.switchTab({ url: '/pages/recipe/recipe' })
     }
   }

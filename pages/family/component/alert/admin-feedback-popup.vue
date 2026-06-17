@@ -6,7 +6,7 @@
       <view class="post-header">
         <text class="post-emoji">👩‍🍳</text>
         <view class="post-title-wrap">
-          <text class="post-title">馆长收信箱 (管理)</text>
+          <text class="post-title">馆长收信箱</text>
           <text class="post-sub">阅览小厨房用户寄来的每一封信，并予以回信</text>
         </view>
       </view>
@@ -158,26 +158,64 @@ const close = () => {
   emit('close')
 }
 
+// 提示输入 Token
+const promptToken = () => {
+  uni.showModal({
+    title: '管理员密码箱',
+    placeholderText: '请输入馆长管理 Token',
+    editable: true,
+    success: (res) => {
+      if (res.confirm) {
+        const token = res.content.trim()
+        if (token) {
+          uni.setStorageSync('admin_feedback_token', token)
+          loadAllFeedbacks()
+        } else {
+          uni.showToast({ title: 'Token 不能为空', icon: 'none' })
+          close()
+        }
+      } else {
+        close()
+      }
+    }
+  })
+}
+
 // 载入全部用户的意见反馈
 const loadAllFeedbacks = async () => {
+  const token = uni.getStorageSync('admin_feedback_token')
+  if (!token) {
+    promptToken()
+    return
+  }
+
   loading.value = true
   try {
-    const res = await familyApi.getAdminFeedbackList()
-    if (res) {
-      const list = Array.isArray(res) ? res : (res.data || [])
-      allFeedbacks.value = list.map(item => ({
-        id: item.id || Date.now(),
-        type: item.type || 'love',
-        content: item.content || '',
-        contact: item.contact || '',
-        date: item.date || '',
-        replied: !!item.replied,
-        replyText: item.replyText || ''
-      }))
-    }
+    const res = await familyApi.getAdminFeedbackList(token)
+    const list = Array.isArray(res) ? res : (res && res.data ? res.data : [])
+    allFeedbacks.value = list.map(item => ({
+      id: item.id || Date.now(),
+      type: item.type || 'love',
+      content: item.content || '',
+      contact: item.contact || '',
+      date: item.date || '',
+      replied: !!item.replied,
+      replyText: item.replyText || ''
+    }))
   } catch (e) {
     console.error('拉取管理员反馈列表失败:', e)
-    uni.showToast({ title: '拉取来信列表失败，请重试', icon: 'none' })
+    uni.showModal({
+      title: '拉取失败',
+      content: '管理员Token可能已过期或无效，是否重新输入？',
+      success: (confirmRes) => {
+        if (confirmRes.confirm) {
+          uni.removeStorageSync('admin_feedback_token')
+          promptToken()
+        } else {
+          close()
+        }
+      }
+    })
   } finally {
     loading.value = false
   }
@@ -191,18 +229,22 @@ const submitReply = async (item) => {
     return
   }
 
+  const token = uni.getStorageSync('admin_feedback_token')
+  if (!token) {
+    uni.showToast({ title: 'Token 未授权，请重新打开页面', icon: 'none' })
+    return
+  }
+
   isSubmitting.value = true
   uni.showLoading({ title: '飞鸽回传中...', mask: true })
 
   try {
-    const res = await familyApi.replyFeedback(item.id, replyContent.trim())
-    if (res) {
-      uni.showToast({ title: '回信成功寄出！', icon: 'success' })
-      // 前端更新状态
-      item.replied = true
-      item.replyText = replyContent.trim()
-      replyInputs[item.id] = '' // 清空输入框
-    }
+    await familyApi.replyFeedback(item.id, replyContent.trim())
+    uni.showToast({ title: '回信成功寄出！', icon: 'success' })
+    // 前端更新状态
+    item.replied = true
+    item.replyText = replyContent.trim()
+    replyInputs[item.id] = '' // 清空输入框
   } catch (e) {
     console.error('管理员回复信件失败:', e)
     uni.showToast({ title: '回复接口异常，请重试', icon: 'none' })
