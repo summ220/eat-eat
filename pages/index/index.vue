@@ -1109,7 +1109,7 @@ const getRandomDish = () => {
 
 <style lang="less" scoped>
 .page {
-  padding: 40rpx 40rpx 220rpx 40rpx;
+  padding: 36rpx 36rpx 190rpx 36rpx;
   min-height: 100vh;
   box-sizing: border-box;
   background: linear-gradient(180deg, var(--primary-light) 0%, #FFFFFF 100%);
@@ -1186,16 +1186,16 @@ const getRandomDish = () => {
   .badge {
     background: var(--primary-grad);
     color: #fff;
-    font-size: 20rpx;
-    padding: 6rpx 16rpx;
+    font-size: 19rpx;
+    padding: 5rpx 14rpx;
     border-radius: 20rpx 20rpx 20rpx 0;
-    margin-left: 20rpx;
+    margin-left: 18rpx;
     font-weight: bold;
-    transform: translateY(-8rpx);
+    transform: translateY(-7rpx);
     box-shadow: 0 4rpx 10rpx var(--primary-shadow);
   }
   .sub-title {
-    font-size: 28rpx;
+    font-size: 26rpx;
     color: #888888;
     font-weight: 500;
   }
@@ -1205,21 +1205,21 @@ const getRandomDish = () => {
 .ingredients-shelf {
   position: relative;
   z-index: 10;
-  margin-bottom: 40rpx;
+  margin-bottom: 32rpx;
   
   .shelf-label {
     display: flex;
     align-items: center;
-    gap: 12rpx;
-    margin-bottom: 24rpx;
-    padding-left: 14rpx;
+    gap: 11rpx;
+    margin-bottom: 20rpx;
+    padding-left: 12rpx;
     
     .shelf-emoji { 
-      font-size: 34rpx; 
+      font-size: 32rpx; 
       filter: drop-shadow(0 2rpx 4rpx rgba(0,0,0,0.06));
     }
     .shelf-title {
-      font-size: 26rpx;
+      font-size: 25rpx;
       color: #8A7E72;
       font-weight: 800;
       letter-spacing: 2rpx;
@@ -1228,10 +1228,10 @@ const getRandomDish = () => {
       &::after {
         content: '';
         position: absolute;
-        bottom: -6rpx;
+        bottom: -5rpx;
         left: 0;
-        width: 32rpx;
-        height: 4rpx;
+        width: 30rpx;
+        height: 3.5rpx;
         background: var(--primary);
         border-radius: 2rpx;
         transition: background 0.3s;
@@ -1239,38 +1239,24 @@ const getRandomDish = () => {
     }
   }
 
-  /* 精致的原木托底托盘线 */
-  // &::after {
-  //   content: '';
-  //   position: absolute;
-  //   bottom: -6rpx;
-  //   left: 16rpx;
-  //   right: 16rpx;
-  //   height: 8rpx;
-  //   background: linear-gradient(to bottom, #EAD7BE, #CCA47D);
-  //   border-radius: 4rpx;
-  //   box-shadow: 0 4rpx 10rpx rgba(138, 113, 79, 0.12);
-  //   z-index: 1;
-  // }
-
   .ingredients-list {
     display: flex;
     justify-content: space-between;
-    gap: 22rpx;
+    gap: 18rpx;
     position: relative;
     z-index: 2;
-    padding-bottom: 12rpx;
+    padding-bottom: 10rpx;
     
     .ingredient-bubble {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 14rpx;
+      gap: 12rpx;
       background: rgba(255, 255, 255, 0.72);
       border: 1.5rpx solid rgba(255, 255, 255, 0.85);
-      border-radius: 40rpx;
-      padding: 26rpx 10rpx;
+      border-radius: 36rpx;
+      padding: 22rpx 10rpx;
       transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       box-shadow: 
         0 6rpx 18rpx rgba(138, 113, 79, 0.03),
@@ -1285,8 +1271,8 @@ const getRandomDish = () => {
       &:nth-child(4) { animation-delay: -2.7s; }
       
       .bubble-icon-wrap {
-        width: 86rpx;
-        height: 86rpx;
+        width: 82rpx;
+        height: 82rpx;
         background: #FFFDF9;
         border-radius: 50%;
         display: flex;
@@ -1299,13 +1285,13 @@ const getRandomDish = () => {
         transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         
         .bubble-icon {
-          font-size: 44rpx;
+          font-size: 42rpx;
           transition: transform 0.3s ease;
         }
       }
       
       .bubble-text {
-        font-size: 22rpx;
+        font-size: 21rpx;
         color: #8A7E72;
         font-weight: 700;
         transition: color 0.3s;
@@ -1320,15 +1306,15 @@ const getRandomDish = () => {
         background: #FFFDF9;
         border-color: var(--primary);
         box-shadow: 
-          0 16rpx 32rpx var(--primary-shadow),
+          0 14rpx 28rpx var(--primary-shadow),
           inset 0 2rpx 6rpx rgba(255,255,255,0.8);
-        transform: translateY(-12rpx);
+        transform: translateY(-10rpx);
         animation-play-state: paused; /* 激活时停止随机漂浮，静止高亮 */
         
         .bubble-icon-wrap {
-          transform: scale(1.18) rotate(6deg);
+          transform: scale(1.16) rotate(6deg);
           background: var(--primary-grad);
-          box-shadow: 0 8rpx 20rpx var(--primary-shadow);
+          box-shadow: 0 7rpx 18rpx var(--primary-shadow);
           border-color: transparent;
           
           .bubble-icon {
@@ -1398,12 +1384,12 @@ const getRandomDish = () => {
   -webkit-backdrop-filter: blur(40rpx);
   border: 2rpx solid rgba(255, 255, 255, 0.85);
   border-radius: 56rpx;
-  padding: 46rpx 36rpx 36rpx 36rpx;
+  padding: 38rpx 34rpx 34rpx 34rpx;
   text-align: center;
   box-shadow: 
     0 10rpx 30rpx rgba(0, 0, 0, 0.01),
     0 24rpx 60rpx rgba(60, 54, 48, 0.02);
-  margin-bottom: 30rpx;
+  margin-bottom: 28rpx;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1487,8 +1473,8 @@ const getRandomDish = () => {
   .steam-cloud {
     position: relative;
     width: 530rpx;
-    height: 220rpx;
-    margin-bottom: 72rpx;
+    height: 200rpx;
+    margin-bottom: 52rpx;
     z-index: 10;
     transition: all 0.3s;
     
@@ -1509,12 +1495,12 @@ const getRandomDish = () => {
     .steam-content {
       position: relative;
       z-index: 2;
-      padding: 24rpx 36rpx;
+      padding: 20rpx 32rpx;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 220rpx;
+      height: 200rpx;
       box-sizing: border-box;
     }
     
@@ -1522,12 +1508,12 @@ const getRandomDish = () => {
       font-size: 23rpx;
       color: #9E9184;
       font-weight: 700;
-      margin-bottom: 12rpx;
+      margin-bottom: 8rpx;
       letter-spacing: 1.5rpx;
     }
     
     .steam-result {
-      font-size: 38rpx;
+      font-size: 36rpx;
       color: #3C3630;
       font-weight: 800;
       letter-spacing: 2rpx;
@@ -1537,7 +1523,7 @@ const getRandomDish = () => {
     }
     
     .result-highlight {
-      font-size: 48rpx;
+      font-size: 46rpx;
       font-weight: 900;
       background: var(--primary-grad);
       -webkit-background-clip: text;
@@ -1549,7 +1535,7 @@ const getRandomDish = () => {
     &::before, &::after {
       content: '';
       position: absolute;
-      bottom: -28rpx;
+      bottom: -22rpx;
       width: 3rpx;
       height: 60rpx;
       background: linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.75) 50%, rgba(255,255,255,0) 100%);
@@ -1569,18 +1555,18 @@ const getRandomDish = () => {
   /* 拟物化大炖锅 - 升级为法式双耳珐琅锅 */
   .gourmet-pot {
     position: relative;
-    width: 290rpx;
-    height: 165rpx;
-    margin-bottom: 16rpx;
+    width: 280rpx;
+    height: 158rpx;
+    margin-bottom: 14rpx;
     z-index: 5;
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     
     .pot-lid {
       position: absolute;
-      top: -16rpx;
+      top: -15rpx;
       left: 15rpx;
-      width: 260rpx;
-      height: 18rpx;
+      width: 250rpx;
+      height: 17rpx;
       background: rgba(255, 255, 255, 0.35);
       backdrop-filter: blur(12rpx);
       -webkit-backdrop-filter: blur(12rpx);
@@ -1612,10 +1598,10 @@ const getRandomDish = () => {
       position: absolute;
       bottom: 0;
       left: 0;
-      width: 290rpx;
-      height: 142rpx;
+      width: 280rpx;
+      height: 136rpx;
       background: var(--primary-grad);
-      border-radius: 8rpx 8rpx 54rpx 54rpx;
+      border-radius: 8rpx 8rpx 50rpx 50rpx;
       border: 2rpx solid rgba(255, 255, 255, 0.85);
       box-shadow: 
         0 12rpx 36rpx rgba(0, 0, 0, 0.04),
@@ -1671,7 +1657,7 @@ const getRandomDish = () => {
         position: absolute;
         left: 0;
         right: 0;
-        bottom: 80rpx;
+        bottom: 74rpx;
         height: 60rpx;
         z-index: 99;
         pointer-events: none;
@@ -1721,7 +1707,7 @@ const getRandomDish = () => {
     position: relative;
     width: 200rpx;
     height: 30rpx;
-    margin-bottom: 64rpx;
+    margin-bottom: 48rpx;
     display: flex;
     justify-content: center;
     
@@ -1755,7 +1741,7 @@ const getRandomDish = () => {
     font-size: 18rpx;
     color: #C1B5A9;
     letter-spacing: 1rpx;
-    margin-bottom: 24rpx;
+    margin-bottom: 20rpx;
     display: block;
   }
 
@@ -1763,11 +1749,11 @@ const getRandomDish = () => {
     background: var(--primary-grad);
     color: #ffffff;
     border-radius: 100rpx;
-    font-size: 28rpx;
+    font-size: 27rpx;
     font-weight: 800;
-    padding: 0 60rpx;
-    height: 84rpx;
-    line-height: 84rpx;
+    padding: 0 54rpx;
+    height: 82rpx;
+    line-height: 82rpx;
     box-shadow: 0 16rpx 36rpx var(--primary-shadow);
     transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: none;
@@ -1782,7 +1768,7 @@ const getRandomDish = () => {
   .manage-pool-link {
     font-size: 22rpx;
     color: #8A7E72;
-    margin-top: 25rpx;
+    margin-top: 20rpx;
     text-decoration: underline;
     letter-spacing: 1rpx;
     text-align: center;
