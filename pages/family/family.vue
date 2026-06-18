@@ -6,7 +6,7 @@
       <!-- 智能提醒跑马灯 (移至最顶部) -->
       <view class="marquee-reminder-row" v-if="reminders.length > 0" @click="showReminderModal = true">
         <view class="marquee-capsule">
-          <text class="m-icon">📢</text>
+          <view class="white-icon icon-alarm" style="width: 40rpx; height: 40rpx; flex-shrink: 0; margin-right: 12rpx;" />
           <view class="m-content-wrap">
             <view class="m-scroll-box">
               <text class="m-scroll-text">智能管家提醒：</text>
@@ -24,11 +24,11 @@
             <view class="family-name-wrap">
               <text class="family-name">{{ familyName }}</text>
               <view class="edit-icon-btn" @click="openEditFamilyName" v-if="familyCode === 'default_family' || familyRole === 'owner'">
-                <text class="e-icon">✏️</text>
+                <view class="white-icon icon-edit" style="width: 28rpx; height: 28rpx; display: block;" />
               </view>
               <!-- 如果加入了多个家庭，允许切换家庭 -->
               <view class="edit-icon-btn" @click="switchToAnotherFamily">
-                <text class="e-icon">🔀</text>
+                <view class="white-icon icon-switch" style="width: 36rpx; height: 36rpx; display: block;" />
               </view>
             </view>
             <text class="greeting">{{ greeting }}</text>
@@ -78,7 +78,9 @@
       <view class="section health-section" @click="goToHealth">
         <view class="section-title">
           <text class="title-text">家庭健康管理</text>
-          <text class="action-text">查看 👉</text>
+          <view class="action-text" style="display: inline-flex; align-items: center;">查看
+            <view class="theme-icon-more" style="margin-left: 6rpx;" />
+          </view>
         </view>
         <health-card
           ref="healthCardRef"
@@ -91,8 +93,10 @@
         <view class="section-title with-bar">
           <text class="title-text">今日三餐</text>
           <view class="title-right-actions" style="display: flex; gap: 20rpx;">
-            <text class="action-text subtle-link" @click="goToDietDiary">📓 饮食手账</text>
-            <text class="action-text subtle-link" @click="mealsPlanRef?.copyMealsToTomorrow()">📅 复制到明天</text>
+            <view class="action-text subtle-link" @click="goToDietDiary">
+              <view class="theme-icon icon-history" style="width: 32rpx; height: 32rpx; margin-right: 8rpx;" /> 饮食手账</view>
+            <view class="action-text subtle-link" @click="mealsPlanRef?.copyMealsToTomorrow()">
+              <view class="theme-icon icon-calendar" style="width: 32rpx; height: 32rpx; margin-right: 8rpx;" /> 复制到明天</view>
           </view>
         </view>
         <meals-plan
@@ -145,39 +149,51 @@
       <view class="bottom-settings">
         <view class="set-list">
           <view class="set-item" @click="openShowFamilyCodeModal" v-if="familyCode && familyRole === 'owner'">
-            <text class="set-icon">🔑</text>
+            <view class="theme-icon icon-key" style="margin-right: 20rpx;" />
             <text class="set-text">家庭编码</text>
             <text class="set-desc" style="margin-right:16rpx; color: #999;">查看并复制</text>
-            <text class="set-arrow">👉</text>
+            <view class="set-arrow" style="display: flex; align-items: center;">
+              <view class="theme-icon icon-more" style="width: 24rpx; height: 24rpx; background-color: #BDC3C7 !important;" />
+            </view>
           </view>
           <view class="set-item" @click="openSetSecurityModal" v-if="familyCode && familyRole === 'owner'">
-            <text class="set-icon">🛡️</text>
+            <view class="theme-icon icon-lock" style="margin-right: 20rpx;" />
             <text class="set-text">数据找回密保设置</text>
             <text class="set-desc" style="margin-right:16rpx; color: #999;">保障历史数据</text>
-            <text class="set-arrow">👉</text>
+            <view class="set-arrow" style="display: flex; align-items: center;">
+              <view class="theme-icon icon-more" style="width: 24rpx; height: 24rpx; background-color: #BDC3C7 !important;" />
+            </view>
           </view>
           <view class="set-item" @click="handleClearCache" v-if="familyCode && familyRole === 'owner'">
-            <text class="set-icon">🧹</text>
+            <view class="theme-icon icon-garbage" style="margin-right: 20rpx;" />
             <text class="set-text">清除缓存</text>
-            <text class="set-arrow"> 👉</text>
+            <view class="set-arrow" style="display: flex; align-items: center;">
+              <view class="theme-icon icon-more" style="width: 24rpx; height: 24rpx; background-color: #BDC3C7 !important;" />
+            </view>
           </view>
           <view class="set-item" @click="showHelpPopup = true">
-            <text class="set-icon">📖</text>
+            <view class="theme-icon icon-question" style="margin-right: 20rpx;" />
             <text class="set-text">使用帮助</text>
-            <text class="set-arrow"> 👉</text>
+            <view class="set-arrow" style="display: flex; align-items: center;">
+              <view class="theme-icon icon-more" style="width: 24rpx; height: 24rpx; background-color: #BDC3C7 !important;" />
+            </view>
           </view>
           <view class="set-item" @click="showFeedbackPopup = true">
-            <text class="set-icon">💬</text>
+            <view class="theme-icon icon-chat" style="margin-right: 20rpx;" />
             <text class="set-text">意见反馈</text>
-            <text class="set-arrow"> 👉</text>
+            <view class="set-arrow" style="display: flex; align-items: center;">
+              <view class="theme-icon icon-more" style="width: 24rpx; height: 24rpx; background-color: #BDC3C7 !important;" />
+            </view>
           </view>
           <view class="set-item" @click="showAdminFeedbackPopup = true" v-if="isAdmin">
-            <text class="set-icon">📬</text>
-            <text class="set-text">馆长收信箱 (管理)</text>
-            <text class="set-arrow"> 👉</text>
+            <view class="theme-icon icon-mailbox" style="margin-right: 20rpx;" />
+            <text class="set-text">馆长收信箱</text>
+            <view class="set-arrow" style="display: flex; align-items: center;">
+              <view class="theme-icon icon-more" style="width: 24rpx; height: 24rpx; background-color: #BDC3C7 !important;" />
+            </view>
           </view>
           <view class="set-item version">
-            <text class="set-icon">✨</text>
+            <view class="theme-icon icon-gem" style="margin-right: 20rpx;" />
             <text class="set-text">当前版本</text>
             <text class="set-desc">v1.3.0</text>
           </view>
@@ -268,7 +284,9 @@
     <!-- 密保强引导弹窗 -->
     <view class="modal-mask" v-if="showSecurityGuideModal" @click="closeSecurityGuide(false)">
       <view class="modal-content security-guide-modal" @click.stop>
-        <view class="shield-badge">🛡️</view>
+        <view class="shield-badge">
+          <view class="theme-icon icon-lock" style="margin-right: 20rpx;" />
+        </view>
         <text class="guide-title">设置安全密保</text>
         <text class="guide-desc">
           检测到您尚未设置找回密保。设置密保后，未来即使清空缓存或更换设备，也能凭密保一键找回所有家庭数据（食材、账本、菜单等）。
@@ -320,7 +338,9 @@
           
           <!-- 仅在未折叠时显示备忘内容 -->
           <view class="memo-content" v-if="!isMemoCollapsed">
-            <text class="memo-icon">📝</text>
+            <view class="memo-icon">
+              <view class="theme-icon icon-memo" style="margin-right: 20rpx;" />
+            </view>
             <text class="memo-tag-text">备忘</text>
           </view>
         </view>
@@ -1410,6 +1430,9 @@ const concatenatedReminders = computed(() => {
   border-radius: 50rpx;
   color: #7F8C8D;
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 
@@ -1506,7 +1529,7 @@ const concatenatedReminders = computed(() => {
     justify-content: center;
     position: relative;
     box-shadow: 0 8rpx 20rpx var(--primary-shadow);
-    transform: rotate(-3deg); /* 手账贴纸倾斜感 */
+    // transform: rotate(-3deg); /* 手账贴纸倾斜感 */
     transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
     
     /* 顶部半透明折叠/展开开关小圆标 */
@@ -1565,15 +1588,21 @@ const concatenatedReminders = computed(() => {
       transform: rotate(0deg);
       
       .tape-btn {
-        top: 28rpx;
+        width: 60rpx;
+        height: 60rpx;
+        top: 15rpx; /* (90 - 60) / 2 = 15rpx，在90rpx高度中居中 */
         left: 50%;
         transform: translateX(-50%);
-        opacity: 0.85;
-        box-shadow: -2rpx 2rpx 8rpx var(--primary-shadow);
+        background: var(--primary); /* 折叠后显示主题色背景 */
+        opacity: 0.9;
+        box-shadow: 0 4rpx 12rpx var(--primary);
         animation: tapePulse 2.5s infinite ease-in-out;
         
         .arrow-txt {
-          left: -1rpx; /* 折缩后‹的左侧对齐微调 */
+          font-size: 38rpx;
+          color: #fff; /* 折叠后箭头文字变为白色，与背景形成对比 */
+          left: -2rpx; /* 折缩后‹的左侧对齐微调 */
+          top: -2rpx;
         }
       }
       
@@ -1612,4 +1641,6 @@ const concatenatedReminders = computed(() => {
   0%, 100% { opacity: 0.85; transform: translateX(-50%) scale(1); }
   50% { opacity: 0.6; transform: translateX(-50%) scale(0.9); }
 }
+
+@import "@/static/icon_base64.css";
 </style>

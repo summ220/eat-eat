@@ -6,8 +6,12 @@
         <view class="member-card" v-for="(m, idx) in displayedMembers" :key="idx" @click.stop="handleMemberClick(m, 'owner')" >
           <view class="avatar-wrap">
             <image class="m-avatar" :class="{ 'is-owner': m.role === 'owner' }" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(m.avatarUrl)" />
-            <view class="edit-tag" v-if="m.isSelf && m.role != 'owner'" @click.stop="handleMemberClick(m, 'member')">✏️</view>
-            <view class="edit-tag owner-crown" v-if="m.role === 'owner'">👑</view>
+            <view class="edit-tag flex-center" v-if="m.isSelf && m.role != 'owner'" @click.stop="handleMemberClick(m, 'member')">
+              <view class="white-icon icon-edit" style="width: 28rpx; height: 28rpx;" />
+            </view>
+            <view class="edit-tag owner-crown flex-center" v-if="m.role === 'owner'">
+              <view class="white-icon icon-gem" style="width: 28rpx; height: 28rpx;" />
+            </view>
           </view>
           <text class="m-nick" @click.stop="showMemberCard(m)">{{ m.name || '干饭人' }}{{ m.isSelf ? ' (我)' : '' }}</text>
           <view class="m-role" @click.stop="showMemberCard(m)"><text>{{ m.title || '大主厨' }}</text></view>
@@ -15,8 +19,8 @@
         
         <!-- 查看全部的入口卡片 -->
         <view class="member-card more-members-card" v-if="members.length > 4 && !showAllMembers" @click.stop="showAllMembers = true">
-          <view class="avatar-wrap more-avatar-wrap">
-            <text class="more-avatar-icon">➕</text>
+          <view class="avatar-wrap more-avatar-wrap flex-center">
+            <view class="white-icon icon-more" style="width: 46rpx; height: 46rpx;" />
           </view>
           <text class="m-nick">显示全部</text>
           <view class="m-role"><text>共 {{ members.length }} 人</text></view>
@@ -24,8 +28,8 @@
 
         <!-- 收起的入口卡片 -->
         <view class="member-card more-members-card fold-btn" v-if="members.length > 4 && showAllMembers" @click.stop="showAllMembers = false">
-          <view class="avatar-wrap more-avatar-wrap">
-            <text class="more-avatar-icon">➖</text>
+          <view class="avatar-wrap more-avatar-wrap flex-center">
+            <view class="white-icon icon-more" style="width: 46rpx; height: 46rpx; transform: scaleX(-1);" />
           </view>
           <text class="m-nick">收起列表</text>
           <view class="m-role"><text>极简模式</text></view>
@@ -49,14 +53,14 @@
           <view class="invite-code-box">
             <text class="code-val" :class="{ 'is-expired': !inviteCode }">{{ inviteCode || '------' }}</text>
             <view class="code-actions">
-              <view class="action-btn refresh-btn-wrap" @click="handleRefreshCode" :class="{ 'spinning': isRefreshing }">
-                <text class="action-icon">🔄</text>
+              <view class="action-btn refresh-btn-wrap flex-center" @click="handleRefreshCode" :class="{ 'spinning': isRefreshing }">
+                <view class="theme-icon icon-switch" style="width: 40rpx; height: 40rpx;" />
               </view>
               <text class="copy-btn" v-if="inviteCode" @click="copyCode">复制</text>
             </view>
           </view>
           <view class="invite-expire-tip">
-            <text class="expire-icon">⏱️</text>
+            <view class="theme-icon icon-alarm" style="width: 32rpx; height: 32rpx; margin-right: 8rpx;" />
             <text class="expire-text">{{ inviteCode ? '邀请码有效期5分钟' : '邀请码已过期' }}</text>
             <text class="expire-countdown" v-if="inviteCode">{{ formattedCountdown }}</text>
           </view>
@@ -69,8 +73,8 @@
               mode="aspectFit"
             />
             <view class="qr-placeholder" v-else>
-              <view class="qr-expired-mask" @click="handleRefreshCode">
-                <text class="refresh-icon">🔄</text>
+              <view class="qr-expired-mask flex-center" style="flex-direction: column;" @click="handleRefreshCode">
+                <view class="theme-icon icon-switch" style="width: 56rpx; height: 56rpx; margin-bottom: 12rpx; background-color: #7f8c8d;" />
                 <text class="refresh-text">邀请码已过期</text>
                 <text class="refresh-subtext">点击重新获取</text>
               </view>
@@ -86,7 +90,9 @@
       <view class="modal-content" @click.stop>
         <view class="avatar-box">
           <image class="avatar" :src="tempAvatarUrl ? (tempAvatarUrl.startsWith('http') ? tempAvatarUrl : config.imgBaseUrl + tempAvatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(tempAvatarUrl)"></image>
-          <view class="camera-icon" @click.stop="chooseAvatar">📷</view>
+          <view class="camera-icon flex-center" @click.stop="chooseAvatar">
+            <view class="white-icon icon-edit" style="width: 32rpx; height: 32rpx;" />
+          </view>
         </view>
         <view class="input-box">
           <input class="join-input" v-model="tempNick" placeholder="请输入新昵称" />
@@ -1082,5 +1088,12 @@ defineExpose({
     z-index: 2;
     &::after { border: none; }
   }
+}
+
+@import "@/static/icon_base64.css";
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

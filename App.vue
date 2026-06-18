@@ -56,6 +56,7 @@ export default {
 </script>
 
 <style>
+@import "@/static/icon_base64.css";
 page {
 	/* background-color: #FFE6E6; */
 	background-color: #FFFFFF;

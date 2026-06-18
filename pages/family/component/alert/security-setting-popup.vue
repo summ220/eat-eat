@@ -2,7 +2,10 @@
 <template>
   <view class="modal-mask" v-if="show" @click="close">
     <view class="modal-content" @click.stop>
-      <text class="modal-title">🛡️ 数据找回密保设置</text>
+      <view class="modal-title" style="display: flex; align-items: center; justify-content: center; font-size: 34rpx; font-weight: 800; color: #2C3E50;">
+        <view class="theme-icon icon-lock" style="width: 46rpx; height: 46rpx; margin-right: 12rpx;" />
+        数据找回密保设置
+      </view>
       <view class="invite-info" style="text-align: left; width: 100%; margin: 20rpx 0;">
         <text class="invite-desc" style="color: #666; font-size: 26rpx; line-height: 1.5; text-align: center; margin-bottom: 30rpx; display: block;">设置密保答案，若未来发生小程序误删或缓存清空，可通过密保安全找回数据。</text>
         
@@ -14,7 +17,7 @@
               <text class="down-arrow" style="font-size: 20rpx; color: #bbb;">▼</text>
             </view>
           </picker>
-
+ 
           <view class="sec-label" style="font-size: 26rpx; color: #888; margin-bottom: 12rpx; margin-top: 10rpx;">密保问题答案：</view>
           <input 
             class="sec-input" 
@@ -122,4 +125,6 @@ const saveSecurityQuestion = async () => {
     margin-bottom: 20rpx;
   }
 }
+
+@import "@/static/icon_base64.css";
 </style>
