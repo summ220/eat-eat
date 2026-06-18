@@ -1168,7 +1168,7 @@ const getRandomDish = () => {
 }
 
 .header {
-  margin: 80rpx 0 32rpx;
+  margin: 120rpx 0 32rpx;
   position: relative;
   z-index: 10;
   
@@ -1557,6 +1557,7 @@ const getRandomDish = () => {
     position: relative;
     width: 280rpx;
     height: 158rpx;
+    margin-top: 20rpx;
     margin-bottom: 14rpx;
     z-index: 5;
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
