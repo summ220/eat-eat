@@ -37,7 +37,7 @@
     <view class="splash-step-container" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 80vh; z-index: 9;" v-if="restoreStep === 0">
       <view class="splash-brand" style="text-align: center; margin-top: 100rpx;">
         <!-- <view class="splash-logo" style="font-size: 150rpx; margin-bottom: 20rpx; animation: bounce 2s infinite ease-in-out;">🍳</view> -->
-        <text class="splash-name" style="font-size: 56rpx; font-weight: 900; color: #FF4D6D; display: block; letter-spacing: 4rpx; font-family: system-ui, -apple-system, sans-serif">食光小栈</text>
+        <text class="splash-name" style="font-size: 56rpx; font-weight: 900; color: #FF4D6D; display: block; letter-spacing: 4rpx; font-family: system-ui, -apple-system, sans-serif">饭事无忧</text>
         <text class="splash-tag" style="font-size: 26rpx; color: #FF4D6D; font-weight: 500; display: inline-block; margin-top: 24rpx; letter-spacing: 1rpx;">好好吃饭，是对自己最大的善意</text>
       </view>
       
@@ -481,14 +481,19 @@ const silentCreateNewFamily = async () => {
   
   try {
     const res = await familyApi.createFamily('我的厨房')
-    if (res && res.data && res.data.family) {
-      const fam = res.data.family
-      const member = res.data.member
+    if (res && res.data && (res.data.family || res.data)) {
+      const fam = res.data.family || res.data
+      const member = res.data.member || {}
       
-      uni.setStorageSync('family_code', fam.familyCode)
-      uni.setStorageSync('family_name', fam.familyName)
-      uni.setStorageSync('family_avatar', fam.avatarUrl || '')
-      uni.setStorageSync('family_role', member.role || 'owner')
+      const code = fam.familyCode || fam.id || fam.family_code
+      const name = fam.familyName || fam.name || fam.family_name || '我的厨房'
+      const avatar = fam.avatarUrl || fam.avatar || fam.avatar_url || ''
+      const role = member.role || 'owner'
+      
+      uni.setStorageSync('family_code', code)
+      uni.setStorageSync('family_name', name)
+      uni.setStorageSync('family_avatar', avatar)
+      uni.setStorageSync('family_role', role)
       
       // 新注册首次进入，设置临时打卡标志避免首次弹出老用户开屏
       uni.setStorageSync('is_first_launch_after_register', 'true')

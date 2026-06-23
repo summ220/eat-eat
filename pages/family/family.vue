@@ -339,7 +339,7 @@
           <!-- 仅在未折叠时显示备忘内容 -->
           <view class="memo-content" v-if="!isMemoCollapsed">
             <view class="memo-icon">
-              <view class="theme-icon icon-memo" style="margin-right: 20rpx;" />
+              <view class="theme-icon icon-memo" />
             </view>
             <text class="memo-tag-text">备忘</text>
           </view>
@@ -501,7 +501,7 @@ const previewImage = (url) => {
     })
   }
 }
-const familyName = ref('')
+const familyName = ref(uni.getStorageSync('family_name'))
 const familyCode = ref(uni.getStorageSync('family_code'))
 const familyRole = ref('owner')
 const familyAvatar = ref(uni.getStorageSync('family_avatar') || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg')
@@ -538,6 +538,8 @@ const showJoinModal = ref(false)
 const handleJoined = async ({ code, role }) => {
   familyCode.value = code
   familyRole.value = role
+  familyName.value = uni.getStorageSync('family_name') || ''
+  familyAvatar.value = uni.getStorageSync('family_avatar') || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'
   await loadFamily()
   if (familyMembersRef.value) {
     await familyMembersRef.value.loadFamilyMembers()
@@ -547,13 +549,25 @@ const handleJoined = async ({ code, role }) => {
 // 家庭信息
 const loadFamily = async () => {
   if (!familyCode.value) return
-  const family = await familyApi.getFamily(familyCode.value)
-  if (family && family.data) {
-    familyName.value = family.data.familyName
-    familyAvatar.value = family.data.avatarUrl || uni.getStorageSync('family_avatar') || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'
-    if (family.data.hasSecurityQuestion || family.data.has_security) {
-      uni.setStorageSync('has_set_security_' + familyCode.value, true)
+  try {
+    const family = await familyApi.getFamily(familyCode.value)
+    if (family && family.data) {
+      const famInfo = family.data.family || family.data
+      if (famInfo && famInfo.familyName) {
+        familyName.value = famInfo.familyName
+        uni.setStorageSync('family_name', famInfo.familyName)
+      }
+      const avatar = famInfo.avatarUrl || famInfo.avatar
+      if (avatar) {
+        familyAvatar.value = avatar
+        uni.setStorageSync('family_avatar', avatar)
+      }
+      if (family.data.hasSecurityQuestion || family.data.has_security || (famInfo && (famInfo.hasSecurityQuestion || famInfo.has_security))) {
+        uni.setStorageSync('has_set_security_' + familyCode.value, true)
+      }
     }
+  } catch (e) {
+    console.error('loadFamily error:', e)
   }
   updateReminders()
   checkSecurityGuide()
@@ -607,6 +621,9 @@ onShow(() => {
   }
   
   familyCode.value = code
+  familyName.value = uni.getStorageSync('family_name') || ''
+  familyAvatar.value = uni.getStorageSync('family_avatar') || config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'
+  familyRole.value = uni.getStorageSync('family_role') || 'owner'
   
   // refreshStats()
   if (mealsPlanRef.value) {

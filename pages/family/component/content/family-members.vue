@@ -7,7 +7,7 @@
           <view class="avatar-wrap">
             <image class="m-avatar" :class="{ 'is-owner': m.role === 'owner' }" :src="m.avatarUrl ? (m.avatarUrl.startsWith('http') ? m.avatarUrl : config.imgBaseUrl + m.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbqsd7_0d13d785d123.jpg'" mode="aspectFill" @click.stop="previewImage(m.avatarUrl)" />
             <view class="edit-tag flex-center" v-if="m.isSelf && m.role != 'owner'" @click.stop="handleMemberClick(m, 'member')">
-              <view class="white-icon icon-edit" style="width: 28rpx; height: 28rpx;" />
+              <view class="white-icon icon-edit" style="width: 22rpx; height: 22rpx;" />
             </view>
             <view class="edit-tag owner-crown flex-center" v-if="m.role === 'owner'">
               <view class="white-icon icon-gem" style="width: 28rpx; height: 28rpx;" />

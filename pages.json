@@ -9,7 +9,7 @@
 		{
 			"path": "pages/welcome/welcome",
 			"style": {
-				"navigationBarTitleText": "食光小栈",
+				"navigationBarTitleText": "饭事无忧",
 				"navigationStyle": "custom"
 			}
 		},

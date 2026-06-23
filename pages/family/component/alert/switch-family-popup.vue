@@ -8,13 +8,13 @@
       </view>
       
       <!-- 当前使用 -->
-      <view class="family-section-label" v-if="familyCode">当前使用</view>
-      <view class="active-family-card" v-if="familyCode">
+      <view class="family-section-label" v-if="props.familyCode">当前使用</view>
+      <view class="active-family-card" v-if="props.familyCode">
         <view class="active-family-left">
-          <image class="active-family-avatar" :src="familyAvatar ? (familyAvatar.startsWith('http') ? familyAvatar : config.imgBaseUrl + familyAvatar) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'" mode="aspectFill" />
+          <image class="active-family-avatar" :src="props.familyAvatar ? (props.familyAvatar.startsWith('http') ? props.familyAvatar : config.imgBaseUrl + props.familyAvatar) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'" mode="aspectFill" />
           <view class="active-family-info">
-            <text class="active-family-name">{{ familyName || '默认家庭' }}</text>
-            <text class="active-family-role-label">{{ familyRole === 'owner' ? '管理员' : '成员' }}</text>
+            <text class="active-family-name">{{ props.familyName || '默认家庭' }}</text>
+            <text class="active-family-role-label">{{ props.familyRole === 'owner' ? '管理员' : '成员' }}</text>
           </view>
         </view>
         <view class="active-family-badge">
@@ -33,14 +33,14 @@
           <view 
             class="other-family-card-item" 
             v-for="fam in otherFamilies" 
-            :key="fam.familyCode"
+            :key="fam.familyCode || fam.id || fam.family_code"
             @click="switchFamily(fam)"
           >
             <view class="active-family-left">
-              <image class="active-family-avatar" :src="fam.avatarUrl ? (fam.avatarUrl.startsWith('http') ? fam.avatarUrl : config.imgBaseUrl + fam.avatarUrl) : config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'" mode="aspectFill" />
+              <image class="active-family-avatar" :src="getFamAvatar(fam)" mode="aspectFill" />
               <view class="active-family-info">
-                <text class="active-family-name">{{ fam.familyName }}</text>
-                <text class="active-family-role-label">{{ fam.role === 'owner' ? '管理员' : '成员' }}</text>
+                <text class="active-family-name">{{ fam.familyName || fam.name || fam.family_name || '未命名家庭' }}</text>
+                <text class="active-family-role-label">{{ (fam.role || 'member') === 'owner' ? '管理员' : '成员' }}</text>
               </view>
             </view>
             <view class="other-family-action-arrow">👉</view>
@@ -105,14 +105,26 @@ const loadingFamilies = ref(false)
 const themeStyle = ref('')
 
 const otherFamilies = computed(() => {
-  return families.value.filter(fam => fam.familyCode !== props.familyCode)
+  return families.value.filter(fam => {
+    const code = fam.familyCode || fam.id || fam.family_code
+    return code !== props.familyCode
+  })
 })
+
+const getFamAvatar = (fam) => {
+  const avatar = fam.avatarUrl || fam.avatar || fam.avatar_url
+  if (avatar) {
+    return avatar.startsWith('http') ? avatar : config.imgBaseUrl + avatar
+  }
+  return config.imgBaseUrl + '/uploads/recipe-covers/fam_74a1bdb4ebab2367/mpmbk9w0_fa7dd116dd69.jpg'
+}
 
 // 获取家庭列表
 const loadMyFamilies = async () => {
   loadingFamilies.value = true
   try {
     const res = await familyApi.getMyFamilies()
+    console.log('getMyFamilies res:', res)
     if (res && res.data) {
       families.value = res.data.families || []
     }
@@ -152,15 +164,20 @@ const emitClose = () => {
 
 // 切换家庭业务逻辑
 const switchFamily = async (fam) => {
-  if (fam.familyCode === props.familyCode) return
+  const code = fam.familyCode || fam.id || fam.family_code
+  const name = fam.familyName || fam.name || fam.family_name || '未命名家庭'
+  const avatar = fam.avatarUrl || fam.avatar || fam.avatar_url || ''
+  const role = fam.role || 'member'
+
+  if (code === props.familyCode) return
   uni.showLoading({ title: '切换中...' })
   try {
-    uni.setStorageSync('family_code', fam.familyCode)
-    uni.setStorageSync('family_name', fam.familyName)
-    uni.setStorageSync('family_avatar', fam.avatarUrl || '')
-    uni.setStorageSync('family_role', fam.role || 'member')
+    uni.setStorageSync('family_code', code)
+    uni.setStorageSync('family_name', name)
+    uni.setStorageSync('family_avatar', avatar)
+    uni.setStorageSync('family_role', role)
     
-    uni.showToast({ title: '已切换至 ' + fam.familyName, icon: 'success' })
+    uni.showToast({ title: '已切换至 ' + name, icon: 'success' })
     emitClose()
     
     setTimeout(() => {
@@ -192,12 +209,17 @@ const handleCreateFamily = () => {
         try {
           const apiRes = await familyApi.createFamily(newName)
           if (apiRes && apiRes.data) {
-            const fam = apiRes.data.family
-            const member = apiRes.data.member
-            uni.setStorageSync('family_code', fam.familyCode)
-            uni.setStorageSync('family_name', fam.familyName)
-            uni.setStorageSync('family_avatar', fam.avatarUrl || '')
-            uni.setStorageSync('family_role', member.role || 'owner')
+            const fam = apiRes.data.family || apiRes.data
+            const member = apiRes.data.member || {}
+            const code = fam.familyCode || fam.id || fam.family_code
+            const name = fam.familyName || fam.name || fam.family_name || newName
+            const avatar = fam.avatarUrl || fam.avatar || fam.avatar_url || ''
+            const role = member.role || 'owner'
+            
+            uni.setStorageSync('family_code', code)
+            uni.setStorageSync('family_name', name)
+            uni.setStorageSync('family_avatar', avatar)
+            uni.setStorageSync('family_role', role)
             
             uni.showToast({ title: '创建家庭成功', icon: 'success' })
             setTimeout(() => {
