@@ -87,13 +87,15 @@
             </view>
           </view>
           <view class="trend-card">
-            <view class="chart-bars" v-if="displayedHistory.length > 0">
-              <view class="bar-col" v-for="(v, i) in displayedHistory" :key="i">
-                <view class="bar-track">
-                  <view class="bar-fill" :style="{ height: getBarHeight(v) }"></view>
-                </view>
-                <text class="bar-label">{{ v.label || getBarLabel(i) }}</text>
-              </view>
+            <view class="chart-wrap" v-if="trendHistory.length > 0">
+              <canvas 
+                canvas-id="weightChart" 
+                id="weightChart" 
+                class="weight-chart-canvas"
+                @touchstart="onChartTouch"
+                @touchmove="onChartTouch"
+                @touchend="onChartEnd"
+              ></canvas>
             </view>
             <view class="trend-empty" v-else>
               <text class="empty-tip">暂无体重统计趋势记录，去添加一条吧 🍏</text>
@@ -250,7 +252,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, getCurrentInstance, nextTick } from 'vue'
 import familyApi from '@/common/api/family.js'
 import { onShow } from '@dcloudio/uni-app'
 import config from '@/common/config'
@@ -297,7 +299,11 @@ const themeStyle = ref('')
 
 const members = ref([])
 const trendHistory = ref([])
+const trendLabels = ref([])
+const targetWeight = ref(70)
+const activeIdx = ref(-1)
 const recommendedRecipes = ref([])
+const instance = getCurrentInstance()
 
 onShow(() => {
   loadFamilyMembers()
@@ -376,19 +382,27 @@ const loadCurrentMemberDetail = async () => {
 
 const loadCurrentMemberTrend = async () => {
   const m = currentMember.value
-  console.log('loadCurrentMemberTrend', m)
   if (!m) return
   try {
     const resTrend = await familyApi.getFamilyHealthMemberTrend(familyCode, m.memberId, trendType.value)
     if (resTrend && resTrend.data) {
-      trendHistory.value = resTrend.data.history || []
+      trendLabels.value = resTrend.data.labels || []
+      trendHistory.value = resTrend.data.displayedHistory || []
+      targetWeight.value = resTrend.data.targetWeight || m.targetWeight || 70
     } else {
+      trendLabels.value = []
       trendHistory.value = []
     }
   } catch (err) {
     console.error('获取体重趋势失败:', err)
+    trendLabels.value = []
     trendHistory.value = []
   }
+  nextTick(() => {
+    setTimeout(() => {
+      drawChart()
+    }, 100)
+  })
 }
 
 const loadCurrentMemberRecommendations = async () => {
@@ -459,6 +473,9 @@ const applyTheme = () => {
       --primary-light: #FF6B8B14;
     `
   }
+  nextTick(() => {
+    drawChart()
+  })
 }
 
 onMounted(() => {
@@ -479,21 +496,310 @@ watch(trendType, () => {
   loadCurrentMemberTrend()
 })
 
-const displayedHistory = computed(() => {
-  return trendHistory.value
-})
-
-const getBarHeight = (v) => {
-  const val = typeof v === 'object' && v !== null ? v.weight : parseFloat(v)
-  if (isNaN(val) || val <= 0) return '0%'
-  const min = 40, max = 100
-  const percent = ((val - min) / (max - min)) * 100
-  return Math.max(10, Math.min(100, percent)) + '%'
+// 获取当前选中的主题颜色以匹配图表配色
+const getThemeColor = () => {
+  const themes = [
+    { color: '#FF6B8B' }, { color: '#4DB88F' }, { color: '#5B89E5' }, { color: '#F2A13B' }
+  ]
+  let idx = uni.getStorageSync('current_theme')
+  idx = (idx === undefined || idx === null || idx >= themes.length) ? 0 : parseInt(idx)
+  return themes[idx].color
 }
 
-const getBarLabel = (idx) => {
-  if (trendType.value === 'week') return ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][idx] || `${idx + 1}`
-  return `${idx + 1}日`
+// 绘制体重趋势 Canvas 图表 (ECharts 风格平滑折线渐变图)
+const drawChart = () => {
+  const labels = trendLabels.value || []
+  const history = trendHistory.value || []
+  if (labels.length === 0 || history.length === 0) return
+  
+  const ctx = uni.createCanvasContext('weightChart', instance)
+  if (!ctx) return
+  
+  const sysInfo = uni.getSystemInfoSync()
+  const screenWidth = sysInfo.screenWidth
+  
+  // 按照设计稿 750rpx 规范自适应转换 px 宽度与高度
+  const containerWidth = Math.floor(screenWidth * (642 / 750))
+  const containerHeight = Math.floor(screenWidth * (360 / 750))
+  
+  ctx.clearRect(0, 0, containerWidth, containerHeight)
+  
+  // 轴距与图表区域大小
+  const paddingLeft = 32
+  const paddingRight = 15
+  const paddingTop = 25
+  const paddingBottom = 25
+  
+  const chartWidth = containerWidth - paddingLeft - paddingRight
+  const chartHeight = containerHeight - paddingTop - paddingBottom
+  
+  // 提取非 null 体重记录，计算出最合理的轴刻度范围 (min-max)
+  const validWeights = history.filter(v => v !== null && v !== undefined).map(v => parseFloat(v))
+  let minW = validWeights.length > 0 ? Math.min(...validWeights) : 50
+  let maxW = validWeights.length > 0 ? Math.max(...validWeights) : 80
+  
+  // 纳入目标体重 markLine，避免目标体重被挤出可视区之外
+  const targetW = parseFloat(targetWeight.value) || (currentMember.value ? currentMember.value.targetWeight : 70)
+  if (!isNaN(targetW)) {
+    minW = Math.min(minW, targetW)
+    maxW = Math.max(maxW, targetW)
+  }
+  
+  // 预留 15% 上下边距，保证数据不贴顶、不贴底
+  let yMin = minW
+  let yMax = maxW
+  if (yMax === yMin) {
+    yMax += 5
+    yMin -= 5
+  } else {
+    const margin = (yMax - yMin) * 0.15
+    yMax += margin
+    yMin -= margin
+  }
+  yMin = Math.max(0, yMin)
+  
+  // 1. 绘制网格线与 Y 轴刻度 (ECharts 风格)
+  const gridLines = 4
+  ctx.setFontSize(10)
+  ctx.setFillStyle('#9E9E9E')
+  ctx.setLineWidth(1)
+  
+  for (let i = 0; i < gridLines; i++) {
+    const ratio = i / (gridLines - 1)
+    const y = paddingTop + chartHeight - ratio * chartHeight
+    const val = yMin + ratio * (yMax - yMin)
+    
+    ctx.setTextAlign('right')
+    ctx.fillText(val.toFixed(1), paddingLeft - 6, y + 4)
+    
+    ctx.beginPath()
+    ctx.setStrokeStyle(i === 0 ? '#E0E0E0' : '#F2F2F2')
+    ctx.moveTo(paddingLeft, y)
+    ctx.lineTo(paddingLeft + chartWidth, y)
+    ctx.stroke()
+  }
+  
+  // 2. 绘制 X 轴刻度日期文字
+  ctx.setTextAlign('center')
+  const xStep = chartWidth / (labels.length - 1 || 1)
+  const drawLabelInterval = labels.length > 7 ? Math.ceil(labels.length / 5) : 1
+  
+  labels.forEach((label, idx) => {
+    if (idx % drawLabelInterval === 0 || idx === labels.length - 1) {
+      const x = paddingLeft + idx * xStep
+      let showText = label
+      if (label && label.length > 5) {
+        showText = label.substring(5) // 格式化为 MM-DD 格式，避免重叠
+      }
+      ctx.fillText(showText, x, containerHeight - 6)
+    }
+  })
+  
+  // 3. 绘制目标体重辅助水平虚线 (MarkLine)
+  if (!isNaN(targetW)) {
+    const targetY = paddingTop + chartHeight - ((targetW - yMin) / (yMax - yMin)) * chartHeight
+    if (targetY >= paddingTop && targetY <= paddingTop + chartHeight) {
+      ctx.beginPath()
+      ctx.setStrokeStyle('#FF8A80')
+      ctx.setLineWidth(1)
+      if (typeof ctx.setLineDash === 'function') {
+        ctx.setLineDash([4, 4], 0)
+      }
+      ctx.moveTo(paddingLeft, targetY)
+      ctx.lineTo(paddingLeft + chartWidth, targetY)
+      ctx.stroke()
+      
+      if (typeof ctx.setLineDash === 'function') {
+        ctx.setLineDash([], 0)
+      }
+      
+      ctx.setFontSize(9)
+      ctx.setFillStyle('#FF8A80')
+      ctx.setTextAlign('left')
+      ctx.fillText(`目标: ${targetW}kg`, paddingLeft + 10, targetY - 4)
+    }
+  }
+  
+  // 4. 计算出具体数据点的 X/Y 坐标，剔除空节点进行连线
+  const points = []
+  history.forEach((val, idx) => {
+    if (val !== null && val !== undefined) {
+      const x = paddingLeft + idx * xStep
+      const y = paddingTop + chartHeight - ((parseFloat(val) - yMin) / (yMax - yMin)) * chartHeight
+      points.push({ x, y, val, label: labels[idx], index: idx })
+    }
+  })
+  
+  if (points.length === 0) {
+    ctx.draw()
+    return
+  }
+  
+  const themeColor = getThemeColor()
+  
+  // 5. 绘制平滑渐变面积阴影 (AreaStyle)
+  ctx.beginPath()
+  ctx.moveTo(points[0].x, paddingTop + chartHeight)
+  ctx.lineTo(points[0].x, points[0].y)
+  
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i]
+    const p1 = points[i + 1]
+    const cpX1 = p0.x + (p1.x - p0.x) / 2
+    const cpY1 = p0.y
+    const cpX2 = p0.x + (p1.x - p0.x) / 2
+    const cpY2 = p1.y
+    ctx.bezierCurveTo(cpX1, cpY1, cpX2, cpY2, p1.x, p1.y)
+  }
+  
+  ctx.lineTo(points[points.length - 1].x, paddingTop + chartHeight)
+  ctx.closePath()
+  
+  const grad = ctx.createLinearGradient(0, paddingTop, 0, paddingTop + chartHeight)
+  grad.addColorStop(0, themeColor + '38') // 阴影起始 22% 透明度
+  grad.addColorStop(1, themeColor + '00')
+  ctx.setFillStyle(grad)
+  ctx.fill()
+  
+  // 6. 绘制高品质平滑贝塞尔曲线描边
+  ctx.beginPath()
+  ctx.moveTo(points[0].x, points[0].y)
+  
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i]
+    const p1 = points[i + 1]
+    const cpX1 = p0.x + (p1.x - p0.x) / 2
+    const cpY1 = p0.y
+    const cpX2 = p0.x + (p1.x - p0.x) / 2
+    const cpY2 = p1.y
+    ctx.bezierCurveTo(cpX1, cpY1, cpX2, cpY2, p1.x, p1.y)
+  }
+  
+  ctx.setStrokeStyle(themeColor)
+  ctx.setLineWidth(3)
+  ctx.stroke()
+  
+  // 7. 绘制数据圆点标记 (外圈描边+白色实心填充)
+  points.forEach((p) => {
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI)
+    ctx.setFillStyle('#ffffff')
+    ctx.fill()
+    ctx.setStrokeStyle(themeColor)
+    ctx.setLineWidth(2)
+    ctx.stroke()
+  })
+  
+  // 8. 绘制手势触摸指示线与 Tooltip 浮窗
+  if (activeIdx.value !== -1) {
+    const activePoint = points.find(p => p.index === activeIdx.value)
+    
+    if (activePoint) {
+      // 垂直十字虚线
+      ctx.beginPath()
+      ctx.setStrokeStyle(themeColor + '70')
+      ctx.setLineWidth(1)
+      if (typeof ctx.setLineDash === 'function') {
+        ctx.setLineDash([3, 3], 0)
+      }
+      ctx.moveTo(activePoint.x, paddingTop)
+      ctx.lineTo(activePoint.x, paddingTop + chartHeight)
+      ctx.stroke()
+      
+      if (typeof ctx.setLineDash === 'function') {
+        ctx.setLineDash([], 0)
+      }
+      
+      // 选中的数据点缩放光晕 (Hover Point)
+      ctx.beginPath()
+      ctx.arc(activePoint.x, activePoint.y, 7, 0, 2 * Math.PI)
+      ctx.setFillStyle(themeColor + '28')
+      ctx.fill()
+      
+      ctx.beginPath()
+      ctx.arc(activePoint.x, activePoint.y, 4, 0, 2 * Math.PI)
+      ctx.setFillStyle(themeColor)
+      ctx.fill()
+      
+      // Tooltip 弹出层位置算法（防超出屏幕）
+      const tooltipW = 96
+      const tooltipH = 44
+      
+      let tooltipX = activePoint.x - tooltipW / 2
+      if (tooltipX < paddingLeft) {
+        tooltipX = paddingLeft
+      } else if (tooltipX + tooltipW > containerWidth - paddingRight) {
+        tooltipX = containerWidth - paddingRight - tooltipW
+      }
+      
+      let tooltipY = activePoint.y - tooltipH - 12
+      if (tooltipY < paddingTop) {
+        tooltipY = activePoint.y + 12
+      }
+      
+      // ECharts 经典的圆角黑色毛玻璃 Tooltip 背景
+      ctx.beginPath()
+      ctx.setFillStyle('rgba(44, 62, 80, 0.9)')
+      
+      const r = 6
+      ctx.moveTo(tooltipX + r, tooltipY)
+      ctx.lineTo(tooltipX + tooltipW - r, tooltipY)
+      ctx.arcTo(tooltipX + tooltipW, tooltipY, tooltipX + tooltipW, tooltipY + r, r)
+      ctx.lineTo(tooltipX + tooltipW, tooltipY + tooltipH - r)
+      ctx.arcTo(tooltipX + tooltipW, tooltipY + tooltipH, tooltipX + tooltipW - r, tooltipY + tooltipH, r)
+      ctx.lineTo(tooltipX + r, tooltipY + tooltipH)
+      ctx.arcTo(tooltipX, tooltipY + tooltipH, tooltipX, tooltipY + tooltipH - r, r)
+      ctx.lineTo(tooltipX, tooltipY + r)
+      ctx.arcTo(tooltipX, tooltipY, tooltipX + r, tooltipY, r)
+      ctx.fill()
+      
+      // 文本渲染
+      ctx.setFontSize(9)
+      ctx.setFillStyle('#ECEFF1')
+      ctx.setTextAlign('center')
+      ctx.fillText(activePoint.label, tooltipX + tooltipW / 2, tooltipY + 15)
+      
+      ctx.setFontSize(11)
+      ctx.setFillStyle('#FFFFFF')
+      ctx.fillText(`${parseFloat(activePoint.val).toFixed(1)} kg`, tooltipX + tooltipW / 2, tooltipY + 32)
+    }
+  }
+  
+  ctx.draw()
+}
+
+// 触摸定位事件处理器
+const onChartTouch = (e) => {
+  if (!trendHistory.value || trendHistory.value.length === 0) return
+  const clientX = e.touches[0].x
+  
+  const sysInfo = uni.getSystemInfoSync()
+  const screenWidth = sysInfo.screenWidth
+  const containerWidth = Math.floor(screenWidth * (642 / 750))
+  
+  const paddingLeft = 32
+  const paddingRight = 15
+  const chartWidth = containerWidth - paddingLeft - paddingRight
+  const xStep = chartWidth / (trendLabels.value.length - 1 || 1)
+  
+  const relativeX = clientX - paddingLeft
+  let nearestIdx = Math.round(relativeX / xStep)
+  nearestIdx = Math.max(0, Math.min(trendLabels.value.length - 1, nearestIdx))
+  
+  if (trendHistory.value[nearestIdx] !== null && trendHistory.value[nearestIdx] !== undefined) {
+    if (activeIdx.value !== nearestIdx) {
+      activeIdx.value = nearestIdx
+      drawChart()
+    }
+  }
+}
+
+const onChartEnd = () => {
+  // 手势松开后，延时 1.2 秒自动关闭 tooltip 气泡
+  setTimeout(() => {
+    activeIdx.value = -1
+    drawChart()
+  }, 1200)
 }
 
 const openWeightModal = () => {
@@ -694,15 +1000,16 @@ const viewRecipe = (r) => {
 /* 4. 体重趋势 */
 .trend-card {
   .card-common();
-  .chart-bars {
-    height: 240rpx; display: flex; align-items: flex-end; justify-content: space-between; padding: 20rpx 0;
-    .bar-col {
-      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 16rpx;
-      .bar-track {
-        flex: 1; width: 14rpx; background: #F8F9FA; border-radius: 100rpx; display: flex; align-items: flex-end;
-        .bar-fill { width: 100%; background: #4DB88F; border-radius: 100rpx; opacity: 0.5; transition: height 0.6s ease; }
-      }
-      .bar-label { font-size: 20rpx; color: #BDC3C7; font-weight: 600; }
+  .chart-wrap {
+    width: 100%;
+    height: 360rpx;
+    position: relative;
+    box-sizing: border-box;
+    
+    .weight-chart-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
   }
   .trend-empty {

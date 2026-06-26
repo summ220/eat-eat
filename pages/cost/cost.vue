@@ -1,11 +1,42 @@
 <template>
   <custom-header title="花费账本" icon="💰" back />
   <view class="page" :style="themeStyle">
-    <!-- 月份切换栏 -->
-    <view class="month-selector">
-      <view class="arrow-btn" @click="changeMonth(-1)"><text class="arrow">◀</text></view>
-      <text class="month-text">{{ displayMonthString }}</text>
-      <view class="arrow-btn" @click="changeMonth(1)"><text class="arrow">▶</text></view>
+    <!-- 月份/天数筛选切换栏 -->
+    <view class="month-selector-wrap">
+      <!-- 左侧占位，使时间居中 -->
+      <view class="placeholder-space"></view>
+      
+      <view class="month-selector">
+        <!-- <view class="arrow-btn" @click="changeDate(-1)"><text class="arrow">◀</text></view> -->
+        
+        <picker 
+          mode="date" 
+          :fields="filterMode === 'month' ? 'month' : 'day'" 
+          :value="pickerValue" 
+          @change="handlePickerChange"
+        >
+          <view class="month-text-box">
+            <text class="month-text">{{ displayDateString }}</text>
+            <text class="calendar-icon">📅</text>
+          </view>
+        </picker>
+        
+        <!-- <view class="arrow-btn" @click="changeDate(1)"><text class="arrow">▶</text></view> -->
+      </view>
+      
+      <!-- 月/天 分段胶囊 -->
+      <view class="mode-capsule">
+        <view 
+          class="mode-btn" 
+          :class="{ active: filterMode === 'month' }" 
+          @click="switchFilterMode('month')"
+        >月</view>
+        <view 
+          class="mode-btn" 
+          :class="{ active: filterMode === 'day' }" 
+          @click="switchFilterMode('day')"
+        >天</view>
+      </view>
     </view>
 
     <!-- 顶部本月统计卡片 -->
@@ -159,11 +190,26 @@ const themeStyle = computed(() => {
   `
 })
 
-// 月份选中逻辑
+// 月份与日期选中逻辑
 const currentDate = ref(new Date())
+const filterMode = ref('month') // 'month' | 'day'
 
-const displayMonthString = computed(() => {
-  return `${currentDate.value.getFullYear()}年${currentDate.value.getMonth() + 1}月`
+const displayDateString = computed(() => {
+  const y = currentDate.value.getFullYear()
+  const m = currentDate.value.getMonth() + 1
+  if (filterMode.value === 'month') {
+    return `${y}年${m}月`
+  } else {
+    const d = currentDate.value.getDate()
+    return `${y}年${m}月${d}日`
+  }
+})
+
+const pickerValue = computed(() => {
+  const y = currentDate.value.getFullYear()
+  const m = String(currentDate.value.getMonth() + 1).padStart(2, '0')
+  const d = String(currentDate.value.getDate()).padStart(2, '0')
+  return filterMode.value === 'month' ? `${y}-${m}` : `${y}-${m}-${d}`
 })
 
 const currentMonthKey = computed(() => {
@@ -174,10 +220,17 @@ const currentMonthKey = computed(() => {
 
 const summaryTitle = computed(() => {
   const t = new Date()
-  if (t.getFullYear() === currentDate.value.getFullYear() && t.getMonth() === currentDate.value.getMonth()) {
-    return '本月'
+  if (filterMode.value === 'month') {
+    if (t.getFullYear() === currentDate.value.getFullYear() && t.getMonth() === currentDate.value.getMonth()) {
+      return '本月'
+    }
+    return displayDateString.value
+  } else {
+    if (t.getFullYear() === currentDate.value.getFullYear() && t.getMonth() === currentDate.value.getMonth() && t.getDate() === currentDate.value.getDate()) {
+      return '今日'
+    }
+    return displayDateString.value
   }
-  return displayMonthString.value
 })
 
 const expandedMonths = ref([])
@@ -187,15 +240,48 @@ const switchCategory = (catName) => {
   load()
 }
 
-const changeMonth = (delta) => {
+const changeDate = (delta) => {
   const nd = new Date(currentDate.value)
-  nd.setMonth(nd.getMonth() + delta)
+  if (filterMode.value === 'month') {
+    nd.setMonth(nd.getMonth() + delta)
+  } else {
+    nd.setDate(nd.getDate() + delta)
+  }
   currentDate.value = nd
   
   // 切换月份后，默认打开对应面板
   const key = currentMonthKey.value
   if (!expandedMonths.value.includes(key)) {
     expandedMonths.value.push(key)
+  }
+  load()
+}
+
+const handlePickerChange = (e) => {
+  const valStr = e.detail.value // 格式 yyyy-mm 或 yyyy-mm-dd
+  const parts = valStr.split('-')
+  const nd = new Date(currentDate.value)
+  nd.setFullYear(parseInt(parts[0], 10))
+  nd.setMonth(parseInt(parts[1], 10) - 1)
+  if (parts[2]) {
+    nd.setDate(parseInt(parts[2], 10))
+  } else {
+    nd.setDate(1) // 默认设为该月第一天
+  }
+  currentDate.value = nd
+  
+  const key = currentMonthKey.value
+  if (!expandedMonths.value.includes(key)) {
+    expandedMonths.value.push(key)
+  }
+  load()
+}
+
+const switchFilterMode = (mode) => {
+  filterMode.value = mode
+  // 切换为“天”时，默认先选中今天
+  if (mode === 'day') {
+    currentDate.value = new Date()
   }
   load()
 }
@@ -233,12 +319,21 @@ const load = async () => {
   try {
     uni.showLoading({ title: '加载中...' })
     
-    // 1. 根据选中月份计算精确的 startTime 和 endTime (格式：yyyy-mm-dd)
+    // 1. 根据选中月份或天数计算精确的 startTime 和 endTime (格式：yyyy-mm-dd)
+    let startTime = ''
+    let endTime = ''
     const year = currentDate.value.getFullYear()
     const month = currentDate.value.getMonth() // 0-based
-    const startTime = `${year}-${String(month + 1).padStart(2, '0')}-01`
-    const lastDay = new Date(year, month + 1, 0).getDate() // 下个月第 0 天即为本月最后一天
-    const endTime = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    
+    if (filterMode.value === 'month') {
+      startTime = `${year}-${String(month + 1).padStart(2, '0')}-01`
+      const lastDay = new Date(year, month + 1, 0).getDate() // 下个月第 0 天即为本月最后一天
+      endTime = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    } else {
+      const day = String(currentDate.value.getDate()).padStart(2, '0')
+      startTime = `${year}-${String(month + 1).padStart(2, '0')}-${day}`
+      endTime = startTime
+    }
     
     // 2. 根据 currentCategory 动态计算 categoryId
     let categoryId = ''
@@ -327,9 +422,17 @@ const toggleGroup = (key) => {
   }
 }
 
-// 统计特定显示月份的数据
+// 统计特定显示月份或天数的数据
 const currentDisplayItems = computed(() => {
-  return list.value.filter(item => item.date.startsWith(currentMonthKey.value))
+  if (filterMode.value === 'month') {
+    return list.value.filter(item => item.date.startsWith(currentMonthKey.value))
+  } else {
+    const y = currentDate.value.getFullYear()
+    const m = String(currentDate.value.getMonth() + 1).padStart(2, '0')
+    const d = String(currentDate.value.getDate()).padStart(2, '0')
+    const dayKey = `${y}-${m}-${d}`
+    return list.value.filter(item => item.date === dayKey)
+  }
 })
 
 const currentMonthTotal = computed(() => {
@@ -503,25 +606,104 @@ const touchEnd = (e, item) => {
   padding: 30rpx 24rpx 40rpx;
 }
 
-// 头部月份切换栏
+// 头部月份与日期切换栏
+.month-selector-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 20rpx;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 40rpx;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  margin-bottom: 30rpx;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.03);
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.placeholder-space {
+  width: 120rpx;
+  flex-shrink: 0;
+}
+
 .month-selector {
   display: flex;
   align-items: center;
+  flex: 1;
   justify-content: center;
-  padding: 10rpx 0 30rpx;
+  
   .arrow-btn {
-    padding: 10rpx 40rpx;
+    padding: 10rpx 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:active {
+      opacity: 0.6;
+    }
+    
     .arrow {
       color: var(--primary);
-      font-size: 28rpx;
+      font-size: 26rpx;
+      font-weight: bold;
     }
   }
+  
+  .month-text-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10rpx;
+    background: #fff;
+    padding: 10rpx 28rpx;
+    border-radius: 100rpx;
+    box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.04);
+    border: 1rpx solid rgba(0, 0, 0, 0.02);
+    transition: transform 0.15s ease;
+    
+    &:active {
+      transform: scale(0.96);
+    }
+  }
+  
   .month-text {
-    font-size: 34rpx;
-    font-weight: bold;
-    color: #333;
-    min-width: 180rpx;
+    font-size: 28rpx;
+    font-weight: 800;
+    color: #2C3E50;
     text-align: center;
+    line-height: 1.2;
+  }
+  
+  .calendar-icon {
+    font-size: 24rpx;
+  }
+}
+
+/* 模式选择胶囊 */
+.mode-capsule {
+  display: flex;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4rpx;
+  border-radius: 100rpx;
+  width: 120rpx;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  
+  .mode-btn {
+    flex: 1;
+    text-align: center;
+    font-size: 22rpx;
+    font-weight: bold;
+    color: #7F8C8D;
+    padding: 8rpx 0;
+    border-radius: 100rpx;
+    transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+    
+    &.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.06);
+    }
   }
 }
 
