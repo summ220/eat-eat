@@ -725,6 +725,71 @@ const initDateWeather = () => {
 // 智能提醒 (纯前端真实计算与分析)
 const reminders = ref([])
 
+// 智能管家每日烹饪与生活寄语
+const getButlerTip = () => {
+  const now = new Date()
+  const day = now.getDay() // 0-6，0是周日
+  const hour = now.getHours()
+  
+  // 1. 周末或特定工作日寄语优先
+  if (day === 0) {
+    return {
+      icon: '✨',
+      text: '管家周末寄语：周日宜慢下节奏，亲手烘焙一份甜点，或和家人围坐共享一顿丰盛的午餐 🥞'
+    }
+  }
+  if (day === 5) {
+    return {
+      icon: '🎉',
+      text: '管家周五心语：辛苦了一周，今晚不妨做顿硬菜（比如红烧肉或清蒸鱼）犒劳一下自己吧 🐟'
+    }
+  }
+  if (day === 6) {
+    return {
+      icon: '🏡',
+      text: '管家周末企划：今日宜呼朋引伴或陪伴家人，一起动手包饺子或做个火锅，享受厨房的烟火气 🥟'
+    }
+  }
+  
+  // 2. 核心工作日按照时间段推荐
+  if (hour >= 6 && hour < 9) {
+    const breakfastTips = [
+      '管家早餐小课堂：空腹不宜喝浓茶或浓咖啡，来一碗热粥或一份煎双蛋，补充一天元气 🍳',
+      '管家健康提示：早餐要吃好，碳水配合蛋白质（如牛奶、鸡蛋、全麦面包）是黄金搭配 🥛',
+      '管家晨间问候：清晨一杯温开水，唤醒肠胃，今天也要好好吃饭呀 ☀️'
+    ]
+    return { icon: '🌤️', text: breakfastTips[now.getDate() % breakfastTips.length] }
+  }
+  
+  if (hour >= 11 && hour < 14) {
+    const lunchTips = [
+      '管家午餐贴士：午餐宜吃得饱且均衡，多吃绿叶蔬菜和鱼肉，下午工作不犯困 🥗',
+      '管家烹饪小窍门：炒青菜时等锅热了再下菜，大火快炒并最后放盐，菜色翠绿口感好 🥬',
+      '管家吃货推荐：中午来一份少油少盐的高蛋白便当，健康美味两不误 🍱'
+    ]
+    return { icon: '🍽️', text: lunchTips[now.getDate() % lunchTips.length] }
+  }
+  
+  if (hour >= 17 && hour < 20) {
+    const dinnerTips = [
+      '管家晚餐贴士：晚餐宜吃得清淡易消化，七分饱最健康，少吃高油高糖食品 🍲',
+      '管家烹饪小窍门：炖排骨或熬骨头汤时，中途切忌加冷水，一次性加足热水汤汁更浓郁 🥣',
+      '管家温馨提示：结束了一天的忙碌，为家人或自己煮一碗热面，暖胃又暖心 🍜'
+    ]
+    return { icon: '🌙', text: dinnerTips[now.getDate() % dinnerTips.length] }
+  }
+  
+  // 3. 默认随机健康/烹饪冷知识 (其他时间段如上午、下午或深夜)
+  const randomTips = [
+    '管家烹饪小窍门：切洋葱前将洋葱放入冰箱冷藏10分钟，切的时候就不容易辣眼睛啦 🧅',
+    '管家烹饪小窍门：煎鱼时用姜块擦一下锅底，或者把鱼身擦干抹少许淀粉，鱼皮就不易粘锅 🐟',
+    '管家健康常识：多吃深色蔬菜（如西兰花、菠菜、胡萝卜），对保护视力很有帮助 🥕',
+    '管家生活窍门：大米里放几瓣大蒜或者几粒花椒，可以有效防止大米生虫哦 🌾',
+    '管家美食哲学：唯有爱与美食不可交付，今天你的厨房里有什么新故事吗？📖'
+  ]
+  return { icon: '💡', text: randomTips[now.getDate() % randomTips.length] }
+}
+
 const updateReminders = async () => {
   const list = []
 
@@ -824,32 +889,14 @@ const updateReminders = async () => {
     }
   }
 
-  // 3. 基于天气的智能饮食推荐
-  const weatherText = dateInfo.value.weather || ''
-  const tempVal = parseFloat(dateInfo.value.temp)
-  
-  if (weatherText.includes('雨') || weatherText.includes('雪') || (!isNaN(tempVal) && tempVal < 15)) {
-    list.push({
-      type: 'info',
-      icon: '🍲',
-      text: '智能推荐：今日气温较低或有雨雪，管家建议煲一碗热气腾腾的「冬瓜排骨汤」暖胃～',
-      action: '去看看'
-    })
-  } else if (weatherText.includes('晴') && !isNaN(tempVal) && tempVal > 30) {
-    list.push({
-      type: 'info',
-      icon: '🍧',
-      text: '智能推荐：今日天气炎热，建议吃一碗解暑的「绿豆百合甜汤」消暑降火～',
-      action: '去看看'
-    })
-  } else {
-    list.push({
-      type: 'info',
-      icon: '💡',
-      text: '智能推荐：今日天气宜人，管家推荐做家常招牌菜「西红柿炒鸡蛋」，快去看看吧！',
-      action: '去看看'
-    })
-  }
+  // 3. 智能管家每日烹饪与生活寄语
+  const butlerTip = getButlerTip()
+  list.push({
+    type: 'info',
+    icon: butlerTip.icon,
+    text: butlerTip.text,
+    action: '去看看'
+  })
 
   reminders.value = list
 }

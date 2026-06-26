@@ -317,12 +317,36 @@ const precipTip = computed(() => {
 
 const lifestyleTip = computed(() => {
   if (!weather.value.now.text) return '获取建议中...'
+  console.log('weather11111111111', JSON.stringify(weather.value.now))
   const text = weather.value.now.text || ''
   const temp = parseInt(weather.value.now.temp) || 20
-  if (text.includes('雨')) return '今天雨天，宜在家煲一锅暖暖的汤 🍲'
-  if (text.includes('晴') && temp > 25) return '阳光正好，非常适合晾晒被子 ☀️'
-  if (temp < 10) return '天气寒冷，记得加衣，宜吃热乎火锅 🥘'
-  return '天气宜人，适合下厨做几道拿手好菜 👨‍🍳'
+  
+  // 1. 雨雪/恶劣天气
+  if (text.includes('雨')) return '今天下雨，宜在家煲一锅暖烘烘的靓汤 🍲'
+  if (text.includes('雪')) return '窗外飘雪，最适合围炉煮茶或吃顿热火锅 ☃️'
+  if (text.includes('雷') || text.includes('雹')) return '雷雨天气，宜安心宅家，喝杯热茶做些烘焙 🧁'
+  if (text.includes('雾') || text.includes('霾') || text.includes('沙') || text.includes('尘')) {
+    return '能见度较低，宜多喝雪梨汤润肺，减少外出 🥣'
+  }
+  
+  // 2. 高温天气 (>=30°C)
+  if (temp >= 30) return '烈日炎炎，宜做些清爽凉拌菜，喝碗绿豆沙消暑 🍧'
+  
+  // 3. 微热天气 (25°C ~ 30°C)
+  if (temp >= 25) {
+    if (text.includes('晴')) return '阳光正好，非常适合晾晒被子，再做一杯手摇冰饮 🍹'
+    if (text.includes('阴') || text.includes('多云')) return '天空多云转阴，体感微热，适合做顿开胃的轻食 🥗'
+    return '天气微热，适合做一盘清爽的小炒，开胃又健康 🥬'
+  }
+  
+  // 4. 严寒天气 (<10°C)
+  if (temp < 10) return '天气寒冷，记得加衣防寒，宜吃热气腾腾的火锅 🥘'
+  
+  // 5. 舒适天气 (10°C ~ 25°C)
+  if (text.includes('晴')) return '阳光和煦，适合去户外散步，或者做几道拿手好菜 👨‍🍳'
+  if (text.includes('阴') || text.includes('多云')) return '天空有些阴沉，但温度舒适，正适合动手做些烘焙 🥐'
+  
+  return '天气宜人，适合下厨做几道拿手好菜 🍳'
 })
 
 const filteredIndices = computed(() => {
@@ -341,12 +365,18 @@ const getCookingIndex = () => {
   if (text.includes('雨')) { 
     level = '5'
     advice = '雨天湿气重，推荐：山药排骨汤、当归鸡汤，暖身祛湿。' 
-  } else if (temp > 30) { 
+  } else if (text.includes('雪')) {
+    level = '5'
+    advice = '雪天寒冷，推荐：羊肉火锅、热可可，驱寒暖胃。'
+  } else if (temp >= 30) { 
     level = '4'
     advice = '天气炎热，推荐：拍黄瓜、绿豆沙、凉拌面，清爽消暑。' 
-  } else if (temp < 5) { 
+  } else if (temp >= 25 && (text.includes('阴') || text.includes('多云'))) {
+    level = '3'
+    advice = '天气微闷，推荐：泰式酸辣大虾、柠檬手撕鸡，开胃解腻。'
+  } else if (temp < 10) { 
     level = '5'
-    advice = '寒冷冬日，推荐：红烧羊肉、老鸭汤，温补御寒。' 
+    advice = '天气寒冷，推荐：红烧羊肉、老鸭汤，温补御寒。' 
   }
   return { type: '99', name: '烹饪与饮食', level: level, text: advice }
 }
