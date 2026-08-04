@@ -3,8 +3,11 @@
   <view class="page" :style="themeStyle">
     <!-- 月份/天数筛选切换栏 -->
     <view class="month-selector-wrap">
-      <!-- 左侧占位，使时间居中 -->
-      <view class="placeholder-space"></view>
+      <!-- 左侧图表分析入口 -->
+      <view class="analysis-btn" @click="goToAnalysis">
+        <text class="analysis-icon"> 📊 </text>
+        <text class="analysis-lbl">统计</text>
+      </view>
       
       <view class="month-selector">
         <!-- <view class="arrow-btn" @click="changeDate(-1)"><text class="arrow">◀</text></view> -->
@@ -153,6 +156,22 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import shopApi from '@/common/api/shop.js'
 import costApi from '@/common/api/cost.js'
+
+// 转换0时区时间到东八区北京时间，并格式化为 YYYY-MM-DD
+const formatUtcToBeijingDate = (dateStr) => {
+  if (!dateStr) return ''
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr
+  }
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return dateStr
+  const utc8Time = date.getTime() + (8 * 60 * 60 * 1000)
+  const utc8Date = new Date(utc8Time)
+  const y = utc8Date.getUTCFullYear()
+  const m = String(utc8Date.getUTCMonth() + 1).padStart(2, '0')
+  const d = String(utc8Date.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
 
 let familyCode = uni.getStorageSync('family_code') || ''
 
@@ -363,7 +382,7 @@ const load = async () => {
         _id: item._id || item.id,
         price: item.price,
         name: item.name,
-        date: item.date,
+        date: formatUtcToBeijingDate(item.date),
         category: cName,
         categoryId: item.categoryId,
         translateX: 0
@@ -466,6 +485,12 @@ const currentMonthRatioText = computed(() => {
   return `核心占比：${sorted[0].cat} ${sorted[0].ratio}%，${sorted[1].cat} ${sorted[1].ratio}%`
 })
 
+const goToAnalysis = () => {
+  uni.navigateTo({
+    url: '/pages/cost/analysis'
+  })
+}
+
 // ---- 交互逻辑 ----
 const onDateChange = (e) => {
   editForm.value.date = e.detail.value
@@ -495,6 +520,7 @@ const openModal = (mode, item = null) => {
   } else {
     editForm.value = { 
       ...item,
+      date: formatUtcToBeijingDate(item.date),
       price: item.price ? parseFloat(item.price).toFixed(2) : ''
     }
     item.translateX = 0
@@ -621,9 +647,32 @@ const touchEnd = (e, item) => {
   border: 1rpx solid rgba(255, 255, 255, 0.5);
 }
 
-.placeholder-space {
-  width: 120rpx;
-  flex-shrink: 0;
+.analysis-btn {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  background: var(--primary-light);
+  padding: 10rpx 20rpx;
+  border-radius: 30rpx;
+  transition: all 0.2s;
+  box-shadow: 0 4rpx 10rpx var(--primary-shadow);
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+  
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+  
+  .analysis-icon {
+    font-size: 26rpx;
+    line-height: 1;
+  }
+  .analysis-lbl {
+    font-size: 22rpx;
+    font-weight: 600;
+    color: var(--primary);
+    line-height: 1;
+  }
 }
 
 .month-selector {

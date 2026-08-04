@@ -89,6 +89,13 @@
 			}
 		},
 		{
+			"path": "pages/cost/analysis",
+			"style": {
+				"navigationBarTitleText": "账本统计分析",
+				"navigationBarBackgroundColor": "#FFF5F7"
+			}
+		},
+		{
 			"path": "pages/family/component/singlePage/memo",
 			"style": {
 				"navigationBarTitleText": "家庭备忘录",

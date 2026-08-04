@@ -59,7 +59,7 @@
 
           <view class="item-body">
             <text class="num">数量：{{ item.num || '-' }}</text>
-            <text class="price" v-if="item.price && item.price !== ''">{{ item.done ? '实际花费' : '预估单价' }}: ¥ {{ item.price }}</text>
+            <text class="price" v-if="item.price && item.price !== ''">{{ item.done ? '实际花费' : '预估价格' }}: ¥ {{ item.price }}</text>
           </view>
 
           <view class="item-footer">
@@ -202,7 +202,7 @@
         <text class="modal-title">确认购买</text>
         <view class="purchase-tip">
           <text class="purchase-item-name">🛍️ {{ activeToggleItem?.name }}</text>
-          <text class="purchase-item-desc">数量：{{ activeToggleItem?.num || '1' }} | 预估单价：¥{{ activeToggleItem?.price || '0' }}</text>
+          <text class="purchase-item-desc">数量：{{ activeToggleItem?.num || '1' }} | 预估价格：¥{{ activeToggleItem?.price || '0' }}</text>
         </view>
         <view class="input-group">
           <view class="price-input-container">
@@ -465,13 +465,8 @@ const toggle = (item) => {
   
   activeToggleItem.value = item
   
-  // 计算预估总价
-  const singlePrice = parseFloat(item.price)
-  const num = parseInt(item.num) || 1
-  let estPrice = ''
-  if (!isNaN(singlePrice)) {
-    estPrice = (singlePrice * num).toFixed(2)
-  }
+  // 直接使用预估价格，输入多少就是多少，不用乘以数量了
+  const estPrice = item.price || ''
   
   purchaseForm.value = {
     price: estPrice,
@@ -495,10 +490,9 @@ const confirmPurchase = async () => {
       return uni.showToast({ title: '请输入有效的实际消费金额', icon: 'none' })
     }
   } else {
-    // 如果不同步到花费，我们也算一个预估总价作为该项的实际花费
-    const singlePrice = parseFloat(item.price)
-    const num = parseInt(item.num) || 1
-    finalPrice = !isNaN(singlePrice) ? singlePrice * num : 0
+    // 如果不同步到花费，直接使用预估价格作为该项的实际花费
+    const estPrice = parseFloat(item.price)
+    finalPrice = !isNaN(estPrice) ? estPrice : 0
   }
   
   showPurchaseModal.value = false
