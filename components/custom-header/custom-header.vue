@@ -3,7 +3,7 @@
     <view class="custom-header" :style="headerStyle">
       <view class="header-content">
         <view class="left-icon" v-if="back" @click="goBack">
-          <text class="back-icon">←</text>
+          <image class="back-icon" src="/static/icon/back.png"></image>
         </view>
         <view class="title-wrap">
           <text class="h-icon" v-if="icon">{{ icon }}</text>
@@ -91,7 +91,8 @@ const goBack = () => {
   z-index: 10;
 }
 .back-icon {
-  font-size: 40rpx;
+  width: 40rpx;
+  height: 40rpx;
   color: #333;
   font-weight: bold;
 }

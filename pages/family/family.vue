@@ -993,6 +993,8 @@ const handleSecuritySaved = () => {
 const showSecurityGuideModal = ref(false)
 
 const checkSecurityGuide = () => {
+  // 暂时禁用密保强引导弹窗
+  return
   if (familyRole.value === 'owner' && familyCode.value && familyCode.value !== 'default_family') {
     const hasSetSecurity = uni.getStorageSync('has_set_security_' + familyCode.value)
     if (!hasSetSecurity) {
@@ -1007,7 +1009,7 @@ const checkSecurityGuide = () => {
 
 const closeSecurityGuide = (remindLater = false) => {
   showSecurityGuideModal.value = false
-  if (remindLater && familyCode.value) {
+  if (familyCode.value) {
     uni.setStorageSync('security_remind_later_' + familyCode.value, Date.now())
   }
 }
